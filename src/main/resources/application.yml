@@ -1,0 +1,35 @@
+server:
+  port: 1234
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/astrodb?createDatabaseIfNotExist=true
+    username: root
+    password: root
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  redis:
+    host: localhost
+    port: 6379
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+otp:
+  expiry-minutes: 5
+
+textlocal:
+  api-key: "YOUR_TEXTLOCAL_API_KEY"
+  sender: "TXTLCL"
+
+sendgrid:
+  api-key: "YOUR_SENDGRID_API_KEY"
+  from-email: "noreply@yourdomain.com"
+
+razorpay:
+  key-id: "YOUR_RAZORPAY_KEY"
+  key-secret: "YOUR_RAZORPAY_SECRET"

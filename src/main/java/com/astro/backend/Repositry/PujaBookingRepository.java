@@ -1,0 +1,11 @@
+package com.astro.backend.Repositry;
+
+
+import com.astro.backend.Entity.PujaBooking;
+import org.springframework.data.jpa.repository.JpaRepository;
+import java.util.List;
+
+public interface PujaBookingRepository extends JpaRepository<PujaBooking, Long> {
+    List<PujaBooking> findByUserIdOrderByBookedAtDesc(Long userId);
+}
+
