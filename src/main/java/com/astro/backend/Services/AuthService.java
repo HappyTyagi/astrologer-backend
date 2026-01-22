@@ -30,11 +30,14 @@ public class AuthService {
                 .password(passwordEncoder.encode(req.getPassword()))
                 .name(req.getName())
                 .role(Role.USER)
+                .genderMasterId(req.getGenderMasterId())
+                .stateMasterId(req.getStateMasterId())
+                .districtMasterId(req.getDistrictMasterId())
                 .build();
 
-        userRepo.save(user);
+        User savedUser = userRepo.save(user);
 
-        return generateTokens(user);
+        return generateTokens(savedUser);
     }
 
     public AuthResponse login(AuthRequest req) {
@@ -61,9 +64,17 @@ public class AuthService {
         long refreshExpiry = 1000L * 60 * 60 * 24 * 30; // 30 days
 
         return AuthResponse.builder()
+                .userId(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
                 .accessToken(jwtService.generateToken(user.getEmail(), accessExpiry))
                 .refreshToken(jwtService.generateToken(user.getEmail(), refreshExpiry))
                 .role(user.getRole().name())
+                .genderMasterId(user.getGenderMasterId())
+                .stateMasterId(user.getStateMasterId())
+                .districtMasterId(user.getDistrictMasterId())
+                .status(true)
+                .message("Authentication successful")
                 .build();
     }
 }

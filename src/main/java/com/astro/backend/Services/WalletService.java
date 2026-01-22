@@ -19,7 +19,12 @@ public class WalletService {
     public Wallet getWallet(Long userId) {
         return walletRepo.findByUserId(userId)
                 .orElseGet(() -> {
-                    Wallet w = new Wallet(null, userId, 0);
+                    Wallet w = Wallet.builder()
+                            .userId(userId)
+                            .balance(0)
+                            .cashback(0.0)
+                            .bonus(0.0)
+                            .build();
                     return walletRepo.save(w);
                 });
     }

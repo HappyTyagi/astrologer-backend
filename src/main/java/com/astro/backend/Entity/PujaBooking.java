@@ -20,6 +20,31 @@ public class PujaBooking {
     @Enumerated(EnumType.STRING)
     private BookingStatus status;
 
+    // ===== Enhanced Tracking =====
+    private Double totalPrice;         // Final price after discounts
+    private Double discountApplied;
+    private String discountCode;
+    private String paymentMethod;      // UPI, Card, Wallet, etc.
+    private String transactionId;      // Payment gateway transaction ID
+    private LocalDateTime completedAt;
+    private LocalDateTime cancelledAt;
+    private String cancellationReason;
+
+    // ===== For Mobile App & CMS =====
+    private Integer rating;            // User rating 1-5
+    private String review;             // User review
+    private String notificationStatus; // For reminder tracking
+    private LocalDateTime reminderSentAt;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        bookedAt = LocalDateTime.now();
+    }
+
     public enum BookingStatus {
         PENDING, CONFIRMED, COMPLETED, CANCELLED, REFUNDED
     }

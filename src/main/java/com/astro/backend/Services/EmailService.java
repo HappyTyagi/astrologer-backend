@@ -35,4 +35,25 @@ public class EmailService {
             e.printStackTrace();
         }
     }
+
+    /**
+     * Send generic email with subject and content
+     */
+    public void sendEmail(String toEmail, String subject, String htmlContent) {
+        Email from = new Email(fromEmail);
+        Email to = new Email(toEmail);
+        Content content = new Content("text/html", htmlContent);
+        Mail mail = new Mail(from, subject, to, content);
+
+        try {
+            SendGrid sg = new SendGrid(apiKey);
+            Request request = new Request();
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+            sg.api(request);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

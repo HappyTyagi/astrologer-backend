@@ -1,4 +1,4 @@
-package com.astro.backend.Contlorer;
+package com.astro.backend.Contlorer.Mobile;
 
 
 
@@ -42,4 +42,3 @@ public class PujaController {
         return bookingRepo.findByUserIdOrderByBookedAtDesc(userId);
     }
 }
-

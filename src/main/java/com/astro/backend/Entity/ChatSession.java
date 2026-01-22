@@ -16,8 +16,8 @@ public class ChatSession {
     private Long userId;
     private Long astrologerId;
 
-    private double ratePerMin; // 20 INR
-    private String currency; // INR
+    private double ratePerMin; // Rate per minute
+    private String currency;   // INR
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;
@@ -26,6 +26,27 @@ public class ChatSession {
 
     @Enumerated(EnumType.STRING)
     private Status status;
+
+    // ===== Enhanced Management =====
+    private Double amountCharged;      // Actual amount deducted
+    private Double walletUsed;         // Wallet amount used
+    private String callType;           // CHAT, VIDEO, VOICE, TEXT
+    private Integer chatHistoryCount;  // Number of messages
+    private String endReason;          // Why chat ended
+
+    // ===== CMS & Analytics =====
+    private Integer userRating;        // Rating by user 1-5
+    private Integer astrologerRating;  // Rating by astrologer 1-5
+    private String userFeedback;
+    private String astrologerFeedback;
+
+    @Temporal(TemporalType.TIMESTAMP)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
 
     public enum Status {
         STARTED, ENDED, AUTO_ENDED, CANCELED
