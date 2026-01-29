@@ -1,9 +1,11 @@
 package com.astro.backend.Services;
 
 import com.astro.backend.Entity.BirthdayNotification;
+import com.astro.backend.Entity.MobileUserProfile;
 import com.astro.backend.Entity.User;
 import com.astro.backend.Entity.Notification;
 import com.astro.backend.Repositry.BirthdayNotificationRepository;
+import com.astro.backend.Repositry.MobileUserProfileRepository;
 import com.astro.backend.Repositry.UserRepository;
 import com.astro.backend.Repositry.NotificationRepository;
 import com.astro.backend.RequestDTO.BirthdayNotificationRequest;
@@ -23,6 +25,7 @@ public class BirthdayNotificationService {
 
     private final BirthdayNotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final MobileUserProfileRepository mobileUserProfileRepository;
     private final EmailService emailService;
     private final NotificationRepository notificationRepo;
 
@@ -36,18 +39,18 @@ public class BirthdayNotificationService {
         LocalDate tomorrowDate = today.plusDays(1);  // Check for tomorrow's birthdays
         Integer currentYear = today.getYear();
 
-        // Get all users from database
-        List<User> allUsers = userRepository.findAll();
+        // Get all mobile user profiles from database
+        List<MobileUserProfile> allProfiles = mobileUserProfileRepository.findAll();
 
-        for (User user : allUsers) {
-            if (user.getDateOfBirth() == null || user.getDateOfBirth().isEmpty()) {
+        for (MobileUserProfile profile : allProfiles) {
+            if (profile.getDateOfBirth() == null || profile.getDateOfBirth().isEmpty()) {
                 continue;
             }
 
             try {
                 // Parse user's date of birth
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                LocalDate dob = LocalDate.parse(user.getDateOfBirth(), formatter);
+                LocalDate dob = LocalDate.parse(profile.getDateOfBirth(), formatter);
                 
                 // Get birthday in current/next year
                 LocalDate upcomingBirthday = dob.withYear(currentYear);
@@ -57,15 +60,19 @@ public class BirthdayNotificationService {
 
                 // Check if birthday is tomorrow
                 if (upcomingBirthday.equals(tomorrowDate)) {
+                    // Get user details
+                    User user = userRepository.findById(profile.getUserId()).orElse(null);
+                    if (user == null) continue;
+                    
                     // Check if notification already exists for this year
                     var existingNotification = notificationRepository.findByUserAndYear(user.getId(), upcomingBirthday.getYear());
                     
                     if (existingNotification.isEmpty()) {
-                        createBirthdayNotification(user, upcomingBirthday);
+                        createBirthdayNotification(user, profile, upcomingBirthday);
                     }
                 }
             } catch (Exception e) {
-                System.err.println("Error processing birthday for user " + user.getId() + ": " + e.getMessage());
+                System.err.println("Error processing birthday for profile " + profile.getId() + ": " + e.getMessage());
             }
         }
     }
@@ -73,7 +80,7 @@ public class BirthdayNotificationService {
     /**
      * Create birthday notification for a user
      */
-    private void createBirthdayNotification(User user, LocalDate birthdayDate) {
+    private void createBirthdayNotification(User user, MobileUserProfile profile, LocalDate birthdayDate) {
         String title = "Happy Birthday, " + user.getName() + "! 🎉";
         String message = "Celebrate your special day with exclusive birthday discounts and special offers!";
         
@@ -82,7 +89,7 @@ public class BirthdayNotificationService {
                 .userFullName(user.getName())
                 .userEmail(user.getEmail())
                 .userMobileNumber(user.getMobileNumber())
-                .userProfileImage(user.getProfileImageUrl())
+                .userProfileImage(profile.getProfileImageUrl())
                 .upcomingYear(birthdayDate.getYear())
                 .title(title)
                 .message(message)
@@ -215,19 +222,22 @@ public class BirthdayNotificationService {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + request.getUserId()));
 
-        if (user.getDateOfBirth() == null || user.getDateOfBirth().isEmpty()) {
+        MobileUserProfile profile = mobileUserProfileRepository.findByUserId(request.getUserId())
+                .orElseThrow(() -> new RuntimeException("Mobile user profile not found for user ID: " + request.getUserId()));
+
+        if (profile.getDateOfBirth() == null || profile.getDateOfBirth().isEmpty()) {
             throw new RuntimeException("User does not have a date of birth set");
         }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        LocalDate dob = LocalDate.parse(user.getDateOfBirth(), formatter);
+        LocalDate dob = LocalDate.parse(profile.getDateOfBirth(), formatter);
 
         BirthdayNotification notification = BirthdayNotification.builder()
                 .userId(user.getId())
                 .userFullName(user.getName())
                 .userEmail(user.getEmail())
                 .userMobileNumber(user.getMobileNumber())
-                .userProfileImage(user.getProfileImageUrl())
+                .userProfileImage(profile.getProfileImageUrl())
                 .upcomingYear(LocalDate.now().getYear())
                 .title(request.getTitle() != null ? request.getTitle() : "Happy Birthday, " + user.getName() + "! 🎉")
                 .message(request.getMessage() != null ? request.getMessage() : "Celebrate your special day!")

@@ -2,8 +2,10 @@ package com.astro.backend.Services;
 
 import com.astro.backend.Entity.OtpTransaction;
 import com.astro.backend.Entity.User;
+import com.astro.backend.Entity.MobileUserProfile;
 import com.astro.backend.Repositry.OtpTransactionRepository;
 import com.astro.backend.Repositry.UserRepository;
+import com.astro.backend.Repositry.MobileUserProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,45 +21,29 @@ public class OtpService {
 
     private final OtpTransactionRepository otpTransactionRepo;
     private final UserRepository userRepository;
+    private final MobileUserProfileRepository mobileUserProfileRepository;
     private final SmsService smsService;
     private final Random random = new Random();
 
     /**
      * Generate and send OTP for mobile number
-     * Check if user exists, if not create new user
-     * Save OTP and reference number in OtpTransaction table
-     * Send OTP via SMS
+     * Returns sessionId (refNumber) for verification
+     * Does NOT create user at this stage
      */
     @Transactional
-    public OtpTransaction generateAndSendOtp(String mobileNumber, String name) {
-
-        // Check if user exists
-        Optional<User> existingUser = userRepository.findByMobileNumber(mobileNumber);
-
-        // If user doesn't exist, create new user
-        if (existingUser.isEmpty()) {
-            User newUser = User.builder()
-                    .name(name)
-                    .mobileNumber(mobileNumber)
-                    .isVerified(false)
-                    .isActive(true)
-                    .createdAt(LocalDateTime.now())
-                    .updatedAt(LocalDateTime.now())
-                    .build();
-            userRepository.save(newUser);
-        }
+    public OtpTransaction generateAndSendOtp(String mobileNumber) {
 
         // Generate random 6-digit OTP
         String otp = String.valueOf(100000 + random.nextInt(900000));
 
-        // Generate unique reference number
-        String refNumber = UUID.randomUUID().toString().substring(0, 12).toUpperCase();
+        // Generate unique session ID (UUID format like example)
+        String sessionId = UUID.randomUUID().toString();
 
         // Create OTP Transaction record
         OtpTransaction otpTxn = OtpTransaction.builder()
                 .mobileNumber(mobileNumber)
                 .otp(otp)
-                .refNumber(refNumber)
+                .refNumber(sessionId)  // Using refNumber as sessionId
                 .isVerified(false)
                 .build();
 
@@ -75,48 +61,55 @@ public class OtpService {
     }
 
     /**
-     * Verify OTP and return user details if valid
+     * Verify OTP - just marks as verified, doesn't create User
+     * User will be created during profile update with all details
+     * Returns true if OTP is valid, false otherwise
      */
     @Transactional
-    public Optional<User> verifyOtp(String mobileNumber, String otp, String refNumber) {
-
-        // Find OTP transaction by reference number and mobile number
+    public boolean verifyOtpOnly(String mobileNumber, String otp, String sessionId) {
+        
+        // Find OTP transaction by session ID (refNumber) and mobile number
         Optional<OtpTransaction> otpTxn = otpTransactionRepo
-                .findByMobileNumberAndRefNumber(mobileNumber, refNumber);
+                .findByMobileNumberAndRefNumber(mobileNumber, sessionId);
 
         if (otpTxn.isEmpty()) {
-            return Optional.empty();
+            return false;
         }
 
         OtpTransaction txn = otpTxn.get();
 
         // Check if OTP is expired
         if (!txn.isValid()) {
-            return Optional.empty();
+            return false;
         }
 
         // Check if OTP matches
         if (!txn.getOtp().equals(otp)) {
-            return Optional.empty();
+            return false;
         }
 
         // Mark OTP as verified
         txn.setIsVerified(true);
         txn.setVerifiedAt(LocalDateTime.now());
         otpTransactionRepo.save(txn);
+        
+        return true;
+    }
 
-        // Get user by mobile number
-        Optional<User> user = userRepository.findByMobileNumber(mobileNumber);
+    /**
+     * Verify OTP and return user details if valid
+     * Creates user if doesn't exist
+     */
+    @Transactional
+    public Optional<User> verifyOtpAndGetUser(String mobileNumber, String otp, String sessionId) {
 
-        if (user.isPresent()) {
-            User u = user.get();
-            // Mark user as verified
-            u.setIsVerified(true);
-            u.setUpdatedAt(LocalDateTime.now());
-            userRepository.save(u);
-        }
-
-        return user;
+        // Do NOT create User table entry here
+        // OTP verification only marks OTP as valid
+        // User will be created later when profile is completed
+        
+        // Return null/empty to indicate OTP was verified but no user created yet
+        // Clients should call /profile/update after OTP verification
+        return Optional.empty();
     }
 
     /**

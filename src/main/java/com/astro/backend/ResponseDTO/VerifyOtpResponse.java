@@ -6,15 +6,15 @@ import lombok.Data;
 @Data
 @Builder
 public class VerifyOtpResponse {
-    private Boolean isValid;           // OTP verification status
-    private String accessToken;        // JWT token if valid
-    private String refreshToken;       // Refresh token if valid
+    private Boolean success;           // OTP verification status
     private String message;            // Status message
-    private Long userId;               // User ID if valid
-    private String name;               // User name if valid
-    private String email;              // User email if valid
-    private String mobileNumber;       // User mobile if valid
-    private String role;               // User role if valid
-    private Boolean isNewUser;         // Flag for new user
+    private String token;              // JWT access token
+    private String refreshToken;       // JWT refresh token
+    private Long userId;               // User ID
+    private String name;               // User name
+    private String mobileNo;           // User mobile number
+    private String email;              // User email
+    private Boolean isNewUser;         // Whether user was just created
+    private Boolean isProfileComplete; // Whether user profile is complete (has MobileUserProfile with complete data)
 }
 

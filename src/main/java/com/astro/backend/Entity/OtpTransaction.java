@@ -26,8 +26,8 @@ public class OtpTransaction {
     @Column(nullable = false, length = 6)
     private String otp;
 
-    @Column(nullable = false, length = 20, unique = true)
-    private String refNumber;          // Unique reference number
+    @Column(nullable = false, length = 50, unique = true)
+    private String refNumber;          // UUID session reference (increased to 50 for UUID format)
 
     @Column(nullable = false)
     private Boolean isVerified;        // OTP verification status

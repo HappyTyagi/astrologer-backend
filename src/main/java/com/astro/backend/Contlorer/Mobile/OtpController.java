@@ -1,6 +1,7 @@
 package com.astro.backend.Contlorer.Mobile;
 
 import com.astro.backend.Auth.JwtService;
+import com.astro.backend.Entity.MobileUserProfile;
 import com.astro.backend.Entity.OtpTransaction;
 import com.astro.backend.Entity.User;
 import com.astro.backend.Helper.AstrologyHelper;
@@ -9,7 +10,10 @@ import com.astro.backend.RequestDTO.VerifyOtpRequest;
 import com.astro.backend.ResponseDTO.SendOtpResponse;
 import com.astro.backend.ResponseDTO.VerifyOtpResponse;
 import com.astro.backend.Services.OtpService;
+import com.astro.backend.Repositry.MobileUserProfileRepository;
 import com.astro.backend.Repositry.UserRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,109 +24,114 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/otp")
 @RequiredArgsConstructor
+@Tag(name = "OTP Authentication", description = "Mobile OTP-based authentication endpoints")
 public class OtpController {
 
     private final OtpService otpService;
     private final JwtService jwtService;
     private final UserRepository userRepository;
+    private final MobileUserProfileRepository mobileUserProfileRepository;
 
     /**
-     * Send OTP to mobile number
-     * - Check if user exists with mobile number
-     * - If not exist: insert new user
-     * - If exist: don't insert
-     * - Generate random 6-digit OTP
-     * - Generate reference number
-     * - Save in OtpTransaction table
-     * - Send OTP via SMS
+     * Send OTP to mobile number (mLogin)
+     * POST /otp/send
+     * Request: { "mobileNo": "7906396608" }
+     * Response: { "sessionId": "uuid", "message": "OTP sent", "mobileNo": "79****6608", "success": true }
      */
     @PostMapping("/send")
+    @Operation(summary = "Send OTP", description = "Send OTP to mobile number for authentication")
     public ResponseEntity<SendOtpResponse> sendOtp(@Valid @RequestBody SendOtpRequest request) {
 
         try {
-            String mobileNumber = AstrologyHelper.sanitizeString(request.getMobileNumber());
-            String name = AstrologyHelper.sanitizeString(request.getName());
+            if (request == null || request.getMobileNo() == null || request.getMobileNo().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(SendOtpResponse.builder()
+                                .message("Mobile number is required")
+                                .success(false)
+                                .build());
+            }
 
-            // Check if user exists
-            Optional<User> existingUser = userRepository.findByMobileNumber(mobileNumber);
-            boolean isNewUser = existingUser.isEmpty();
+            String mobileNumber = AstrologyHelper.sanitizeString(request.getMobileNo());
+
+            // Validate mobile number format (10 digits)
+            if (!mobileNumber.matches("^[0-9]{10}$")) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(SendOtpResponse.builder()
+                                .message("Invalid mobile number format. Must be 10 digits")
+                                .mobileNo(mobileNumber)
+                                .success(false)
+                                .build());
+            }
 
             // Generate OTP and save in transaction table
-            OtpTransaction otpTxn = otpService.generateAndSendOtp(mobileNumber, name);
+            OtpTransaction otpTxn = otpService.generateAndSendOtp(mobileNumber);
+
+            if (otpTxn == null || otpTxn.getRefNumber() == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(SendOtpResponse.builder()
+                                .message("Failed to generate OTP")
+                                .success(false)
+                                .build());
+            }
 
             SendOtpResponse response = SendOtpResponse.builder()
-                    .refNumber(otpTxn.getRefNumber())
-                    .message("OTP sent successfully to " + AstrologyHelper.maskMobileNumber(mobileNumber))
-                    .isNewUser(isNewUser)
-                    .mobileNumber(AstrologyHelper.maskMobileNumber(mobileNumber))
+                    .sessionId(otpTxn.getRefNumber())
+                    .message("OTP sent successfully")
+                    .mobileNo(AstrologyHelper.maskMobileNumber(mobileNumber))
+                    .success(true)
                     .build();
 
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(SendOtpResponse.builder()
                             .message("Failed to send OTP: " + e.getMessage())
+                            .success(false)
                             .build());
         }
     }
 
     /**
-     * Verify OTP
-     * - Get OTP, reference number, and mobile number
-     * - Check if OTP is valid (not expired, matches stored value)
-     * - If valid: create JWT token with mobile number and name
-     * - Return JWT token and user details
+     * Verify OTP and return JWT token
+     * POST /otp/verify
+     * Request: { "otp": "521649", "sessionId": "uuid", "mobileNo": "7906396608" }
+     * Response: { "success": true, "token": "jwt", "refreshToken": "jwt", "userId": 1, "name": "User", "mobileNo": "7906396608", "isNewUser": false }
+     * 
+     * If user doesn't exist, creates new user with mobile number
+     * Returns JWT token for authentication
      */
     @PostMapping("/verify")
+    @Operation(summary = "Verify OTP", description = "Verify OTP. User will be created after profile update.")
     public ResponseEntity<VerifyOtpResponse> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
 
         try {
-            String mobileNumber = AstrologyHelper.sanitizeString(request.getMobileNumber());
+            String mobileNumber = AstrologyHelper.sanitizeString(request.getMobileNo());
             String otp = AstrologyHelper.sanitizeString(request.getOtp());
-            String refNumber = AstrologyHelper.sanitizeString(request.getRefNumber());
+            String sessionId = AstrologyHelper.sanitizeString(request.getSessionId());
 
-            // Verify OTP
-            Optional<User> user = otpService.verifyOtp(mobileNumber, otp, refNumber);
+            // Verify OTP only (does not create user)
+            boolean isOtpValid = otpService.verifyOtpOnly(mobileNumber, otp, sessionId);
 
-            if (user.isEmpty()) {
+            if (!isOtpValid) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(VerifyOtpResponse.builder()
-                                .isValid(false)
-                                .message("Invalid OTP or reference number")
+                                .success(false)
+                                .message("Invalid OTP or session")
                                 .build());
             }
 
-            User verifiedUser = user.get();
-
-            // Generate JWT token with mobile number and name
-            // Token expires in 7 days (7 * 24 * 60 * 60 * 1000 ms)
-            long expiryMs = 7 * 24 * 60 * 60 * 1000L;
-            String token = jwtService.generateTokenWithClaims(
-                    verifiedUser.getMobileNumber(),
-                    verifiedUser.getName(),
-                    expiryMs
-            );
-
-            // Generate refresh token (30 days)
-            long refreshExpiryMs = 30 * 24 * 60 * 60 * 1000L;
-            String refreshToken = jwtService.generateTokenWithClaims(
-                    verifiedUser.getMobileNumber(),
-                    verifiedUser.getName(),
-                    refreshExpiryMs
-            );
-
+            // OTP verified successfully
+            // User will be created during /profile/update
+            // For now, just return success with sessionId for next step
+            
             VerifyOtpResponse response = VerifyOtpResponse.builder()
-                    .isValid(true)
-                    .message("OTP verified successfully")
-                    .accessToken(token)
-                    .refreshToken(refreshToken)
-                    .userId(verifiedUser.getId())
-                    .mobileNumber(verifiedUser.getMobileNumber())
-                    .name(verifiedUser.getName())
-                    .email(verifiedUser.getEmail())
-                    .role(verifiedUser.getRole().toString())
-                    .isNewUser(false)
+                    .success(true)
+                    .message("OTP verified successfully. Proceed to complete profile.")
+                    .mobileNo(AstrologyHelper.maskMobileNumber(mobileNumber))
+                    .isNewUser(true)  // All OTP verified users are new until profile created
+                    .isProfileComplete(false)
                     .build();
 
             return ResponseEntity.ok(response);
@@ -130,9 +139,22 @@ public class OtpController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(VerifyOtpResponse.builder()
-                            .isValid(false)
+                            .success(false)
                             .message("Failed to verify OTP: " + e.getMessage())
                             .build());
         }
+    }
+
+    /**
+     * Check if mobile user profile has all required fields
+     * Required fields: name (in User), genderMasterId, stateMasterId, districtMasterId
+     */
+    private boolean hasAllRequiredFields(MobileUserProfile profile, User user) {
+        return profile != null &&
+                user != null &&
+                user.getName() != null && !user.getName().isEmpty() &&
+                profile.getGenderMasterId() != null &&
+                profile.getStateMasterId() != null &&
+                profile.getDistrictMasterId() != null;
     }
 }

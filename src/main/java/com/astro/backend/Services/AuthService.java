@@ -30,9 +30,6 @@ public class AuthService {
                 .password(passwordEncoder.encode(req.getPassword()))
                 .name(req.getName())
                 .role(Role.USER)
-                .genderMasterId(req.getGenderMasterId())
-                .stateMasterId(req.getStateMasterId())
-                .districtMasterId(req.getDistrictMasterId())
                 .build();
 
         User savedUser = userRepo.save(user);
@@ -70,9 +67,6 @@ public class AuthService {
                 .accessToken(jwtService.generateToken(user.getEmail(), accessExpiry))
                 .refreshToken(jwtService.generateToken(user.getEmail(), refreshExpiry))
                 .role(user.getRole().name())
-                .genderMasterId(user.getGenderMasterId())
-                .stateMasterId(user.getStateMasterId())
-                .districtMasterId(user.getDistrictMasterId())
                 .status(true)
                 .message("Authentication successful")
                 .build();

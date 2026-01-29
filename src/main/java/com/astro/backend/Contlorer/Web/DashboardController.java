@@ -1,8 +1,10 @@
 package com.astro.backend.Contlorer.Web;
 
+import com.astro.backend.Entity.MobileUserProfile;
 import com.astro.backend.Entity.PujaBooking;
 import com.astro.backend.Entity.User;
 import com.astro.backend.Entity.WalletTransaction;
+import com.astro.backend.Repositry.MobileUserProfileRepository;
 import com.astro.backend.Repositry.PujaBookingRepository;
 import com.astro.backend.Repositry.UserRepository;
 import com.astro.backend.Repositry.WalletTransactionRepository;
@@ -20,6 +22,7 @@ import java.util.List;
 public class DashboardController {
 
     private final UserRepository userRepository;
+    private final MobileUserProfileRepository mobileUserProfileRepository;
     private final PujaBookingRepository pujaBookingRepository;
     private final WalletTransactionRepository walletTransactionRepository;
 
@@ -76,12 +79,12 @@ public class DashboardController {
 
     /**
      * Count upcoming births (birthdays in next 30 days or current month)
-     * This counts users with valid dateOfBirth
+     * This counts mobile users with valid dateOfBirth
      */
     private Integer countUpcomingBirths() {
-        List<User> users = userRepository.findAll();
-        return (int) users.stream()
-                .filter(user -> user.getDateOfBirth() != null)
+        List<MobileUserProfile> profiles = mobileUserProfileRepository.findAll();
+        return (int) profiles.stream()
+                .filter(profile -> profile.getDateOfBirth() != null)
                 .count();
     }
 

@@ -15,6 +15,15 @@ spring:
 springdoc:
   swagger-ui:
     path: /swagger-ui.html
+    defaultModelsExpandDepth: -1
+    docExpansion: none
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
+  api-docs:
+    enabled: true
+  model-and-view-allowed: false
+  override-with-generic-response: false
+  auto-tag-classes: false
 otp:
   expiry-minutes: 5
 

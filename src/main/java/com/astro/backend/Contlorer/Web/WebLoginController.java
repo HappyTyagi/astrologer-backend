@@ -63,7 +63,6 @@ public class WebLoginController {
                     .email(user.getEmail())
                     .name(user.getName())
                     .mobileNumber(user.getMobileNumber())
-                    .profileImageUrl(user.getProfileImageUrl())
                     .role(user.getRole().toString())
                     .token(token)
                     .status(true)

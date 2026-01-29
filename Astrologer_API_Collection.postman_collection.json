@@ -1,0 +1,1260 @@
+{
+	"info": {
+		"_postman_id": "astrologer-api-collection",
+		"name": "Astrologer API Collection",
+		"description": "Complete API collection for Astrologer Backend Application",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"mobileNumber\": \"+919876543210\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refreshToken\": \"your-refresh-token\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/refresh",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "refresh"]
+						}
+					}
+				},
+				{
+					"name": "Web Login",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/web/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "web", "auth", "login"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "OTP",
+			"item": [
+				{
+					"name": "Send OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"mobileNumber\": \"+919876543210\",\n  \"name\": \"John Doe\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/otp/send",
+							"host": ["{{baseUrl}}"],
+							"path": ["otp", "send"]
+						}
+					}
+				},
+				{
+					"name": "Verify OTP",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"mobileNumber\": \"+919876543210\",\n  \"otp\": \"123456\",\n  \"refNumber\": \"REF123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/otp/verify",
+							"host": ["{{baseUrl}}"],
+							"path": ["otp", "verify"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Profile",
+			"item": [
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": 1,\n  \"dateOfBirth\": \"1990-01-15\",\n  \"gender\": \"Male\",\n  \"city\": \"Mumbai\",\n  \"state\": \"Maharashtra\",\n  \"latitude\": 19.0760,\n  \"longitude\": 72.8777\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/profile/update",
+							"host": ["{{baseUrl}}"],
+							"path": ["profile", "update"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Astrologer Profile - Mobile",
+			"item": [
+				{
+					"name": "Get All Active Astrologers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/mobile/astrologers",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mobile", "astrologers"]
+						}
+					}
+				},
+				{
+					"name": "Get Astrologer by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/mobile/astrologers/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mobile", "astrologers", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Available Astrologers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/mobile/astrologers/available",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mobile", "astrologers", "available"]
+						}
+					}
+				},
+				{
+					"name": "Search Astrologers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/mobile/astrologers/search?specialization=Vedic&language=Hindi&minRating=4.0&maxRate=100&availableOnly=true&sortBy=rating",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mobile", "astrologers", "search"],
+							"query": [
+								{
+									"key": "specialization",
+									"value": "Vedic"
+								},
+								{
+									"key": "language",
+									"value": "Hindi"
+								},
+								{
+									"key": "minRating",
+									"value": "4.0"
+								},
+								{
+									"key": "maxRate",
+									"value": "100"
+								},
+								{
+									"key": "availableOnly",
+									"value": "true"
+								},
+								{
+									"key": "sortBy",
+									"value": "rating"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get by Specialization",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/mobile/astrologers/specialization/Vedic",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mobile", "astrologers", "specialization", "Vedic"]
+						}
+					}
+				},
+				{
+					"name": "Get Top Rated",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/mobile/astrologers/top-rated?minRating=4.0",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mobile", "astrologers", "top-rated"],
+							"query": [
+								{
+									"key": "minRating",
+									"value": "4.0"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Toggle Availability",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/mobile/astrologers/availability/123?isAvailable=true",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mobile", "astrologers", "availability", "123"],
+							"query": [
+								{
+									"key": "isAvailable",
+									"value": "true"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Astrologer Profile - Web/CMS",
+			"item": [
+				{
+					"name": "Get All Astrologers",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/web/astrologers/all",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "web", "astrologers", "all"]
+						}
+					}
+				},
+				{
+					"name": "Get Astrologer by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/web/astrologers/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "web", "astrologers", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get by User ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/web/astrologers/user/123",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "web", "astrologers", "user", "123"]
+						}
+					}
+				},
+				{
+					"name": "Create Astrologer Profile",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": 123,\n  \"consultationRate\": 50.00,\n  \"bio\": \"Experienced Vedic astrologer with 10 years of practice\",\n  \"certifications\": \"Certified Jyotish Acharya\",\n  \"languages\": \"Hindi, English, Sanskrit\",\n  \"specializations\": \"Vedic, Numerology, Vastu\",\n  \"experienceYears\": 10,\n  \"maxConcurrentChats\": 3,\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/web/astrologers/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "web", "astrologers", "create"]
+						}
+					}
+				},
+				{
+					"name": "Update Astrologer Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": 123,\n  \"consultationRate\": 60.00,\n  \"bio\": \"Updated bio...\",\n  \"certifications\": \"Certified Jyotish Acharya\",\n  \"languages\": \"Hindi, English, Tamil\",\n  \"specializations\": \"Vedic, Numerology\",\n  \"experienceYears\": 12,\n  \"maxConcurrentChats\": 5,\n  \"isAvailable\": true,\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/web/astrologers/update/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "web", "astrologers", "update", "1"]
+						}
+					}
+				},
+				{
+					"name": "Approve Astrologer",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"isApproved\": true,\n  \"approvalNotes\": \"Profile verified and approved for consultation\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/web/astrologers/approve/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "web", "astrologers", "approve", "1"]
+						}
+					}
+				},
+				{
+					"name": "Verify Astrologer",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/web/astrologers/verify/1?isVerified=true",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "web", "astrologers", "verify", "1"],
+							"query": [
+								{
+									"key": "isVerified",
+									"value": "true"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Pending Approvals",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/web/astrologers/pending",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "web", "astrologers", "pending"]
+						}
+					}
+				},
+				{
+					"name": "Toggle Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/web/astrologers/toggle-status/1?isActive=false",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "web", "astrologers", "toggle-status", "1"],
+							"query": [
+								{
+									"key": "isActive",
+									"value": "false"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Search Astrologers",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"specialization\": \"Vedic\",\n  \"language\": \"Hindi\",\n  \"minRating\": 3.5,\n  \"maxRate\": 100,\n  \"availableOnly\": false,\n  \"sortBy\": \"experience\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/web/astrologers/search",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "web", "astrologers", "search"]
+						}
+					}
+				},
+				{
+					"name": "Toggle Availability",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/web/astrologers/availability/1?isAvailable=true",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "web", "astrologers", "availability", "1"],
+							"query": [
+								{
+									"key": "isAvailable",
+									"value": "true"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Astrologer",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/web/astrologers/delete/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "web", "astrologers", "delete", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Wallet",
+			"item": [
+				{
+					"name": "Get Balance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/wallet/balance/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["wallet", "balance", "1"]
+						}
+					}
+				},
+				{
+					"name": "Add Money",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"amount\": 500,\n  \"currency\": \"INR\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/wallet/add-money/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["wallet", "add-money", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Transactions",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/wallet/transactions/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["wallet", "transactions", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Puja",
+			"item": [
+				{
+					"name": "List Pujas",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/puja/list",
+							"host": ["{{baseUrl}}"],
+							"path": ["puja", "list"]
+						}
+					}
+				},
+				{
+					"name": "Get Slots",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/puja/slots/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["puja", "slots", "1"]
+						}
+					}
+				},
+				{
+					"name": "Book Puja",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": 1,\n  \"pujaId\": 1,\n  \"slotId\": 1\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/puja/book",
+							"host": ["{{baseUrl}}"],
+							"path": ["puja", "book"]
+						}
+					}
+				},
+				{
+					"name": "Get History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/puja/history/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["puja", "history", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Chat",
+			"item": [
+				{
+					"name": "Start Chat",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/chat/start?userId=1&astrologerId=2",
+							"host": ["{{baseUrl}}"],
+							"path": ["chat", "start"],
+							"query": [
+								{
+									"key": "userId",
+									"value": "1"
+								},
+								{
+									"key": "astrologerId",
+									"value": "2"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Stop Chat",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/chat/stop/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["chat", "stop", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/chat/history/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["chat", "history", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"item": [
+				{
+					"name": "Test Notification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"label\": \"test-notification\",\n  \"testMessage\": \"This is a test message\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/notification/test",
+							"host": ["{{baseUrl}}"],
+							"path": ["notification", "test"]
+						}
+					}
+				},
+				{
+					"name": "Send Notification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": 1,\n  \"title\": \"Special Offer\",\n  \"message\": \"Get 20% off on your first consultation\",\n  \"type\": \"PROMO\",\n  \"imageUrl\": \"https://example.com/promo.jpg\",\n  \"actionUrl\": \"/consultations\",\n  \"actionData\": \"{\\\"offerId\\\": 123}\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/notification/send",
+							"host": ["{{baseUrl}}"],
+							"path": ["notification", "send"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Birthday Notifications",
+			"item": [
+				{
+					"name": "Get Pending Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/mobile/birthday-notifications/pending/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mobile", "birthday-notifications", "pending", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get All Notifications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/mobile/birthday-notifications/all/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mobile", "birthday-notifications", "all", "1"]
+						}
+					}
+				},
+				{
+					"name": "Mark as Viewed",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/mobile/birthday-notifications/mark-viewed/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "mobile", "birthday-notifications", "mark-viewed", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Astrology",
+			"item": [
+				{
+					"name": "Generate Kundli",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/astrology/kundli?lat=19.0760&lon=72.8777&dd=15&mm=1&yyyy=1990&time=14.30",
+							"host": ["{{baseUrl}}"],
+							"path": ["astrology", "kundli"],
+							"query": [
+								{
+									"key": "lat",
+									"value": "19.0760"
+								},
+								{
+									"key": "lon",
+									"value": "72.8777"
+								},
+								{
+									"key": "dd",
+									"value": "15"
+								},
+								{
+									"key": "mm",
+									"value": "1"
+								},
+								{
+									"key": "yyyy",
+									"value": "1990"
+								},
+								{
+									"key": "time",
+									"value": "14.30"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Panchang",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/astrology/panchang?lat=19.0760&lon=72.8777&dd=28&mm=1&yyyy=2026&hour=10&min=30&tz=Asia/Kolkata",
+							"host": ["{{baseUrl}}"],
+							"path": ["astrology", "panchang"],
+							"query": [
+								{
+									"key": "lat",
+									"value": "19.0760"
+								},
+								{
+									"key": "lon",
+									"value": "72.8777"
+								},
+								{
+									"key": "dd",
+									"value": "28"
+								},
+								{
+									"key": "mm",
+									"value": "1"
+								},
+								{
+									"key": "yyyy",
+									"value": "2026"
+								},
+								{
+									"key": "hour",
+									"value": "10"
+								},
+								{
+									"key": "min",
+									"value": "30"
+								},
+								{
+									"key": "tz",
+									"value": "Asia/Kolkata"
+								}
+							]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Master Data - District",
+			"item": [
+				{
+					"name": "Get All Districts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/master/district/all",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "master", "district", "all"]
+						}
+					}
+				},
+				{
+					"name": "Get Active Districts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/master/district/active",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "master", "district", "active"]
+						}
+					}
+				},
+				{
+					"name": "Get Districts by State",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/master/district/state/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "master", "district", "state", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get District by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/master/district/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "master", "district", "1"]
+						}
+					}
+				},
+				{
+					"name": "Insert District",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"stateId\": 1,\n  \"name\": \"Mumbai\",\n  \"code\": \"MUM\",\n  \"description\": \"Mumbai District\",\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/master/district/insert",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "master", "district", "insert"]
+						}
+					}
+				},
+				{
+					"name": "Update District",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"stateId\": 1,\n  \"name\": \"Mumbai\",\n  \"code\": \"MUM\",\n  \"description\": \"Updated description\",\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/master/district/update/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "master", "district", "update", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete District",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/master/district/delete/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "master", "district", "delete", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Master Data - State",
+			"item": [
+				{
+					"name": "Get All States",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/master/state/all",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "master", "state", "all"]
+						}
+					}
+				},
+				{
+					"name": "Get Active States",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/master/state/active",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "master", "state", "active"]
+						}
+					}
+				},
+				{
+					"name": "Insert State",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Maharashtra\",\n  \"code\": \"MH\",\n  \"country\": \"India\",\n  \"description\": \"Maharashtra State\",\n  \"isActive\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/master/state/insert",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "master", "state", "insert"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Master Data - Gender",
+			"item": [
+				{
+					"name": "Get All Genders",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/master/gender/all",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "master", "gender", "all"]
+						}
+					}
+				},
+				{
+					"name": "Get Active Genders",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/master/gender/active",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "master", "gender", "active"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Astrologer District Price",
+			"item": [
+				{
+					"name": "Get Price",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/master/astrologer-district-price/get/1/1/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "master", "astrologer-district-price", "get", "1", "1", "1"]
+						}
+					}
+				},
+				{
+					"name": "Create Price",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"astrologerId\": 1,\n  \"districtMasterId\": 1,\n  \"pujaId\": 1,\n  \"price\": 500.00\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/master/astrologer-district-price/create",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "master", "astrologer-district-price", "create"]
+						}
+					}
+				},
+				{
+					"name": "Get Prices by Astrologer",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/master/astrologer-district-price/astrologer/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "master", "astrologer-district-price", "astrologer", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Dashboard",
+			"item": [
+				{
+					"name": "Get Dashboard Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/web/dashboard/stats",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "web", "dashboard", "stats"]
+						}
+					}
+				}
+			]
+		}
+	]
+}
