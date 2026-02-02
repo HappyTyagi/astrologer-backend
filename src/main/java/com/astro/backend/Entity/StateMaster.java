@@ -26,6 +26,10 @@ public class StateMaster {
 
     private String description;
 
+    private Double latitude;  // Capital city latitude
+
+    private Double longitude;  // Capital city longitude
+
     @Column(nullable = false)
     private Boolean isActive;
 

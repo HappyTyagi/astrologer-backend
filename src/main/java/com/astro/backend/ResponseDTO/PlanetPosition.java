@@ -7,5 +7,8 @@ import lombok.*;
 public class PlanetPosition {
     private String planet;
     private double longitude;
+    private double degree;
     private String rashi;
+    private double speed;
+    private boolean retrograde;
 }

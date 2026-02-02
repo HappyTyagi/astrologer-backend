@@ -60,6 +60,69 @@ public class ProfileController {
     }
 
     /**
+     * Get existing user profile data to auto-fill form
+     * Mobile sends: userId and mobileNo
+     * Backend returns: Existing profile data (DOB, birth time, gender, location, etc.)
+     * GET /profile/get/{userId}
+     */
+    @GetMapping("/get/{userId}")
+    @Operation(summary = "Get user profile for auto-fill", 
+               description = "Fetch existing user profile data to auto-fill astrology form")
+    public ResponseEntity<UpdateProfileResponse> getProfileForAutoFill(
+            @PathVariable Long userId) {
+        try {
+            logger.info("\n========== /profile/get/{} REQUEST ==========", userId);
+            logger.info("Fetching profile data for userId: {}", userId);
+            
+            UpdateProfileResponse response = profileService.getProfileByUserId(userId);
+            
+            logger.info("Profile fetched successfully");
+            logger.info("===========================================\n");
+            
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Error fetching profile: ", e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(UpdateProfileResponse.builder()
+                            .status(false)
+                            .message("Failed to fetch profile: " + e.getMessage())
+                            .build());
+        }
+    }
+
+    /**
+     * Get existing user profile data by mobile number
+     * Mobile sends: mobileNo only
+     * GET /profile/get-by-mobile/{mobileNo}
+     */
+    @GetMapping("/get-by-mobile/{mobileNo}")
+    @Operation(summary = "Get user profile by mobile number", 
+               description = "Fetch existing user profile data using mobile number")
+    public ResponseEntity<UpdateProfileResponse> getProfileByMobileNumber(
+            @PathVariable String mobileNo) {
+        try {
+            logger.info("\n========== /profile/get-by-mobile/{} REQUEST ==========", mobileNo);
+            logger.info("Fetching profile data for mobileNo: {}", mobileNo);
+            
+            UpdateProfileResponse response = profileService.getProfileByMobileNumber(mobileNo);
+            
+            logger.info("Profile fetched successfully");
+            logger.info("=====================================================\n");
+            
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("Error fetching profile: ", e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(UpdateProfileResponse.builder()
+                            .status(false)
+                            .message("Failed to fetch profile: " + e.getMessage())
+                            .build());
+        }
+    }
+
+    /**
      * Update user profile after registration
      * Accepts: userId, dateOfBirth, gender, city, state, latitude (optional), longitude (optional)
      * Calculates and saves age to database
@@ -71,6 +134,7 @@ public class ProfileController {
         try {
             // Print received request
             logger.info("\n========== /profile/update REQUEST ==========");
+            logger.info("Full Request: {}", request);
             logger.info("User ID: {}", request.getUserId());
             logger.info("Name: {}", request.getName());
             logger.info("Mobile No: {}", request.getMobileNo());
@@ -92,9 +156,11 @@ public class ProfileController {
             logger.info("=========================================\n");
             
             UpdateProfileResponse response = profileService.updateProfile(request);
+            logger.info("Update Profile Response: {}", response);
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
+            logger.error("Error updating profile: ", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(UpdateProfileResponse.builder()
                             .status(false)

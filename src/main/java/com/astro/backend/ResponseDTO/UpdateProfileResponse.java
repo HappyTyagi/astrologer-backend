@@ -22,6 +22,9 @@ public class UpdateProfileResponse {
     private Long districtMasterId;
     private Double latitude;
     private Double longitude;
+    private String birthTime;          // Birth time (HH:mm)
+    private String birthAmPm;          // Birth time AM/PM
+    private String address;            // Full address
     private Boolean status;
     private String message;
 }

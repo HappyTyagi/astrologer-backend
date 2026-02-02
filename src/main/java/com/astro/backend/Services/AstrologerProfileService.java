@@ -115,6 +115,24 @@ public class AstrologerProfileService {
     }
 
     /**
+     * Get astrologer profile by MOBILE NUMBER (PRIMARY LOOKUP)
+     * Supports mobile-number-first architecture
+     */
+    public AstrologerProfileResponse getProfileByMobileNumber(String mobileNumber) {
+        if (mobileNumber == null || mobileNumber.isEmpty()) {
+            throw new RuntimeException("Mobile number is required");
+        }
+
+        User user = userRepository.findByMobileNumber(mobileNumber)
+                .orElseThrow(() -> new RuntimeException("User not found with mobile number: " + mobileNumber));
+
+        AstrologerProfile profile = astrologerProfileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Astrologer profile not found for mobile number: " + mobileNumber));
+
+        return buildResponse(profile, user, true, "Profile retrieved successfully");
+    }
+
+    /**
      * Get all active astrologers
      */
     public List<AstrologerProfileResponse> getAllActiveAstrologers() {

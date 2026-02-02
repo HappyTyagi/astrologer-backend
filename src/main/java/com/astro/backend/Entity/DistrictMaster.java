@@ -27,6 +27,10 @@ public class DistrictMaster {
 
     private String description;
 
+    private Double latitude;  // District center latitude
+
+    private Double longitude;  // District center longitude
+
     @Column(nullable = false)
     private Boolean isActive;
 

@@ -7,12 +7,12 @@ import jakarta.validation.constraints.NotNull;
 @Data
 public class UpdateProfileRequest {
     
-    @NotNull(message = "User ID is required")
-    private Long userId;
+    private Long userId;  // Optional - will be looked up via mobile number if mobileNo is provided
     
     private String name;  // Optional - user name
 
-    private String mobileNo; // Optional - for logging only
+    @NotBlank(message = "Mobile number is required (primary lookup key)")
+    private String mobileNo; // REQUIRED - primary identifier for user lookup
 
     private String deviceToken; // Optional - device push token
 

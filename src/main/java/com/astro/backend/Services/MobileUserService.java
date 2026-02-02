@@ -118,28 +118,83 @@ public class MobileUserService {
 
     /**
      * Get mobile user profile by user ID
+     * If userId is null or invalid, it will throw an exception
      */
     public MobileUserProfileResponse getMobileUserProfile(Long userId) {
+        if (userId == null || userId <= 0) {
+            throw new RuntimeException("User ID is required and must be greater than 0");
+        }
+        
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
         MobileUserProfile profile = mobileUserProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Mobile user profile not found"));
+                .orElseThrow(() -> new RuntimeException("Mobile user profile not found for user ID: " + userId));
 
         return buildResponse(user, profile, "Mobile user profile retrieved successfully");
     }
 
     /**
-     * Update mobile user device details
+     * Get mobile user profile by MOBILE NUMBER (PRIMARY LOOKUP)
+     * Supports mobile-number-first architecture
+     */
+    public MobileUserProfileResponse getMobileUserProfileByMobileNumber(String mobileNumber) {
+        if (mobileNumber == null || mobileNumber.isEmpty()) {
+            throw new RuntimeException("Mobile number is required");
+        }
+        
+        MobileUserProfile profile = mobileUserProfileRepository.findByMobileNumber(mobileNumber)
+                .orElseThrow(() -> new RuntimeException("Mobile user profile not found for mobile number: " + mobileNumber));
+
+        User user = userRepository.findById(profile.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found for userId: " + profile.getUserId()));
+
+        return buildResponse(user, profile, "Mobile user profile retrieved successfully");
+    }
+
+    /**
+     * Update mobile user device details by user ID
      */
     @Transactional
     public MobileUserProfileResponse updateDeviceDetails(Long userId, String deviceToken, 
             String fcmToken, String appVersion) {
+        if (userId == null || userId <= 0) {
+            throw new RuntimeException("User ID is required and must be greater than 0");
+        }
+        
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
 
         MobileUserProfile profile = mobileUserProfileRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Mobile user profile not found"));
+                .orElseThrow(() -> new RuntimeException("Mobile user profile not found for user ID: " + userId));
+
+        // Update device details
+        profile.setDeviceToken(deviceToken);
+        profile.setFcmToken(fcmToken);
+        profile.setAppVersion(appVersion);
+        profile.setLastLoginAt(LocalDateTime.now());
+
+        MobileUserProfile updatedProfile = mobileUserProfileRepository.save(profile);
+
+        return buildResponse(user, updatedProfile, "Device details updated successfully");
+    }
+
+    /**
+     * Update mobile user device details by MOBILE NUMBER (PRIMARY LOOKUP)
+     * Supports mobile-number-first architecture
+     */
+    @Transactional
+    public MobileUserProfileResponse updateDeviceDetailsByMobileNumber(String mobileNumber, String deviceToken, 
+            String fcmToken, String appVersion) {
+        if (mobileNumber == null || mobileNumber.isEmpty()) {
+            throw new RuntimeException("Mobile number is required");
+        }
+        
+        MobileUserProfile profile = mobileUserProfileRepository.findByMobileNumber(mobileNumber)
+                .orElseThrow(() -> new RuntimeException("Mobile user profile not found for mobile number: " + mobileNumber));
+
+        User user = userRepository.findById(profile.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found for userId: " + profile.getUserId()));
 
         // Update device details
         profile.setDeviceToken(deviceToken);

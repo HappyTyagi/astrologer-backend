@@ -29,58 +29,197 @@ public class ProfileService {
     private final GenderMasterRepository genderMasterRepository;
 
     /**
+     * Get existing user profile by userId - for auto-fill form
+     * Returns all profile data stored in database
+     */
+    public UpdateProfileResponse getProfileByUserId(Long userId) {
+        if (userId == null || userId <= 0) {
+            throw new RuntimeException("User ID is required and must be greater than 0");
+        }
+        
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+        Optional<MobileUserProfile> profileOpt = mobileUserProfileRepository.findByUserId(userId);
+        
+        if (profileOpt.isEmpty()) {
+            // User exists but no profile yet - return basic user info
+            return UpdateProfileResponse.builder()
+                    .userId(user.getId())
+                    .name(user.getName())
+                    .email(user.getEmail())
+                    .mobileNumber(user.getMobileNumber())
+                    .status(true)
+                    .message("User found but profile not completed yet")
+                    .build();
+        }
+
+        MobileUserProfile profile = profileOpt.get();
+        
+        // Return all profile data for auto-fill
+        return UpdateProfileResponse.builder()
+                .userId(user.getId())
+                .name(profile.getName() != null ? profile.getName() : user.getName())
+                .email(user.getEmail())
+                .mobileNumber(user.getMobileNumber())
+                .dateOfBirth(profile.getDateOfBirth())
+                .age(profile.getAge())
+                .genderMasterId(profile.getGenderMasterId())
+                .stateMasterId(profile.getStateMasterId())
+                .districtMasterId(profile.getDistrictMasterId())
+                .latitude(profile.getLatitude())
+                .longitude(profile.getLongitude())
+                .status(true)
+                .message("Profile data retrieved successfully")
+                .build();
+    }
+
+    /**
+     * Get existing user profile by mobile number - for auto-fill form
+     * Returns all profile data stored in database
+     */
+    public UpdateProfileResponse getProfileByMobileNumber(String mobileNumber) {
+        if (mobileNumber == null || mobileNumber.isEmpty()) {
+            throw new RuntimeException("Mobile number is required");
+        }
+        
+        User user = userRepository.findByMobileNumber(mobileNumber)
+                .orElseThrow(() -> new RuntimeException("User not found with mobile number: " + mobileNumber));
+
+        Optional<MobileUserProfile> profileOpt = mobileUserProfileRepository.findByMobileNumber(mobileNumber);
+        
+        if (profileOpt.isEmpty()) {
+            // User exists but no profile yet - return basic user info
+            return UpdateProfileResponse.builder()
+                    .userId(user.getId())
+                    .name(user.getName())
+                    .email(user.getEmail())
+                    .mobileNumber(user.getMobileNumber())
+                    .status(true)
+                    .message("User found but profile not completed yet")
+                    .build();
+        }
+
+        MobileUserProfile profile = profileOpt.get();
+        
+        // Return all profile data for auto-fill
+        return UpdateProfileResponse.builder()
+                .userId(user.getId())
+                .name(profile.getName() != null ? profile.getName() : user.getName())
+                .email(user.getEmail())
+                .mobileNumber(user.getMobileNumber())
+                .dateOfBirth(profile.getDateOfBirth())
+                .age(profile.getAge())
+                .genderMasterId(profile.getGenderMasterId())
+                .stateMasterId(profile.getStateMasterId())
+                .districtMasterId(profile.getDistrictMasterId())
+                .latitude(profile.getLatitude())
+                .longitude(profile.getLongitude())
+                .status(true)
+                .message("Profile data retrieved successfully")
+                .build();
+    }
+
+    /**
      * Update user profile - creates User + MobileUserProfile if doesn't exist
-     * Accepts either userId or mobileNo (for OTP-verified new users)
+     * PRIMARY LOOKUP: Mobile number (if provided)
+     * FALLBACK LOOKUP: userId (for backward compatibility)
      */
     @Transactional
     public UpdateProfileResponse updateProfile(UpdateProfileRequest request) {
         
         Long userId = request.getUserId();
+        String mobileNo = request.getMobileNo();
         MobileUserProfile mobileProfile = null;
+        User user = null;
 
-        // If userId not provided, create new User from mobile number
-        if (userId == null || userId <= 0) {
-            if (request.getMobileNo() == null || request.getMobileNo().isEmpty()) {
-                throw new RuntimeException("Either userId or mobileNo is required");
-            }
-            
-            // Create new User for OTP-verified mobile number
-            User newUser = User.builder()
-                    .name(request.getName() != null ? request.getName() : "User")
-                    .mobileNumber(request.getMobileNo())
-                    .isVerified(true)
-                    .isActive(true)
-                    .role(com.astro.backend.EnumFile.Role.USER)
-                    .createdAt(LocalDateTime.now())
-                    .updatedAt(LocalDateTime.now())
-                    .build();
-            User savedUser = userRepository.save(Objects.requireNonNull(newUser, "User must not be null"));
-            userId = savedUser.getId();
-            
-            // Create new MobileUserProfile
-                mobileProfile = MobileUserProfile.builder()
-                    .userId(userId)
-                    .name(request.getName() != null ? request.getName() : "User")
-                    .mobileNumber(request.getMobileNo())
-                    .isProfileComplete(false)
-                    .createdAt(LocalDateTime.now())
-                    .updatedAt(LocalDateTime.now())
-                    .build();
-        } else {
-                // Update user name if provided
-                    final Long existingUserId = userId;
-                    User existingUser = userRepository.findById(existingUserId)
-                        .orElseThrow(() -> new RuntimeException("User not found for user ID: " + existingUserId));
-                if (request.getName() != null && !request.getName().isEmpty()) {
-                existingUser.setName(request.getName());
-                existingUser.setUpdatedAt(LocalDateTime.now());
-                userRepository.save(existingUser);
-                }
-
-                // Find existing mobile user profile by user ID
+        // STEP 1: Try to find user by MOBILE NUMBER (PRIMARY LOOKUP)
+        if (mobileNo != null && !mobileNo.isEmpty()) {
+            // Look up by mobile number first in MobileUserProfile
+            Optional<MobileUserProfile> existingProfile = mobileUserProfileRepository.findByMobileNumber(mobileNo);
+            if (existingProfile.isPresent()) {
+                // User already exists with this mobile number
+                mobileProfile = existingProfile.get();
+                userId = mobileProfile.getUserId();
                 final Long finalUserId = userId;
-                mobileProfile = mobileUserProfileRepository.findByUserId(finalUserId)
-                    .orElseThrow(() -> new RuntimeException("Mobile user profile not found for user ID: " + finalUserId));
+                user = userRepository.findById(finalUserId)
+                        .orElseThrow(() -> new RuntimeException("User not found for userId: " + finalUserId));
+            } else {
+                // Check if user exists in User table (may not have MobileUserProfile yet)
+                Optional<User> existingUser = userRepository.findByMobileNumber(mobileNo);
+                if (existingUser.isPresent()) {
+                    // User exists but no MobileUserProfile - link them
+                    user = existingUser.get();
+                    userId = user.getId();
+                    
+                    // Create new MobileUserProfile for this existing user
+                    mobileProfile = MobileUserProfile.builder()
+                            .userId(userId)
+                            .name(request.getName() != null ? request.getName() : user.getName())
+                            .mobileNumber(mobileNo)
+                            .isProfileComplete(false)
+                            .createdAt(LocalDateTime.now())
+                            .updatedAt(LocalDateTime.now())
+                            .build();
+                } else {
+                    // Completely new user - create both user and profile
+                    user = User.builder()
+                            .name(request.getName() != null ? request.getName() : "User")
+                            .mobileNumber(mobileNo)
+                            .isVerified(true)
+                            .isActive(true)
+                            .role(com.astro.backend.EnumFile.Role.USER)
+                            .createdAt(LocalDateTime.now())
+                            .updatedAt(LocalDateTime.now())
+                            .build();
+                    user = userRepository.save(user);
+                    userId = user.getId();
+                    
+                    // Create new MobileUserProfile
+                    final Long newUserId = userId;
+                    mobileProfile = MobileUserProfile.builder()
+                            .userId(newUserId)
+                            .name(request.getName() != null ? request.getName() : "User")
+                            .mobileNumber(mobileNo)
+                            .isProfileComplete(false)
+                            .createdAt(LocalDateTime.now())
+                            .updatedAt(LocalDateTime.now())
+                            .build();
+                }
+            }
+        } 
+        // STEP 2: Fallback to userId lookup if mobile number not provided
+        else if (userId != null && userId > 0) {
+            final Long lookupUserId = userId;
+            user = userRepository.findById(lookupUserId)
+                    .orElseThrow(() -> new RuntimeException("User not found for user ID: " + lookupUserId));
+            
+            // Find or create MobileUserProfile by userId
+            Optional<MobileUserProfile> existingProfile = mobileUserProfileRepository.findByUserId(lookupUserId);
+            if (existingProfile.isPresent()) {
+                mobileProfile = existingProfile.get();
+            } else {
+                // Create new MobileUserProfile if it doesn't exist
+                mobileProfile = MobileUserProfile.builder()
+                        .userId(lookupUserId)
+                        .name(request.getName() != null ? request.getName() : user.getName())
+                        .mobileNumber(user.getMobileNumber())
+                        .isProfileComplete(false)
+                        .createdAt(LocalDateTime.now())
+                        .updatedAt(LocalDateTime.now())
+                        .build();
+            }
+        }
+        // STEP 3: Error if neither mobile number nor userId provided
+        else {
+            throw new RuntimeException("Either mobileNo or userId is required");
+        }
+
+        // Update user name if provided
+        if (request.getName() != null && !request.getName().isEmpty() && user != null) {
+            user.setName(request.getName());
+            user.setUpdatedAt(LocalDateTime.now());
+            userRepository.save(user);
         }
 
         try {
@@ -151,6 +290,8 @@ public class ProfileService {
                 return UpdateProfileResponse.builder()
                     .userId(updatedProfile.getUserId())
                     .name(updatedProfile.getName() != null ? updatedProfile.getName() : "User")
+                    .email(updatedProfile.getEmail())
+                    .mobileNumber(updatedProfile.getMobileNumber())
                     .dateOfBirth(updatedProfile.getDateOfBirth())
                     .age(updatedProfile.getAge())
                     .genderMasterId(updatedProfile.getGenderMasterId())
@@ -158,6 +299,9 @@ public class ProfileService {
                     .districtMasterId(updatedProfile.getDistrictMasterId())
                     .latitude(updatedProfile.getLatitude())
                     .longitude(updatedProfile.getLongitude())
+                    .birthTime(updatedProfile.getBirthTime())
+                    .birthAmPm(updatedProfile.getBirthAmPm())
+                    .address(updatedProfile.getAddress())
                     .status(true)
                     .message("Profile updated successfully")
                     .build();

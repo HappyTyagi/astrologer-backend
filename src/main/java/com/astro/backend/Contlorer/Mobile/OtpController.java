@@ -1,9 +1,7 @@
 package com.astro.backend.Contlorer.Mobile;
 
-import com.astro.backend.Auth.JwtService;
 import com.astro.backend.Entity.MobileUserProfile;
 import com.astro.backend.Entity.OtpTransaction;
-import com.astro.backend.Entity.User;
 import com.astro.backend.Helper.AstrologyHelper;
 import com.astro.backend.RequestDTO.SendOtpRequest;
 import com.astro.backend.RequestDTO.VerifyOtpRequest;
@@ -11,7 +9,6 @@ import com.astro.backend.ResponseDTO.SendOtpResponse;
 import com.astro.backend.ResponseDTO.VerifyOtpResponse;
 import com.astro.backend.Services.OtpService;
 import com.astro.backend.Repositry.MobileUserProfileRepository;
-import com.astro.backend.Repositry.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +25,6 @@ import java.util.Optional;
 public class OtpController {
 
     private final OtpService otpService;
-    private final JwtService jwtService;
-    private final UserRepository userRepository;
     private final MobileUserProfileRepository mobileUserProfileRepository;
 
     /**
@@ -77,7 +72,7 @@ public class OtpController {
             SendOtpResponse response = SendOtpResponse.builder()
                     .sessionId(otpTxn.getRefNumber())
                     .message("OTP sent successfully")
-                    .mobileNo(AstrologyHelper.maskMobileNumber(mobileNumber))
+                    .mobileNo(mobileNumber)
                     .success(true)
                     .build();
 
@@ -122,17 +117,47 @@ public class OtpController {
                                 .build());
             }
 
-            // OTP verified successfully
-            // User will be created during /profile/update
-            // For now, just return success with sessionId for next step
-            
-            VerifyOtpResponse response = VerifyOtpResponse.builder()
-                    .success(true)
-                    .message("OTP verified successfully. Proceed to complete profile.")
-                    .mobileNo(AstrologyHelper.maskMobileNumber(mobileNumber))
-                    .isNewUser(true)  // All OTP verified users are new until profile created
-                    .isProfileComplete(false)
-                    .build();
+                    // OTP verified successfully
+                    // Check if mobile profile already exists by mobile number (no User table check)
+                    Optional<MobileUserProfile> profileOpt = mobileUserProfileRepository.findByMobileNumber(mobileNumber);
+                    if (profileOpt.isPresent()) {
+                    MobileUserProfile profile = profileOpt.get();
+                    boolean profileComplete = Boolean.TRUE.equals(profile.getIsProfileComplete()) || hasAllRequiredFields(profile);
+
+                    VerifyOtpResponse response = VerifyOtpResponse.builder()
+                        .success(true)
+                        .message(profileComplete
+                            ? "OTP verified successfully. Profile is complete."
+                            : "OTP verified successfully. Proceed to complete profile.")
+                        .userId(profile.getUserId())
+                        .name(profile.getName())
+                        .email(profile.getEmail())
+                        .mobileNo(mobileNumber)
+                        .isNewUser(false)
+                        .isProfileComplete(profileComplete)
+                        // Include profile data for SharedPreferences
+                        .dateOfBirth(profile.getDateOfBirth())
+                        .age(profile.getAge())
+                        .genderMasterId(profile.getGenderMasterId())
+                        .stateMasterId(profile.getStateMasterId())
+                        .districtMasterId(profile.getDistrictMasterId())
+                        .latitude(profile.getLatitude())
+                        .longitude(profile.getLongitude())
+                        .birthTime(profile.getBirthTime())
+                        .birthAmPm(profile.getBirthAmPm())
+                        .address(profile.getAddress())
+                        .build();
+
+                    return ResponseEntity.ok(response);
+                    }
+
+                    VerifyOtpResponse response = VerifyOtpResponse.builder()
+                        .success(true)
+                        .message("OTP verified successfully. Proceed to complete profile.")
+                        .mobileNo(mobileNumber)
+                        .isNewUser(true)
+                        .isProfileComplete(false)
+                        .build();
 
             return ResponseEntity.ok(response);
 
@@ -149,10 +174,9 @@ public class OtpController {
      * Check if mobile user profile has all required fields
      * Required fields: name (in User), genderMasterId, stateMasterId, districtMasterId
      */
-    private boolean hasAllRequiredFields(MobileUserProfile profile, User user) {
+    private boolean hasAllRequiredFields(MobileUserProfile profile) {
         return profile != null &&
-                user != null &&
-                user.getName() != null && !user.getName().isEmpty() &&
+                profile.getName() != null && !profile.getName().isEmpty() &&
                 profile.getGenderMasterId() != null &&
                 profile.getStateMasterId() != null &&
                 profile.getDistrictMasterId() != null;

@@ -24,6 +24,7 @@ public class AstroDashboardService {
 
     private final MobileUserProfileRepository mobileUserProfileRepository;
     private final KundliService kundliService;
+    private final LocationCoordinatesService locationCoordinatesService;
 
     public AstroDashboardResponse getDashboardByMobile(String mobileNo) {
         String mobile = AstrologyHelper.sanitizeString(mobileNo);
@@ -52,13 +53,6 @@ public class AstroDashboardService {
                     .build();
         }
 
-        if (profile.getLatitude() == null || profile.getLongitude() == null) {
-            return AstroDashboardResponse.builder()
-                    .status(false)
-                    .message("Location is missing")
-                    .build();
-        }
-
         LocalDate dob;
         try {
             dob = LocalDate.parse(profile.getDateOfBirth(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
@@ -74,19 +68,67 @@ public class AstroDashboardService {
             time = 12.00; // Default time when birth time is not stored
         }
 
-        KundliResponse kundli = kundliService.generateKundli(
-                profile.getLatitude(),
-                profile.getLongitude(),
-                dob.getDayOfMonth(),
-                dob.getMonthValue(),
-                dob.getYear(),
-                time
-        );
+        String sunSign = null;
+        String moonSign = null;
+        String lagnaSign = null;
+        String nakshatra = null;
 
-        String sunSign = getPlanetRashi(kundli.getPlanets(), "Sun");
-        String moonSign = getPlanetRashi(kundli.getPlanets(), "Moon");
-        String lagnaSign = kundli.getAscendant();
-        String nakshatra = kundli.getNakshatra();
+        // Determine coordinates: User provided > District > State > GMT
+        double latitude;
+        double longitude;
+        String locationSource;
+
+        if (profile.getLatitude() != null && profile.getLongitude() != null) {
+            // User provided exact coordinates
+            latitude = profile.getLatitude();
+            longitude = profile.getLongitude();
+            locationSource = "User provided";
+        } else {
+            // Use district/state default coordinates
+            double[] coords = locationCoordinatesService.getCoordinatesWithFallback(
+                    profile.getDistrictMasterId(),
+                    profile.getStateMasterId()
+            );
+            latitude = coords[0];
+            longitude = coords[1];
+            locationSource = (latitude != 0.0 || longitude != 0.0) ? "District/State default" : "GMT default";
+        }
+
+        log.info("Generating Kundli with coordinates - lat: {}, lon: {}, source: {}", latitude, longitude, locationSource);
+
+        // Generate Kundli with determined coordinates
+        if (latitude != 0.0 || longitude != 0.0) {
+            // Has location info (either user provided or default from district/state)
+            KundliResponse kundli = kundliService.generateKundli(
+                    latitude,
+                    longitude,
+                    dob.getDayOfMonth(),
+                    dob.getMonthValue(),
+                    dob.getYear(),
+                    time
+            );
+
+            sunSign = getPlanetRashi(kundli.getPlanets(), "Sun");
+            moonSign = getPlanetRashi(kundli.getPlanets(), "Moon");
+            lagnaSign = kundli.getAscendant();
+            nakshatra = kundli.getNakshatra();
+        } else {
+            // No location info - use GMT
+            KundliResponse kundli = kundliService.generateKundli(
+                    0.0,    // Equator
+                    0.0,    // GMT
+                    dob.getDayOfMonth(),
+                    dob.getMonthValue(),
+                    dob.getYear(),
+                    time
+            );
+
+            sunSign = getPlanetRashi(kundli.getPlanets(), "Sun");
+            moonSign = getPlanetRashi(kundli.getPlanets(), "Moon");
+            // Lagna and Nakshatra require exact location, so leave them null
+            lagnaSign = null;
+            nakshatra = null;
+        }
 
         LuckyInfo luckyInfo = getLuckyInfo(moonSign != null ? moonSign : sunSign);
 
