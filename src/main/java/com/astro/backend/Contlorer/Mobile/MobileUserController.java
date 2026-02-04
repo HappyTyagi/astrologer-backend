@@ -75,4 +75,24 @@ public class MobileUserController {
                             .build());
         }
     }
+
+    /**
+     * Update language preference
+     * PUT /api/mobile/user/language/{userId}
+     */
+    @PutMapping("/language/{userId}")
+    public ResponseEntity<MobileUserProfileResponse> updateLanguage(
+            @PathVariable Long userId,
+            @RequestParam Integer language) {
+        try {
+            MobileUserProfileResponse response = mobileUserService.updateLanguage(userId, language);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(MobileUserProfileResponse.builder()
+                            .status(false)
+                            .message("Failed to update language: " + e.getMessage())
+                            .build());
+        }
+    }
 }

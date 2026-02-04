@@ -28,5 +28,6 @@ public class VerifyOtpResponse {
     private String birthTime;          // Birth time (HH:mm)
     private String birthAmPm;          // Birth time AM/PM
     private String address;            // Full address
+    private Integer isLanguage;        // Language preference (1 = English, 2 = Hindi)
 }
 

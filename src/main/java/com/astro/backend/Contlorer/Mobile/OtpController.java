@@ -146,6 +146,7 @@ public class OtpController {
                         .birthTime(profile.getBirthTime())
                         .birthAmPm(profile.getBirthAmPm())
                         .address(profile.getAddress())
+                        .isLanguage(profile.getIsLanguage())
                         .build();
 
                     return ResponseEntity.ok(response);

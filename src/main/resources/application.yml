@@ -39,3 +39,7 @@ sendgrid:
 razorpay:
   key-id: "YOUR_RAZORPAY_KEY"
   key-secret: "YOUR_RAZORPAY_SECRET"
+
+free-astrology:
+  base-url: "https://json.freeastrologyapi.com"
+  api-key: "64mIJQUBn47P6znPRzWa52hMvu6fPKuy7DJycxS6"

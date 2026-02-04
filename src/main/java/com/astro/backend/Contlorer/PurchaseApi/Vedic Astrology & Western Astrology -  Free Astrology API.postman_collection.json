@@ -1,0 +1,3444 @@
+{
+  "info": {
+    "_postman_id": "fea1770c-431d-439d-ac4c-40f8e1f2f82b",
+    "name": "Vedic Astrology & Western Astrology -  Free Astrology API",
+    "description": "Vedic Astrology Calculations on API calls by Free Astrology API [https://www.freeastrologyapi.com](https://www.freeastrologyapi.com)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "13127549"
+  },
+  "item": [
+    {
+      "name": "Planets, Kundli and Divisional Charts Information",
+      "item": [
+        {
+          "name": "Planets - Rasi Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.933,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/planets",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "planets"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Planets - Extended",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/planets/extended",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "planets",
+                "extended"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Navamsa Chart Info",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/navamsa-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "navamsa-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D2 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d2-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d2-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D3 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d3-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d3-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D4 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d4-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d4-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D5 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d5-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d5-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D6 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d6-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d6-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D7 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d7-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d7-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D8 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d8-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d8-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D10 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d10-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d10-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D11 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d11-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d11-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D12 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d12-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d12-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D16 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d16-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d16-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D20 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d20-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d20-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D24 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d24-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d24-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D27 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d27-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d27-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D30 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d30-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d30-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D40 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d40-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d40-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D45 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d40-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d40-chart-info"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D60 Chart information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1976,\r\n    \"month\": 6,\r\n    \"date\": 10,\r\n    \"hours\": 11,\r\n    \"minutes\": 10,\r\n    \"seconds\": 0,\r\n    \"latitude\": 18.9333,\r\n    \"longitude\": 72.8166,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /*  topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d60-chart-info",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d60-chart-info"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Get Planets positions, Kundli information and information about all Divisional charts"
+    },
+    {
+      "name": "Divisional Charts - SVG image Code",
+      "item": [
+        {
+          "name": "Horoscope Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/horoscope-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "horoscope-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Navamsa Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/navamsa-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "navamsa-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D2 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"en\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d2-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d2-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D3 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d3-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d3-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D4 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d4-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d4-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D5 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d5-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d5-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D6 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d6-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d6-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D7 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d7-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d7-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D8 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d8-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d8-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D10 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d10-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d10-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D11 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d11-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d11-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D12 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d12-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d12-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D16 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d16-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d16-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D20 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d20-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d20-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D24 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d24-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d24-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D27 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d27-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d27-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D30 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d30-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d30-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D40 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d40-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d40-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D45 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d45-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d45-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D60 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d60-chart-svg-code",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d60-chart-svg-code"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Get SVG image code for the asked divisional chart"
+    },
+    {
+      "name": "Divisional Charts - SVG image URL",
+      "item": [
+        {
+          "name": "Horoscope Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"en\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/horoscope-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "horoscope-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Navamsa Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/navamsa-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "navamsa-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D2 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#2274A5\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d2-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d2-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D3 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d3-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d3-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D4 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d4-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d4-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D5 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d5-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d5-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D6 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d6-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d6-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D7 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d7-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d7-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D8 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d8-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d8-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D10 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d10-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d10-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D11 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d11-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d11-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D12 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d12-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d12-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D16 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d16-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d16-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D20 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d20-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d20-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D24 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d24-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d24-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D27 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d27-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d27-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D30 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d30-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d30-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D40 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d40-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d40-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D45 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d45-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d45-chart-url"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "D60 Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"lahiri\", /* lahiri / sayana */\r\n        \"language\":\"te\" /* te / en */\r\n    },\r\n    \"chart_config\" :  {\r\n            \"font_family\":\"Mallanna\", /* Mallanna / Roboto */\r\n            \"hide_time_location\":\"False\", /* True / False */\r\n            \"hide_outer_planets\":\"False\", /* True / False */\r\n            \"chart_style\":\"south_india\",  /* south_india / north_india */\r\n             /*\"sign_number_font_color\":\"#A5243D\", */ /* works for north_india chart only */\r\n            \"native_name\":\"Mr. Ram Charan\",\r\n            \"native_name_font_size\": \"20px\",\r\n            \"native_details_font_size\":\"15px\",\r\n            \"chart_border_width\":1,\r\n            \"planet_name_font_size\": \"20px\",\r\n            \"chart_heading_font_size\":\"25px\",            \r\n            \"chart_background_color\":\"#FEE1C7\",            \r\n            \"chart_border_color\":\"#B5A886\",            \r\n            \"native_details_font_color\":\"#000\",            \r\n            \"native_name_font_color\": \"#231F20\",            \r\n            \"planet_name_font_color\": \"#BC412B\",            \r\n            \"chart_heading_font_color\":\"#2D3319\"\r\n        }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/d60-chart-url",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "d60-chart-url"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Get SVG image URL for the asked divisional chart"
+    },
+    {
+      "name": "Panchang",
+      "item": [
+        {
+          "name": "Tithi Timings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 4,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"geocentric\", /* topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/tithi-durations",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "tithi-durations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Nakshatra Timings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2023,\r\n    \"month\": 12,\r\n    \"date\": 13,\r\n    \"hours\": 6,\r\n    \"minutes\": 0,\r\n    \"seconds\": 0,\r\n    \"longitude\": 78.4666,\r\n    \"latitude\": 17.38333,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"geocentric\", /* topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/nakshatra-durations",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "nakshatra-durations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Yoga Durations",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2023,\r\n    \"month\": 12,\r\n    \"date\": 13,\r\n    \"hours\": 6,\r\n    \"minutes\": 0,\r\n    \"seconds\": 0,\r\n    \"longitude\": 78.4666,\r\n    \"latitude\": 17.38333,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"geocentric\", /* topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/yoga-durations",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "yoga-durations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Karana Timings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 4,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"geocentric\", /* topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/karana-durations",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "karana-durations"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Vedic Weekday",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 4,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"geocentric\", /* topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/vedicweekday",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "vedicweekday"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Lunar Month Info",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 4,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"geocentric\", /* topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/lunarmonthinfo",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "lunarmonthinfo"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ritu Information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1984,\r\n    \"month\": 4,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"geocentric\", /* topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/rituinfo",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "rituinfo"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Samvat Information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2000,\r\n    \"month\": 4,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"topocentric\", /* topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" ,/* lahiri / sayana */\r\n        \"lunar_month_definition\":\"amanta\"\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/samvatinfo",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "samvatinfo"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Aayanam",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1999,\r\n    \"month\": 12,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"geocentric\", /* topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/aayanam",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "aayanam"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Hora Timings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1999,\r\n    \"month\": 12,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"geocentric\", /* topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/hora-timings",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "hora-timings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Choghadiya Timings",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1999,\r\n    \"month\": 12,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"geocentric\", /* topocentric / geocentric */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/choghadiya-timings",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "choghadiya-timings"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Abhijit Muhurat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 4,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"geocentric\",\r\n        \"ayanamsha\": \"lahiri\"\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/abhijit-muhurat",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "abhijit-muhurat"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Amrit Kaal",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 4,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"geocentric\",\r\n        \"ayanamsha\": \"lahiri\"\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/amrit-kaal",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "amrit-kaal"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Brahma Muhurat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 4,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"geocentric\",\r\n        \"ayanamsha\": \"lahiri\"\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/brahma-muhurat",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "brahma-muhurat"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rahu Kalam",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 4,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"geocentric\",\r\n        \"ayanamsha\": \"lahiri\"\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/rahu-kalam",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "rahu-kalam"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Yama Gandam",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 4,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"geocentric\",\r\n        \"ayanamsha\": \"lahiri\"\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/yama-gandam",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "yama-gandam"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Gulika Kalam",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 4,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"geocentric\",\r\n        \"ayanamsha\": \"lahiri\"\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/gulika-kalam",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "gulika-kalam"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Dur Muhurat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 4,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"geocentric\",\r\n        \"ayanamsha\": \"lahiri\"\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/dur-muhurat",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "dur-muhurat"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Varjyam",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 4,\r\n    \"date\": 3,\r\n    \"hours\": 12,\r\n    \"minutes\": 10,\r\n    \"seconds\": 53,\r\n    \"latitude\": 1.4433887,\r\n    \"longitude\": 103.8325013,\r\n    \"timezone\":8,\r\n    \"config\": {        \r\n        \"observation_point\": \"geocentric\",\r\n        \"ayanamsha\": \"lahiri\"\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/varjyam",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "varjyam"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Good & Bad Times",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 7,\r\n    \"date\": 4,\r\n    \"hours\": 1,\r\n    \"minutes\": 5,\r\n    \"seconds\": 12,\r\n    \"latitude\": 12.865416,\r\n    \"longitude\": -85.207229,\r\n    \"timezone\": -6,\r\n    \"config\": {        \r\n        \"observation_point\": \"topocentric\",\r\n        \"ayanamsha\": \"lahiri\"\r\n    }\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/good-bad-times",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "good-bad-times"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Get Panchang calculations - Tithi, Vara, Nakshatra, Yoga, Karana, Lunar Month, Ritu, Aayanam, Hora times, Choghadiya Times, Abhijit Muhurat, Amrit Kaal, Brahma Muhurat, Rahu Kalam, Yama Gandam, Gulika Kalam, Dur Muhurat and Varjyam"
+    },
+    {
+      "name": "Shad Bala",
+      "item": [
+        {
+          "name": "Summary",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2022,\r\n    \"month\": 8,\r\n    \"date\": 11,\r\n    \"hours\": 6,\r\n    \"minutes\": 0,\r\n    \"seconds\": 0,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"geocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"sayana\" /* lahiri / sayana */\r\n    }\r\n\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/shadbala/summary",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "shadbala",
+                "summary"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Break-up",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2022,\r\n    \"month\": 8,\r\n    \"date\": 11,\r\n    \"hours\": 6,\r\n    \"minutes\": 0,\r\n    \"seconds\": 0,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"geocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"sayana\" /* lahiri / sayana */\r\n    }\r\n\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/shadbala/break-up",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "shadbala",
+                "break-up"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sthana Bala",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2022,\r\n    \"month\": 8,\r\n    \"date\": 11,\r\n    \"hours\": 6,\r\n    \"minutes\": 0,\r\n    \"seconds\": 0,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"geocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"sayana\" /* lahiri / sayana */\r\n    }\r\n\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/shadbala/sthana-bala",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "shadbala",
+                "sthana-bala"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Kaala Bala",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2022,\r\n    \"month\": 8,\r\n    \"date\": 11,\r\n    \"hours\": 6,\r\n    \"minutes\": 0,\r\n    \"seconds\": 0,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"geocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"sayana\" /* lahiri / sayana */\r\n    }\r\n\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/shadbala/kaala-bala",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "shadbala",
+                "kaala-bala"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Dig Bala",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2022,\r\n    \"month\": 8,\r\n    \"date\": 11,\r\n    \"hours\": 6,\r\n    \"minutes\": 0,\r\n    \"seconds\": 0,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"geocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"sayana\" /* lahiri / sayana */\r\n    }\r\n\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/shadbala/dig-bala",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "shadbala",
+                "dig-bala"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cheshta Bala",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2022,\r\n    \"month\": 8,\r\n    \"date\": 11,\r\n    \"hours\": 6,\r\n    \"minutes\": 0,\r\n    \"seconds\": 0,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"geocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"sayana\" /* lahiri / sayana */\r\n    }\r\n\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/shadbala/cheshta-bala",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "shadbala",
+                "cheshta-bala"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Drig Bala",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2022,\r\n    \"month\": 8,\r\n    \"date\": 11,\r\n    \"hours\": 6,\r\n    \"minutes\": 0,\r\n    \"seconds\": 0,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"geocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"sayana\" /* lahiri / sayana */\r\n    }\r\n\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/shadbala/drig-bala",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "shadbala",
+                "drig-bala"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Naisargika Bala",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2022,\r\n    \"month\": 8,\r\n    \"date\": 11,\r\n    \"hours\": 6,\r\n    \"minutes\": 0,\r\n    \"seconds\": 0,\r\n    \"latitude\": 17.38333,\r\n    \"longitude\": 78.4666,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"geocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"sayana\" /* lahiri / sayana */\r\n    }\r\n\r\n}"
+            },
+            "url": {
+              "raw": "{{API_URL}}/shadbala/naisargika-bala",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "shadbala",
+                "naisargika-bala"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Shad Bala of Planets"
+    },
+    {
+      "name": "Geo Location",
+      "item": [
+        {
+          "name": "Geo Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"location\":\"Hyderabad\"\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/geo-details",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "geo-details"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Get Co ordimates ( Latitude and Longitude ) for a given place"
+    },
+    {
+      "name": "Time Zone",
+      "item": [
+        {
+          "name": "Time Zone With DST",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n        \"timezone\": \"Europe/Paris\",\r\n        \"year\": 2026,\r\n        \"month\": 7,\r\n        \"day\": 29,\r\n        \"hour\": 2,\r\n        \"minute\": 30\r\n    }",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/timezone-with-dst",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "timezone-with-dst"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Get DST and timezone offset for a given timezone and local datetime"
+    },
+    {
+      "name": "Match Making",
+      "item": [
+        {
+          "name": "Ashta Koota Score",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"female\":{\r\n            \"year\": 2014,\r\n\t\t\t\"month\": 2,\r\n\t\t\t\"date\": 26,\r\n\t\t\t\"hours\": 1,\r\n\t\t\t\"minutes\": 54,\r\n\t\t\t\"seconds\": 0,\r\n\t\t\t\"latitude\": 11.67,\r\n\t\t\t\"longitude\": 92.76,\r\n\t\t\t\"timezone\": 5.5\r\n    },\r\n    \"male\":{\r\n\t\t\t\"year\": 2010,\r\n\t\t\t\"month\": 2,\r\n\t\t\t\"date\": 27,\r\n\t\t\t\"hours\": 4,\r\n\t\t\t\"minutes\": 23,\r\n\t\t\t\"seconds\": 0,\r\n\t\t\t\"latitude\": 19.06,\r\n\t\t\t\"longitude\": 73.49,\r\n\t\t\t\"timezone\": 5.5\r\n    },\r\n     \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric / topocentric */\r\n        \"language\": \"te\", /* te, hi, en , */\r\n        \"ayanamsha\": \"lahiri\" /* lahiri / sayana */\r\n    }\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/match-making/ashtakoot-score",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "match-making",
+                "ashtakoot-score"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Get Ashta Koota Score for Match Making"
+    },
+    {
+      "name": "Vimsottari Dasa",
+      "item": [
+        {
+          "name": "Maha Dasas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\":16.51666666666667,\r\n    \"longitude\":80.61666666666667,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"geocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"sayana\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/vimsottari/maha-dasas",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "vimsottari",
+                "maha-dasas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Maha Dasas And Antar Dasas",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\":16.51666666666667,\r\n    \"longitude\":80.61666666666667,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"geocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"sayana\" /* lahiri / sayana */\r\n    }\r\n\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/vimsottari/maha-dasas-and-antar-dasas",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "vimsottari",
+                "maha-dasas-and-antar-dasas"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Dasa Information for a Given Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 2024,\r\n    \"month\": 1,\r\n    \"date\": 1,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 31,\r\n    \"latitude\": 16.51666666666667,\r\n    \"longitude\": 80.61666666666667,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"geocentric\", /* geocentric / topocentric */\r\n        \"ayanamsha\": \"sayana\" /* lahiri / sayana */\r\n    },\r\n    \"event_data\": {\r\n        \"year\": 2024,\r\n        \"month\": 4,\r\n        \"date\": 1,\r\n        \"hours\": 9,\r\n        \"minutes\": 30,\r\n        \"seconds\": 0\r\n    }\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/vimsottari/dasa-information",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "vimsottari",
+                "dasa-information"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "API calls related Vimsottari Dasa System"
+    },
+    {
+      "name": "Western Astrology",
+      "item": [
+        {
+          "name": "Planets information",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1998,\r\n    \"month\": 3,\r\n    \"date\": 3,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 0,\r\n    \"latitude\": 17.38405,\r\n    \"longitude\": 78.45636,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric or topocentric */\r\n        \"ayanamsha\": \"tropical\", /*  tropical or sayana or lahiri  */\r\n        \"language\": \"en\" /* en , te , es , fr , pt , ru , de ,  ja, pl */\r\n    }\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/western/planets",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "western",
+                "planets"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Houses",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1998,\r\n    \"month\": 3,\r\n    \"date\": 3,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 0,\r\n    \"latitude\": 17.38405,\r\n    \"longitude\": 78.45636,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric or topocentric */\r\n        \"ayanamsha\": \"tropical\", /*  tropical or sayana or lahiri  */\r\n        \"house_system\": \"Placidus\", /* \"Porphyry\", \"Placidus\",\"Koch\",\"Whole Signs\",\"Equal Houses\",\"Regiomontanus\",\"Vehlow\" */ \r\n        \"language\": \"en\" /* en , te , es , fr , pt , ru , de ,  ja, pl */      \r\n    }\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/western/houses",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "western",
+                "houses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Aspects",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1998,\r\n    \"month\": 3,\r\n    \"date\": 3,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 0,\r\n    \"latitude\": 17.38405,\r\n    \"longitude\": 78.45636,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric or topocentric */\r\n        \"ayanamsha\": \"tropical\", /*  tropical or sayana or lahiri  */\r\n        \"language\": \"en\", /* en , te , es , fr , pt , ru , de ,  ja, pl */\r\n        \"exclude_planets\": [\"Lilith\",\"Chiron\",\"Ceres\",\"Vesta\",\"Juno\",\"Pallas\"], /* \"True Node\", \"Mean Node\", \"IC\",\"MC\",\"Descendant\",\"Ascendant\",\"Sun\",\"Moon\",\"Mars\",\"Mercury\",\"Jupiter\",\"Venus\",\"Saturn\",\"Lilith\",\"Chiron\",\"Ceres\",\"Vesta\",\"Juno\",\"Pallas\",\"Uranus\",\"Neptune\",\"Pluto\"*/ \r\n        \"allowed_aspects\": [\"Conjunction\",\"Trine\"], /* \"Conjunction\", \"Opposition\", \"Trine\",\"Square\",\"Sextile\",\"Semi-Sextile\",\"Quintile\",\"Septile\",\"Octile\",\"Novile\",\"Quincunx\",\"Sesquiquadrate\" */\r\n        \"orb_values\":{\r\n            \"Conjunction\": 3, /* 0 to 15 */\r\n            \"Opposition\": 5, /* 0 to 15 */\r\n            \"Square\": 5, /* 0 to 15 */\r\n            \"Trine\": 5, /* 0 to 15 */\r\n            \"Sextile\": 5, /* 0 to 15 */\r\n            \"Semi-Sextile\": 5, /* 0 to 15 */\r\n            \"Quintile\": 5, /* 0 to 15 */\r\n            \"Septile\": 5, /* 0 to 15 */\r\n            \"Octile\": 5, /* 0 to 15 */\r\n            \"Novile\": 5, /* 0 to 15 */\r\n            \"Quincunx\": 5, /* 0 to 15 */\r\n            \"Sesquiquadrate\": 5 /* 0 to 15 */\r\n        }\r\n    }\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/western/aspects",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "western",
+                "aspects"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Natal Wheel Chart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api_key}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\r\n    \"year\": 1998,\r\n    \"month\": 3,\r\n    \"date\": 3,\r\n    \"hours\": 10,\r\n    \"minutes\": 30,\r\n    \"seconds\": 0,\r\n    \"latitude\": 17.38405,\r\n    \"longitude\": 78.45636,\r\n    \"timezone\": 5.5,\r\n    \"config\": {\r\n        \"observation_point\": \"topocentric\", /* geocentric or topocentric */\r\n        \"ayanamsha\": \"tropical\", /*  tropical or sayana or lahiri  */\r\n        \"house_system\": \"Placidus\", /* \"Porphyry\", \"Placidus\",\"Koch\",\"Whole Signs\",\"Equal Houses\",\"Regiomontanus\",\"Vehlow\" */\r\n        \"language\": \"en\", /* en , te , es , fr , pt , ru , de ,  ja, pl */\r\n        \"exclude_planets\": [\r\n            \"Lilith\"\r\n        ], /* \"True Node\", \"Mean Node\", \"IC\",\"MC\",\"Descendant\",\"Ascendant\",\"Sun\",\"Moon\",\"Mars\",\"Mercury\",\"Jupiter\",\"Venus\",\"Saturn\",\"Lilith\",\"Chiron\",\"Ceres\",\"Vesta\",\"Juno\",\"Pallas\",\"Uranus\",\"Neptune\",\"Pluto\"*/ /* optional */\r\n        \"allowed_aspects\": [\r\n            \"Conjunction\",\r\n            \"Opposition\",\r\n            \"Trine\",\r\n            \"Square\"\r\n        ], /* \"Conjunction\", \"Opposition\", \"Trine\",\"Square\",\"Sextile\",\"Semi-Sextile\",\"Quintile\",\"Septile\",\"Octile\",\"Novile\",\"Quincunx\",\"Sesquiquadrate\" */ /* optional */\r\n        \"aspect_line_colors\": {\r\n            \"Conjunction\": \"#558B6E\", /* optional */\r\n            \"Opposition\": \"#88A09E\", /* optional */\r\n            \"Square\": \"#704C5E\", /* optional */\r\n            \"Trine\": \"#B88C9E\", /* optional */\r\n            \"Sextile\": \"#F1C8DB\", /* optional */\r\n            \"Semi-Sextile\": \"#A799B7\", /* optional */\r\n            \"Quintile\": \"#9888A5\", /* optional */\r\n            \"Septile\": \"#776472\", /* optional */\r\n            \"Octile\": \"#445552\", /* optional */\r\n            \"Novile\": \"#294D4A\", /* optional */\r\n            \"Quincunx\": \"#49306B\", /* optional */\r\n            \"Sesquiquadrate\": \"#E1CDB5\" /* optional */\r\n        },\r\n        \"wheel_chart_colors\": {\r\n            \"zodiac_sign_background_color\":\"#26408B\", /* optional */\r\n            \"chart_background_color\":\"#C2E7D9\", /* optional */\r\n            \"zodiac_signs_text_color\":\"#FFFFFF\", /* optional */\r\n            \"dotted_line_color\":\"#201E50\", /* optional */\r\n            \"planets_icon_color\":\"#4A5859\" /* optional */\r\n        },\r\n        \"orb_values\": {\r\n            \"Conjunction\": 3, /* 0 to 15 */ /* optional */\r\n            \"Opposition\": 5, /* 0 to 15 */ /* optional */\r\n            \"Square\": 5, /* 0 to 15 */ /* optional */\r\n            \"Trine\": 5, /* 0 to 15 */ /* optional */\r\n            \"Sextile\": 5, /* 0 to 15 */ /* optional */\r\n            \"Semi-Sextile\": 5, /* 0 to 15 */ /* optional */\r\n            \"Quintile\": 5, /* 0 to 15 */ /* optional */\r\n            \"Septile\": 5, /* 0 to 15 */ /* optional */\r\n            \"Octile\": 5, /* 0 to 15 */ /* optional */\r\n            \"Novile\": 5, /* 0 to 15 */ /* optional */\r\n            \"Quincunx\": 5, /* 0 to 15 */ /* optional */\r\n            \"Sesquiquadrate\": 5 /* 0 to 15 */ /* optional */\r\n        }\r\n    }\r\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{API_URL}}/western/natal-wheel-chart",
+              "host": [
+                "{{API_URL}}"
+              ],
+              "path": [
+                "western",
+                "natal-wheel-chart"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "api_key",
+      "value": "YOUR_API_KEY_HERE",
+      "type": "string"
+    },
+    {
+      "key": "API_URL",
+      "value": "https://json.freeastrologyapi.com",
+      "type": "string"
+    }
+  ]
+}

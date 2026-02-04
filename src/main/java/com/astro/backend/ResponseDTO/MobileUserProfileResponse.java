@@ -42,6 +42,9 @@ public class MobileUserProfileResponse {
     private String profileImageUrl;
     private Boolean isProfileComplete;
 
+    // ===== Language Preference =====
+    private Integer isLanguage; // 1 = English, 2 = Hindi
+
     // ===== Referral =====
     private String referralCode;
     private Integer referredByUserId;

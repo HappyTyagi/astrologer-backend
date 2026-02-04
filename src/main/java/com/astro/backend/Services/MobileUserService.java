@@ -76,6 +76,7 @@ public class MobileUserService {
                     .referralCode(referralCode)
                     .referredByUserId(request.getReferredByUserId())
                     .isProfileComplete(false)
+                    .isLanguage(1) // Default to English
                     .lastLoginAt(LocalDateTime.now())
                     .build();
 
@@ -208,6 +209,28 @@ public class MobileUserService {
     }
 
     /**
+     * Update language preference
+     */
+    @Transactional
+    public MobileUserProfileResponse updateLanguage(Long userId, Integer language) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        MobileUserProfile profile = mobileUserProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new RuntimeException("Mobile profile not found"));
+
+        // Validate language value (1 = English, 2 = Hindi)
+        if (language != 1 && language != 2) {
+            throw new RuntimeException("Invalid language value. Use 1 for English, 2 for Hindi");
+        }
+
+        profile.setIsLanguage(language);
+        MobileUserProfile updatedProfile = mobileUserProfileRepository.save(profile);
+
+        return buildResponse(user, updatedProfile, "Language updated successfully");
+    }
+
+    /**
      * Helper method to build response
      */
     private MobileUserProfileResponse buildResponse(User user, MobileUserProfile profile, String message) {
@@ -234,6 +257,7 @@ public class MobileUserService {
                 .districtMasterId(profile.getDistrictMasterId())
                 .profileImageUrl(profile.getProfileImageUrl())
                 .isProfileComplete(profile.getIsProfileComplete())
+                .isLanguage(profile.getIsLanguage())
                 .referralCode(profile.getReferralCode())
                 .referredByUserId(profile.getReferredByUserId())
                 .createdAt(user.getCreatedAt())

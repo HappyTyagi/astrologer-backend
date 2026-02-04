@@ -59,6 +59,10 @@ public class MobileUserProfile {
     private LocalDateTime lastLoginAt;
     private String profileImageUrl;
 
+    // ===== Language Preference =====
+    @Column(nullable = false, columnDefinition = "INTEGER DEFAULT 1")
+    private Integer isLanguage;        // 1 = English, 2 = Hindi
+
     // ===== Referral System =====
     private String referralCode;       // For referral system
     private Integer referredByUserId;  // Track referrals
