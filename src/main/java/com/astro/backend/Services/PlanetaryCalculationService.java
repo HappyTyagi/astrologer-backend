@@ -327,12 +327,24 @@ public class PlanetaryCalculationService {
             // Save to database
             Long chartId = saveBirthChart(request, outputList, userId);
 
-            // Build response
+            // Generate HTML content
+            PlanetaryPositionResponse tempResponse = PlanetaryPositionResponse.builder()
+                    .statusCode(200)
+                    .input(buildInputData(request))
+                    .output(outputList)
+                    .chartId(chartId)
+                    .build();
+            String htmlContent = generateKundliHtml(tempResponse);
+                Map<String, String> htmlSections = buildHtmlSections(tempResponse);
+            
+            // Build response with HTML
             return PlanetaryPositionResponse.builder()
                     .statusCode(200)
                     .input(buildInputData(request))
                     .output(outputList)
                     .chartId(chartId)
+                    .htmlContent(htmlContent)
+                    .htmlSections(htmlSections)
                     .build();
 
         } catch (Exception e) {
@@ -571,6 +583,7 @@ public class PlanetaryCalculationService {
     private String generateKundliHtml(PlanetaryPositionResponse response) {
         StringBuilder html = new StringBuilder();
 
+        
         // Extract data from new output structure
         @SuppressWarnings("unchecked")
         Map<String, Object> outputMap = (Map<String, Object>) response.getOutput().get(0);
@@ -695,27 +708,6 @@ public class PlanetaryCalculationService {
         html.append("</head>\n");
         html.append("<body>\n");
         html.append("<div class=\"page\">\n");
-        html.append("<div class=\"header\">\n");
-        html.append("  <div class=\"om\">ॐ</div>\n");
-        html.append("  <div class=\"title\"><h1>कुंडली / Kundli</h1><h2>Kundli Report</h2></div>\n");
-        html.append("  <div class=\"sun\">☀️</div>\n");
-        html.append("</div>\n");
-
-        html.append("<div class=\"info\">\n");
-        html.append("  <div>");
-        html.append("<b>Date:</b> ").append(dateText).append("<br>");
-        html.append("<b>Time:</b> ").append(timeText).append("<br>");
-        html.append("<b>Time Zone:</b> ").append(timezoneText).append("<br>");
-        html.append("<b>Latitude:</b> ").append(String.format("%.6f", response.getInput().getLatitude())).append("<br>");
-        html.append("<b>Longitude:</b> ").append(String.format("%.6f", response.getInput().getLongitude()));
-        html.append("</div>\n");
-        html.append("  <div>");
-        html.append("<b>Rasi (Moon Sign):</b> ").append(moonSign != null ? SIGN_MAP.get(moonSign) : "-").append("<br>");
-        html.append("<b>Ascendant (Lagna):</b> ").append(ascendantSign != null ? SIGN_MAP.get(ascendantSign) : "-").append("<br>");
-        html.append("<b>Sun Sign:</b> ").append(sunSign != null ? SIGN_MAP.get(sunSign) : "-").append("<br>");
-        html.append("<b>Ayanamsa:</b> ").append(ayanamsaValue != null ? String.format("%.4f", ayanamsaValue) : "-");
-        html.append("</div>\n");
-        html.append("</div>\n");
 
         // Charts section (Kundli, Navamsha, Transit)
         html.append("<div class=\"charts\">\n");
@@ -763,7 +755,7 @@ public class PlanetaryCalculationService {
         houseCoords.put(11, new int[]{360, 300});
         houseCoords.put(12, new int[]{265, 180});
 
-        html.append("  <g fill=\"#000\" font-size=\"12\" font-weight=\"bold\">\n");
+        html.append("  <g fill=\"#000\" font-size=\"10\" font-weight=\"bold\">\n");
         for (int sign = 1; sign <= 12; sign++) {
             int[] coord = houseCoords.get(sign);
             if (coord == null) {
@@ -773,11 +765,11 @@ public class PlanetaryCalculationService {
             if (planets.size() > 1) {
                 // Multiple planets: use tspan for vertical stacking
                 html.append("    <text x=\"").append(coord[0]).append("\" y=\"").append(coord[1])
-                        .append("\" font-size=\"12\" font-weight=\"bold\" text-anchor=\"start\" dominant-baseline=\"middle\">\n");
+                        .append("\" font-size=\"10\" font-weight=\"bold\" text-anchor=\"start\" dominant-baseline=\"middle\">\n");
                 for (int i = 0; i < planets.size(); i++) {
                     String planetName = planets.get(i);
                     String abbr = planetAbbr.getOrDefault(planetName, planetName.substring(0, Math.min(3, planetName.length())));
-                    html.append("      <tspan x=\"").append(coord[0]).append("\" dy=\"").append(i == 0 ? "0" : "8").append("\">").append(abbr).append("</tspan>\n");
+                    html.append("      <tspan x=\"").append(coord[0]).append("\" dy=\"").append(i == 0 ? "0" : "10").append("\">").append(abbr).append("</tspan>\n");
                 }
                 html.append("    </text>\n");
             } else if (planets.size() == 1) {
@@ -817,7 +809,7 @@ public class PlanetaryCalculationService {
         html.append("    <text x=\"325\" y=\"300\">11</text>\n");
         html.append("    <text x=\"225\" y=\"200\">12</text>\n");
         html.append("  </g>\n");
-        html.append("  <g fill=\"#000\" font-size=\"12\" font-weight=\"bold\">\n");
+        html.append("  <g fill=\"#000\" font-size=\"10\" font-weight=\"bold\">\n");
         for (int house = 1; house <= 12; house++) {
             int[] coord = houseCoords.get(house);
             if (coord == null) {
@@ -827,11 +819,11 @@ public class PlanetaryCalculationService {
             if (planets.size() > 1) {
                 // Multiple planets: use tspan for vertical stacking
                 html.append("    <text x=\"").append(coord[0]).append("\" y=\"").append(coord[1])
-                        .append("\" font-size=\"12\" font-weight=\"bold\" text-anchor=\"start\" dominant-baseline=\"middle\">\n");
+                        .append("\" font-size=\"10\" font-weight=\"bold\" text-anchor=\"start\" dominant-baseline=\"middle\">\n");
                 for (int i = 0; i < planets.size(); i++) {
                     String planetName = planets.get(i);
                     String abbr = planetAbbr.getOrDefault(planetName, planetName.substring(0, Math.min(3, planetName.length())));
-                    html.append("      <tspan x=\"").append(coord[0]).append("\" dy=\"").append(i == 0 ? "0" : "8").append("\">").append(abbr).append("</tspan>\n");
+                    html.append("      <tspan x=\"").append(coord[0]).append("\" dy=\"").append(i == 0 ? "0" : "10").append("\">").append(abbr).append("</tspan>\n");
                 }
                 html.append("    </text>\n");
             } else if (planets.size() == 1) {
@@ -902,7 +894,7 @@ public class PlanetaryCalculationService {
         html.append("    <text x=\"325\" y=\"300\">11</text>\n");
         html.append("    <text x=\"225\" y=\"200\">12</text>\n");
         html.append("  </g>\n");
-        html.append("  <g fill=\"#000\" font-size=\"12\" font-weight=\"bold\">\n");
+        html.append("  <g fill=\"#000\" font-size=\"10\" font-weight=\"bold\">\n");
         for (int house = 1; house <= 12; house++) {
             int[] coord = houseCoords.get(house);
             if (coord == null) {
@@ -912,11 +904,11 @@ public class PlanetaryCalculationService {
             if (planets.size() > 1) {
                 // Multiple planets: use tspan for vertical stacking
                 html.append("    <text x=\"").append(coord[0]).append("\" y=\"").append(coord[1])
-                        .append("\" font-size=\"12\" font-weight=\"bold\" text-anchor=\"start\" dominant-baseline=\"middle\">\n");
+                        .append("\" font-size=\"10\" font-weight=\"bold\" text-anchor=\"start\" dominant-baseline=\"middle\">\n");
                 for (int i = 0; i < planets.size(); i++) {
                     String planetName = planets.get(i);
                     String abbr = planetAbbr.getOrDefault(planetName, planetName.substring(0, Math.min(3, planetName.length())));
-                    html.append("      <tspan x=\"").append(coord[0]).append("\" dy=\"").append(i == 0 ? "0" : "8").append("\">").append(abbr).append("</tspan>\n");
+                    html.append("      <tspan x=\"").append(coord[0]).append("\" dy=\"").append(i == 0 ? "0" : "10").append("\">").append(abbr).append("</tspan>\n");
                 }
                 html.append("    </text>\n");
             } else if (planets.size() == 1) {
@@ -971,11 +963,275 @@ public class PlanetaryCalculationService {
         html.append("</div>\n");
 
         html.append("</div>\n");
-        html.append("<div class=\"footer\">© Kundli Report • Traditional Theme</div>\n");
+        html.append("<div class=\"footer\">© Kundli Report</div>\n");
         html.append("</div>\n");
         html.append("</body>\n");
         html.append("</html>");
 
+        return html.toString();
+    }
+
+    /**
+     * Build separate HTML blocks for charts and data to return in JSON.
+     */
+    private Map<String, String> buildHtmlSections(PlanetaryPositionResponse response) {
+        Map<String, String> sections = new LinkedHashMap<>();
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> outputMap = (Map<String, Object>) response.getOutput().get(0);
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> kundliData = (List<Map<String, Object>>) outputMap.get("kundli");
+        Map<String, Object> indexedPlanets = kundliData.get(0);
+        Map<String, Object> namedPlanets = kundliData.get(1);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> ascendantData = (Map<String, Object>) namedPlanets.get("Ascendant");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> sunData = (Map<String, Object>) namedPlanets.get("Sun");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> moonData = (Map<String, Object>) namedPlanets.get("Moon");
+
+        Integer ascendantSign = ascendantData != null ? (Integer) ascendantData.get("current_sign") : null;
+        Double ascendantDegree = ascendantData != null ? (Double) ascendantData.get("fullDegree") : 0.0;
+        Integer sunSign = sunData != null ? (Integer) sunData.get("current_sign") : null;
+        Integer moonSign = moonData != null ? (Integer) moonData.get("current_sign") : null;
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> ayanamsaData = indexedPlanets != null ? (Map<String, Object>) indexedPlanets.get("13") : null;
+        Double ayanamsaValue = ayanamsaData != null ? (Double) ayanamsaData.get("value") : null;
+
+        Map<String, String> planetAbbr = Map.ofEntries(
+                Map.entry("Sun", "Sun"),
+                Map.entry("Moon", "Mo"),
+                Map.entry("Mars", "Mar"),
+                Map.entry("Mercury", "Mer"),
+                Map.entry("Jupiter", "Jup"),
+                Map.entry("Venus", "Ve"),
+                Map.entry("Saturn", "Sat"),
+                Map.entry("Rahu", "Ra"),
+                Map.entry("Ketu", "Ke"),
+                Map.entry("Ascendant", "As"),
+                Map.entry("Uranus", "Ur"),
+                Map.entry("Neptune", "Nep"),
+                Map.entry("Pluto", "Pl")
+        );
+
+        Map<Integer, int[]> houseCoords = new HashMap<>();
+        houseCoords.put(1, new int[]{360, 85});
+        houseCoords.put(2, new int[]{285, 20});
+        houseCoords.put(3, new int[]{180, 76});
+        houseCoords.put(4, new int[]{70, 25});
+        houseCoords.put(5, new int[]{10, 90});
+        houseCoords.put(6, new int[]{70, 180});
+        houseCoords.put(7, new int[]{10, 255});
+        houseCoords.put(8, new int[]{70, 365});
+        houseCoords.put(9, new int[]{180, 300});
+        houseCoords.put(10, new int[]{265, 365});
+        houseCoords.put(11, new int[]{360, 300});
+        houseCoords.put(12, new int[]{265, 180});
+
+        // Kundli planets by sign
+        Map<Integer, List<String>> planetsBySign = new HashMap<>();
+        for (Map.Entry<String, Object> entry : namedPlanets.entrySet()) {
+            String planetName = entry.getKey();
+            @SuppressWarnings("unchecked")
+            Map<String, Object> planetData = (Map<String, Object>) entry.getValue();
+            Integer sign = (Integer) planetData.get("current_sign");
+            if (sign != null) {
+                planetsBySign.computeIfAbsent(sign, k -> new ArrayList<>()).add(planetName);
+            }
+        }
+        if (ascendantSign != null && !planetsBySign.getOrDefault(ascendantSign, new ArrayList<>()).contains("Ascendant")) {
+            planetsBySign.computeIfAbsent(ascendantSign, k -> new ArrayList<>()).add(0, "Ascendant");
+        }
+
+        // Navamsha planets by house
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> navamshaData = (List<Map<String, Object>>) outputMap.get("navamsha");
+        Map<String, Object> navamshaNamedPlanets = navamshaData.get(1);
+        Map<Integer, List<String>> planetsByNavamshaHouse = new HashMap<>();
+        for (Map.Entry<String, Object> entry : navamshaNamedPlanets.entrySet()) {
+            String planetName = entry.getKey();
+            if ("Ascendant".equals(planetName)) {
+                continue;
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> planetData = (Map<String, Object>) entry.getValue();
+            Integer navamshaHouseNum = (Integer) planetData.get("navamsha_house");
+            if (navamshaHouseNum != null) {
+                planetsByNavamshaHouse.computeIfAbsent(navamshaHouseNum, k -> new ArrayList<>()).add(planetName);
+            }
+        }
+        if (!planetsByNavamshaHouse.getOrDefault(1, new ArrayList<>()).contains("Ascendant")) {
+            planetsByNavamshaHouse.computeIfAbsent(1, k -> new ArrayList<>()).add(0, "Ascendant");
+        }
+
+        // Transit planets by house
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> transitData = (List<Map<String, Object>>) outputMap.get("transit");
+        Map<String, Object> transitNamedPlanets = transitData.get(1);
+        Map<Integer, List<String>> planetsByTransitHouse = new HashMap<>();
+        for (Map.Entry<String, Object> entry : transitNamedPlanets.entrySet()) {
+            String planetName = entry.getKey();
+            if ("Ascendant".equals(planetName)) {
+                continue;
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> planetData = (Map<String, Object>) entry.getValue();
+            Integer transitHouse = (Integer) planetData.get("transit_house");
+            if (transitHouse != null) {
+                planetsByTransitHouse.computeIfAbsent(transitHouse, k -> new ArrayList<>()).add(planetName);
+            }
+        }
+        if (!planetsByTransitHouse.getOrDefault(1, new ArrayList<>()).contains("Ascendant")) {
+            planetsByTransitHouse.computeIfAbsent(1, k -> new ArrayList<>()).add(0, "Ascendant");
+        }
+
+        // Build sections with complete HTML
+        sections.put("kundliChart", wrapInCompleteHtml("Kundli Birth Chart", buildChartHtml("Kundli Birth Chart", planetsBySign, houseCoords, planetAbbr)));
+        sections.put("navamshaChart", wrapInCompleteHtml("Navamsha Chart", buildChartHtml("Navamsha Chart", planetsByNavamshaHouse, houseCoords, planetAbbr)));
+        sections.put("transitChart", wrapInCompleteHtml("Transit Chart", buildChartHtml("Transit Chart (Today from Lagna)", planetsByTransitHouse, houseCoords, planetAbbr)));
+        sections.put("planetaryPositions", wrapInCompleteHtml("Planetary Positions", buildPlanetaryPositionsTable(namedPlanets)));
+        sections.put("astrologicalData", wrapInCompleteHtml("Astrological Data", buildAstrologicalDataSection(ascendantSign, ascendantData, sunSign, moonSign, ayanamsaValue)));
+
+        return sections;
+    }
+
+    private String buildChartHtml(String title, Map<Integer, List<String>> planetsByHouse,
+                                  Map<Integer, int[]> houseCoords, Map<String, String> planetAbbr) {
+        StringBuilder html = new StringBuilder();
+        html.append("<div class=\"box\">\n");
+        html.append("<h3>").append(title).append("</h3>\n");
+        html.append("<svg width=\"100%\" viewBox=\"0 0 400 400\" xmlns=\"http://www.w3.org/2000/svg\">\n");
+        html.append("  <rect x=\"0\" y=\"0\" width=\"400\" height=\"400\" fill=\"none\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"0\" y1=\"0\" x2=\"400\" y2=\"400\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"400\" y1=\"0\" x2=\"0\" y2=\"400\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"200\" y1=\"0\" x2=\"400\" y2=\"200\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"400\" y1=\"200\" x2=\"200\" y2=\"400\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"200\" y1=\"400\" x2=\"0\" y2=\"200\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"0\" y1=\"200\" x2=\"200\" y2=\"0\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <text x=\"200\" y=\"200\" font-size=\"180\" fill=\"#8a5a2b\" opacity=\"0.06\" text-anchor=\"middle\" dominant-baseline=\"middle\">ॐ</text>\n");
+        html.append("  <g fill=\"#3b2414\" font-size=\"12\" font-weight=\"bold\" text-anchor=\"middle\" dominant-baseline=\"middle\">\n");
+        html.append("    <text x=\"325\" y=\"100\">1</text>\n");
+        html.append("    <text x=\"300\" y=\"75\">2</text>\n");
+        html.append("    <text x=\"200\" y=\"175\">3</text>\n");
+        html.append("    <text x=\"100\" y=\"75\">4</text>\n");
+        html.append("    <text x=\"75\" y=\"100\">5</text>\n");
+        html.append("    <text x=\"175\" y=\"200\">6</text>\n");
+        html.append("    <text x=\"200\" y=\"225\">9</text>\n");
+        html.append("    <text x=\"75\" y=\"300\">7</text>\n");
+        html.append("    <text x=\"100\" y=\"325\">8</text>\n");
+        html.append("    <text x=\"300\" y=\"260\">9</text>\n");
+        html.append("    <text x=\"300\" y=\"320\">10</text>\n");
+        html.append("    <text x=\"325\" y=\"300\">11</text>\n");
+        html.append("    <text x=\"225\" y=\"200\">12</text>\n");
+        html.append("  </g>\n");
+        html.append("  <g fill=\"#000\" font-size=\"10\" font-weight=\"bold\">\n");
+        for (int house = 1; house <= 12; house++) {
+            int[] coord = houseCoords.get(house);
+            if (coord == null) {
+                continue;
+            }
+            List<String> planets = planetsByHouse.getOrDefault(house, new ArrayList<>());
+            if (planets.size() > 1) {
+                html.append("    <text x=\"").append(coord[0]).append("\" y=\"").append(coord[1])
+                        .append("\" font-size=\"10\" font-weight=\"bold\" text-anchor=\"start\" dominant-baseline=\"middle\">\n");
+                for (int i = 0; i < planets.size(); i++) {
+                    String planetName = planets.get(i);
+                    String abbr = planetAbbr.getOrDefault(planetName, planetName.substring(0, Math.min(3, planetName.length())));
+                    html.append("      <tspan x=\"").append(coord[0]).append("\" dy=\"")
+                            .append(i == 0 ? "0" : "10").append("\">").append(abbr).append("</tspan>\n");
+                }
+                html.append("    </text>\n");
+            } else if (planets.size() == 1) {
+                String planetName = planets.get(0);
+                String abbr = planetAbbr.getOrDefault(planetName, planetName.substring(0, Math.min(3, planetName.length())));
+                html.append("    <text x=\"").append(coord[0]).append("\" y=\"").append(coord[1])
+                        .append("\">").append(abbr).append("</text>\n");
+            }
+        }
+        html.append("  </g>\n");
+        html.append("</svg>\n");
+        html.append("</div>\n");
+        return html.toString();
+    }
+
+    private String buildPlanetaryPositionsTable(Map<String, Object> namedPlanets) {
+        StringBuilder html = new StringBuilder();
+        html.append("<div class=\"box\">\n");
+        html.append("<h3>Planetary Positions</h3>\n");
+        html.append("<table>\n");
+        html.append("  <tr><th>Planet</th><th>Sign</th><th>Degree</th><th>House</th></tr>\n");
+        for (Map.Entry<String, Object> entry : namedPlanets.entrySet()) {
+            String planetName = entry.getKey();
+            if ("Ascendant".equals(planetName)) {
+                continue;
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> planetData = (Map<String, Object>) entry.getValue();
+            Integer sign = (Integer) planetData.get("current_sign");
+            Double normDeg = (Double) planetData.get("normDegree");
+            Integer houseNum = (Integer) planetData.get("house_number");
+            html.append("  <tr><td>").append(planetName).append("</td><td>")
+                    .append(sign != null ? SIGN_MAP.get(sign) : "-")
+                    .append("</td><td>")
+                    .append(normDeg != null ? String.format("%.2f°", normDeg) : "-")
+                    .append("</td><td>")
+                    .append(houseNum != null ? houseNum : "-")
+                    .append("</td></tr>\n");
+        }
+        html.append("</table>\n");
+        html.append("</div>\n");
+        return html.toString();
+    }
+
+    private String buildAstrologicalDataSection(Integer ascendantSign, Map<String, Object> ascendantData,
+                                                 Integer sunSign, Integer moonSign, Double ayanamsaValue) {
+        StringBuilder html = new StringBuilder();
+        html.append("<div class=\"box\">\n");
+        html.append("<h3>Astrological Data</h3>\n");
+        html.append("Ascendant: ")
+                .append(ascendantSign != null ? SIGN_MAP.get(ascendantSign) : "-")
+                .append(ascendantData != null ? String.format(" %.2f°", (Double) ascendantData.get("normDegree")) : "")
+                .append("<br>\n");
+        html.append("Sun Sign: ").append(sunSign != null ? SIGN_MAP.get(sunSign) : "-").append("<br>\n");
+        html.append("Moon Sign: ").append(moonSign != null ? SIGN_MAP.get(moonSign) : "-").append("<br>\n");
+        html.append("Ayanamsa: ").append(ayanamsaValue != null ? String.format("%.4f", ayanamsaValue) : "-")
+                .append("<br>\n");
+        html.append("</div>\n");
+        return html.toString();
+    }
+
+    private String wrapInCompleteHtml(String title, String content) {
+        StringBuilder html = new StringBuilder();
+        html.append("<!DOCTYPE html>\n");
+        html.append("<html lang=\"hi\">\n");
+        html.append("<head>\n");
+        html.append("<meta charset=\"UTF-8\" />\n");
+        html.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n");
+        html.append("<title>").append(title).append(" - Kundli Report</title>\n");
+        html.append("<style>\n");
+        html.append("*{box-sizing:border-box}\n");
+        html.append("html,body{width:100%;height:100%;margin:0;padding:0;font-size:16px;}\n");
+        html.append("body{margin:0;background:#cdb68a;font-family: Calibre, Georgia, \"Times New Roman\", serif;}\n");
+        html.append(".page{max-width:1200px;margin:20px auto;background:radial-gradient(circle,#f6e6c6,#e1c18a);border:10px solid #8a5a2b;box-shadow:0 0 30px rgba(0,0,0,.45);padding:25px;width:100%;}\n");
+        html.append(".box{border:3px solid #8a5a2b;padding:15px;background:rgba(255,255,255,.18);width:100%;}\n");
+        html.append(".box h3{text-align:center;margin:0 0 10px;font-size:20px;}\n");
+        html.append("svg{width:100%;height:auto;max-width:100%;}\n");
+        html.append("table{width:100%;border-collapse:collapse;font-size:16px;}\n");
+        html.append("th,td{border:1px solid #8a5a2b;padding:8px;font-size:16px;}\n");
+        html.append(".footer{margin-top:20px;text-align:center;font-size:16px;}\n");
+        html.append("@media screen and (max-width:768px){.page{padding:12px;margin:0;border-width:6px;}.box{padding:10px;}.box h3{font-size:18px;margin:0 0 8px;}table{font-size:16px;}th,td{padding:6px;font-size:16px;}}\n");
+        html.append("</style>\n");
+        html.append("</head>\n");
+        html.append("<body>\n");
+        html.append("<div class=\"page\">\n");
+        html.append(content);
+        html.append("<div class=\"footer\">© Kundli Report</div>\n");
+        html.append("</div>\n");
+        html.append("</body>\n");
+        html.append("</html>");
         return html.toString();
     }
 }

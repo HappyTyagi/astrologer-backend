@@ -1,6 +1,8 @@
 package com.astro.backend.Contlorer.Mobile;
 
+import com.astro.backend.RequestDTO.PlanetaryPositionRequest;
 import com.astro.backend.ResponseDTO.FullKundliResponse;
+import com.astro.backend.ResponseDTO.PlanetaryPositionResponse;
 import com.astro.backend.Services.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,26 +25,28 @@ public class AstroServicesController {
     private final RemedyRecommendationService remedyService;
     private final MuhuratService muhuratService;
     private final PredictionService predictionService;
+    private final PlanetaryCalculationService planetaryCalculationService;
 
     /**
-     * Generate complete birth chart (Kundli)
+     * Generate complete birth chart (Kundli) with Planetary Positions and HTML rendering
      */
     @PostMapping("/kundli/calculate")
-    public ResponseEntity<?> generateFullKundli(
-            @RequestParam Long userId,
-            @RequestParam String dateOfBirth,
-            @RequestParam String timeOfBirth,
-            @RequestParam(required = false) Double latitude,
-            @RequestParam(required = false) Double longitude,
-            @RequestParam(required = false) String timezone) {
+    public ResponseEntity<?> generateFullKundli(@RequestBody Map<String, Object> payload) {
         try {
+            Long userId = payload.get("userId") != null ? Long.valueOf(payload.get("userId").toString()) : null;
+            String dateOfBirth = (String) payload.get("dateOfBirth");
+            String timeOfBirth = (String) payload.get("timeOfBirth");
+            Double latitude = payload.get("latitude") != null ? Double.valueOf(payload.get("latitude").toString()) : 0.0;
+            Double longitude = payload.get("longitude") != null ? Double.valueOf(payload.get("longitude").toString()) : 0.0;
+            String timezone = payload.get("timezone") != null ? payload.get("timezone").toString() : null;
+
             log.info("Generating full kundli for user: {}", userId);
 
             int[] dob = parseDate(dateOfBirth);
             double birthTime = parseTimeToHours(timeOfBirth);
-
             double lat = latitude != null ? latitude : 0.0;
             double lon = longitude != null ? longitude : 0.0;
+            double tz = timezone != null ? parseTimezone(timezone) : 5.5;
 
             FullKundliResponse kundliData = advancedKundliService.generateFullKundli(
                     lat,
@@ -52,12 +56,43 @@ public class AstroServicesController {
                     dob[2],
                     birthTime,
                     "User",
-                    timeOfBirth  // Pass original time string
+                    timeOfBirth
             );
+
+            // Add Planetary Positions with HTML rendering
+            try {
+                PlanetaryPositionRequest planetaryRequest = PlanetaryPositionRequest.builder()
+                        .year(dob[2])
+                        .month(dob[1])
+                        .date(dob[0])
+                        .hours((int) birthTime)
+                        .minutes((int) ((birthTime - (int) birthTime) * 60))
+                        .seconds(0)
+                        .latitude(lat)
+                        .longitude(lon)
+                        .timezone(tz)
+                        .config(PlanetaryPositionRequest.Config.builder()
+                                .observationPoint("topocentric")
+                                .ayanamsha("lahiri")
+                                .build())
+                        .build();
+
+                PlanetaryPositionResponse planetaryData = planetaryCalculationService
+                        .calculatePlanetaryPositions(planetaryRequest, userId);
+
+                String svgUrl = planetaryCalculationService.saveSvgToFile(planetaryData);
+                planetaryData.setSvgUrl(svgUrl);
+
+                kundliData.setPlanetaryPositions(planetaryData);
+                log.info("✅ Planetary positions added to kundli response");
+            } catch (Exception e) {
+                log.warn("⚠️ Failed to add planetary positions: {}", e.getMessage());
+                // Continue without planetary positions if calculation fails
+            }
 
             return ResponseEntity.ok(Map.of(
                     "status", "success",
-                    "message", "Full Kundli generated successfully",
+                    "message", "Full Kundli generated successfully with planetary positions and HTML",
                     "data", kundliData
             ));
         } catch (Exception e) {
@@ -120,6 +155,34 @@ public class AstroServicesController {
         }
 
         return hours + ((double) minutes / 60.0);
+    }
+
+    private double parseTimezone(String timezone) {
+        if (timezone == null || timezone.isBlank()) {
+            return 5.5; // Default to IST
+        }
+        
+        // Handle timezone names like "Asia/Kolkata", "Asia/Kolkata", etc.
+        if (timezone.contains("/")) {
+            // For now, extract the offset based on common patterns
+            if (timezone.contains("Kolkata") || timezone.contains("India")) {
+                return 5.5;
+            } else if (timezone.contains("Delhi")) {
+                return 5.5;
+            } else if (timezone.contains("Mumbai")) {
+                return 5.5;
+            }
+            // Default to 5.5 for any Asia/Indian timezone
+            return 5.5;
+        }
+        
+        // Try to parse as a number (e.g., "5.5", "+05:30")
+        try {
+            return Double.parseDouble(timezone);
+        } catch (NumberFormatException e) {
+            log.warn("Could not parse timezone: {}, using default 5.5", timezone);
+            return 5.5;
+        }
     }
 
     private boolean isPresent(FullKundliResponse.Dosha dosha) {

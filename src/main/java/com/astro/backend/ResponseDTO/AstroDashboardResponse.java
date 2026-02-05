@@ -27,4 +27,6 @@ public class AstroDashboardResponse {
     private String luckyDay;
     private String luckyGemstone;
     private String auspiciousTime;
+
+    private PlanetaryPositionResponse planetaryPositions;
 }

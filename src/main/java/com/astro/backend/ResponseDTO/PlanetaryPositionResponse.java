@@ -18,6 +18,8 @@ public class PlanetaryPositionResponse {
     private List<Map<String, Object>> output;
     private Long chartId;  // Database record ID
     private String svgUrl;  // URL to access the saved SVG file
+    private String htmlContent;  // HTML content for Kundli chart
+    private Map<String, String> htmlSections; // Separate HTML blocks for charts/data
     
     @Data
     @Builder

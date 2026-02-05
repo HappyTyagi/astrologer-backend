@@ -71,6 +71,10 @@ public class FullKundliResponse {
     // Location metadata
     private LocationMeta locationMeta;
 
+    // Planetary positions with HTML rendering
+    @ToString.Exclude
+    private PlanetaryPositionResponse planetaryPositions;
+
     @Getter
     @Setter
     @NoArgsConstructor

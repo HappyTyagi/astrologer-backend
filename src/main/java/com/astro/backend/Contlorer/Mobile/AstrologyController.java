@@ -4,6 +4,7 @@ package com.astro.backend.Contlorer.Mobile;
 import com.astro.backend.ResponseDTO.AstroDashboardResponse;
 import com.astro.backend.ResponseDTO.KundliResponse;
 import com.astro.backend.ResponseDTO.PanchangResponse;
+import com.astro.backend.RequestDTO.KundliRequest;
 import com.astro.backend.Services.AstroDashboardService;
 import com.astro.backend.Services.KundliService;
 import com.astro.backend.Services.PanchangService;
@@ -32,6 +33,24 @@ public class AstrologyController {
     ) {
         return kundliService.generateKundli(lat, lon, dd, mm, yyyy, time);
     }
+
+        // New POST endpoint for mobile app: accepts JSON body and Auth token
+        @PostMapping("/kundli")
+        public ResponseEntity<KundliResponse> kundliPost(
+            @RequestBody KundliRequest request,
+            @RequestHeader(value = "Authorization", required = false) String authorizationHeader
+        ) {
+        // Optionally: validate the token here if not handled globally
+        KundliResponse response = kundliService.generateKundli(
+            request.getLat(),
+            request.getLon(),
+            request.getDd(),
+            request.getMm(),
+            request.getYyyy(),
+            request.getTime()
+        );
+        return ResponseEntity.ok(response);
+        }
 
 
 

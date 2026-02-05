@@ -48,6 +48,55 @@ public class AdvancedKundliService {
             "Uttara Bhadrapada", "Revati"
     };
 
+        private static final String[] TITHI_NAMES = {
+            "Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami",
+            "Shashthi", "Saptami", "Ashtami", "Navami", "Dashami",
+            "Ekadashi", "Dwadashi", "Trayodashi", "Chaturdashi", "Purnima",
+            "Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami",
+            "Shashthi", "Saptami", "Ashtami", "Navami", "Dashami",
+            "Ekadashi", "Dwadashi", "Trayodashi", "Chaturdashi", "Amavasya"
+        };
+
+        private static final String[] TITHI_MEANINGS = {
+            "New beginnings and fresh starts",
+            "Growth, balance, and steady progress",
+            "Creativity, courage, and initiative",
+            "Overcoming obstacles and building focus",
+            "Learning, purification, and harmony",
+            "Discipline, service, and resilience",
+            "Vitality, movement, and success",
+            "Intensity, transformation, and inner strength",
+            "Completion, endurance, and determination",
+            "Accomplishment, leadership, and stability",
+            "Purification, devotion, and clarity",
+            "Gratitude, service, and refinement",
+            "Strength, confidence, and achievement",
+            "Protection, power, and deep insight",
+            "Wholeness, fulfillment, and abundance",
+            "Reset, renewal, and new direction",
+            "Expansion, support, and grounding",
+            "Creativity, communication, and action",
+            "Removing blocks and preparing change",
+            "Nurturing, learning, and consistency",
+            "Duty, discipline, and perseverance",
+            "Momentum, courage, and progress",
+            "Introspection, transformation, and release",
+            "Reflection, completion, and closure",
+            "Achievement, structure, and resolve",
+            "Spiritual focus, fasting, and alignment",
+            "Giving, gratitude, and balance",
+            "Ambition, strength, and completion",
+            "Letting go, protection, and inner power",
+            "Rest, introspection, and renewal"
+        };
+
+        private static final Map<Integer, String> PADA_MEANINGS = Map.of(
+            1, "Initiation and direction",
+            2, "Growth and expansion",
+            3, "Refinement and effort",
+            4, "Stability and culmination"
+        );
+
     /**
      * Calculate today's Lagna (Ascendant) chart
      */
@@ -137,17 +186,11 @@ public class AdvancedKundliService {
             // Calculate Tithi
             double diff = (moonLong - sunLong + 360.0) % 360.0;
             int tithiNumber = (int) Math.floor(diff / 12.0) + 1;
-            String[] tithiNames = {
-                "Pratipada", "Dwitiya", "Tritiya", "Chaturthi", "Panchami",
-                "Shashthi", "Saptami", "Ashtami", "Navami", "Dashami",
-                "Ekadashi", "Dwadashi", "Trayodashi", "Chaturdashi", "Purnima/Amavasya"
-            };
-            String tithiName = tithiNumber <= 15 ? tithiNames[tithiNumber - 1] : tithiNames[tithiNumber - 16];
-            String paksha = tithiNumber <= 15 ? "Shukla" : "Krishna";
+            // Tithi details are built from master mappings below
             
             // Calculate Nakshatra
             String nakshatra = getNakshatra(moonLong);
-            String pada = getPada(moonLong);
+            int padaNumber = getPadaNumber(moonLong);
             
             // Calculate Yoga
             int yogaNumber = (int) Math.floor(((sunLong + moonLong) % 360.0) / (360.0 / 27.0)) + 1;
@@ -180,15 +223,8 @@ public class AdvancedKundliService {
             panchang.put("date", String.format("%02d-%02d-%04d", dd, mm, yyyy));
             panchang.put("dateTime", now.toString());
             panchang.put("dayOfWeek", dayOfWeek);
-            panchang.put("tithi", Map.of(
-                "number", tithiNumber,
-                "name", tithiName,
-                "paksha", paksha
-            ));
-            panchang.put("nakshatra", Map.of(
-                "name", nakshatra,
-                "pada", pada
-            ));
+            panchang.put("tithi", buildTithiDetails(tithiNumber));
+            panchang.put("nakshatra", buildNakshatraDetails(nakshatra, padaNumber));
             panchang.put("yoga", Map.of(
                 "number", yogaNumber,
                 "name", yogaName
@@ -331,11 +367,14 @@ public class AdvancedKundliService {
         int tithiNumber = (int) Math.floor(diff / 12.0) + 1;
         int yogaNumber = (int) Math.floor(((sunLong + moonLong) % 360.0) / (360.0 / 27.0)) + 1;
         int karanaNumber = (int) Math.floor(diff / 6.0) + 1;
+        int padaNumber = getPadaNumber(moonLong);
 
         Map<String, Object> panchang = new LinkedHashMap<>();
         panchang.put("tithiNumber", tithiNumber);
         panchang.put("nakshatra", nakshatra);
         panchang.put("pada", pada);
+        panchang.put("tithi", buildTithiDetails(tithiNumber));
+        panchang.put("nakshatraDetails", buildNakshatraDetails(nakshatra, padaNumber));
         panchang.put("yogaNumber", yogaNumber);
         panchang.put("karanaNumber", karanaNumber);
         panchang.put("julianDay", julDay);
@@ -591,8 +630,35 @@ public class AdvancedKundliService {
     }
 
     private String getPada(double moonLong) {
-        // Pada is based on nakshatra position
-        return "Pada " + ((int) ((moonLong % (360.0 / 27.0)) / (360.0 / 108.0)) + 1);
+        return "Pada " + getPadaNumber(moonLong);
+    }
+
+    private int getPadaNumber(double moonLong) {
+        // Pada is based on nakshatra position (1-4)
+        return ((int) ((moonLong % (360.0 / 27.0)) / (360.0 / 108.0)) + 1);
+    }
+
+    private Map<String, Object> buildTithiDetails(int tithiNumber) {
+        int index = Math.max(1, Math.min(30, tithiNumber)) - 1;
+        String name = TITHI_NAMES[index];
+        String meaning = TITHI_MEANINGS[index];
+        String paksha = tithiNumber <= 15 ? "Shukla" : "Krishna";
+
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("number", tithiNumber);
+        details.put("name", name);
+        details.put("meaning", meaning);
+        details.put("paksha", paksha);
+        return details;
+    }
+
+    private Map<String, Object> buildNakshatraDetails(String nakshatra, int padaNumber) {
+        Map<String, Object> details = new LinkedHashMap<>();
+        details.put("name", nakshatra);
+        details.put("pada", padaNumber);
+        details.put("padaName", "Pada " + padaNumber);
+        details.put("padaMeaning", PADA_MEANINGS.getOrDefault(padaNumber, ""));
+        return details;
     }
 
     private String getPlanetName(int id) {

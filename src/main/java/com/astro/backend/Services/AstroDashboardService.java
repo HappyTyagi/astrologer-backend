@@ -1,13 +1,13 @@
 package com.astro.backend.Services;
 
 import com.astro.backend.Entity.MobileUserProfile;
-import com.astro.backend.Entity.User;
 import com.astro.backend.Helper.AstrologyHelper;
 import com.astro.backend.Repositry.MobileUserProfileRepository;
-import com.astro.backend.Repositry.UserRepository;
+import com.astro.backend.RequestDTO.PlanetaryPositionRequest;
 import com.astro.backend.ResponseDTO.AstroDashboardResponse;
 import com.astro.backend.ResponseDTO.KundliResponse;
 import com.astro.backend.ResponseDTO.PlanetPosition;
+import com.astro.backend.ResponseDTO.PlanetaryPositionResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +25,7 @@ public class AstroDashboardService {
     private final MobileUserProfileRepository mobileUserProfileRepository;
     private final KundliService kundliService;
     private final LocationCoordinatesService locationCoordinatesService;
+    private final PlanetaryCalculationService planetaryCalculationService;
 
     public AstroDashboardResponse getDashboardByMobile(String mobileNo) {
         String mobile = AstrologyHelper.sanitizeString(mobileNo);
@@ -132,6 +133,37 @@ public class AstroDashboardService {
 
         LuckyInfo luckyInfo = getLuckyInfo(moonSign != null ? moonSign : sunSign);
 
+        PlanetaryPositionResponse planetaryPositions = null;
+        try {
+            TimeParts timeParts = parseBirthTime(profile.getBirthTime(), profile.getBirthAmPm());
+            if (timeParts == null) {
+            timeParts = new TimeParts(12, 0, 0);
+            }
+
+            PlanetaryPositionRequest request = PlanetaryPositionRequest.builder()
+                .year(dob.getYear())
+                .month(dob.getMonthValue())
+                .date(dob.getDayOfMonth())
+                .hours(timeParts.hours)
+                .minutes(timeParts.minutes)
+                .seconds(timeParts.seconds)
+                .latitude(latitude)
+                .longitude(longitude)
+                .timezone(5.5)
+                .config(PlanetaryPositionRequest.Config.builder()
+                    .observationPoint("topocentric")
+                    .ayanamsha("lahiri")
+                    .build())
+                .build();
+
+            planetaryPositions = planetaryCalculationService
+                .calculatePlanetaryPositions(request, profile.getId());
+            String svgUrl = planetaryCalculationService.saveSvgToFile(planetaryPositions);
+            planetaryPositions.setSvgUrl(svgUrl);
+        } catch (Exception e) {
+            log.warn("Failed to build planetary positions for dashboard", e);
+        }
+
         AstroDashboardResponse response = AstroDashboardResponse.builder()
                 .status(true)
                 .message("Dashboard data fetched successfully")
@@ -147,6 +179,7 @@ public class AstroDashboardService {
                 .luckyDay(luckyInfo.day)
                 .luckyGemstone(luckyInfo.gemstone)
                 .auspiciousTime(luckyInfo.auspiciousTime)
+                .planetaryPositions(planetaryPositions)
             .build();
 
         log.info("Astro dashboard response: {}", response);
@@ -184,6 +217,41 @@ public class AstroDashboardService {
             return hour + (minute / 100.0);
         } catch (Exception e) {
             return Double.NaN;
+        }
+    }
+
+    private TimeParts parseBirthTime(String birthTime, String amPm) {
+        if (birthTime == null || birthTime.isEmpty()) {
+            return null;
+        }
+        try {
+            String[] parts = birthTime.split(":");
+            int hour = Integer.parseInt(parts[0]);
+            int minute = parts.length > 1 ? Integer.parseInt(parts[1]) : 0;
+            int second = parts.length > 2 ? Integer.parseInt(parts[2]) : 0;
+
+            String meridian = amPm != null ? amPm.trim().toUpperCase() : "";
+            if (hour == 12) {
+                hour = 0;
+            }
+            if ("PM".equals(meridian)) {
+                hour += 12;
+            }
+            return new TimeParts(hour, minute, second);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static class TimeParts {
+        private final int hours;
+        private final int minutes;
+        private final int seconds;
+
+        private TimeParts(int hours, int minutes, int seconds) {
+            this.hours = hours;
+            this.minutes = minutes;
+            this.seconds = seconds;
         }
     }
 

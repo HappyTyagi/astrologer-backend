@@ -5,7 +5,10 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "district_master")
+@Table(name = "district_master", indexes = {
+    @Index(name = "idx_district_location", columnList = "latitude, longitude"),
+    @Index(name = "idx_district_state", columnList = "stateId")
+})
 @Getter
 @Setter
 @NoArgsConstructor
