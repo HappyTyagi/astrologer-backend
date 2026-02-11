@@ -33,6 +33,7 @@ public class StateMaster {
     private Double longitude;  // Capital city longitude
     
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    @JsonIgnore
     private Boolean isActive;
 
     @Temporal(TemporalType.TIMESTAMP)

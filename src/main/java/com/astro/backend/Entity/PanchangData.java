@@ -60,6 +60,7 @@ public class PanchangData {
     private LocalDateTime updatedAt;
     
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    @JsonIgnore
     private Boolean isActive;
 
     @PrePersist

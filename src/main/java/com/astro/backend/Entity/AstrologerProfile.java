@@ -51,6 +51,7 @@ public class AstrologerProfile {
     private Integer experienceYears;   // Years of experience
     
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    @JsonIgnore
     private Boolean isActive;          // Account status
 
     @Temporal(TemporalType.TIMESTAMP)

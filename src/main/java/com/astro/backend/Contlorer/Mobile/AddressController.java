@@ -21,12 +21,33 @@ import java.util.stream.Collectors;
 public class AddressController {
 
     private final AddressRepository addressRepository;
+    private static final int MAX_ADDRESSES_PER_USER = 5;
 
     @PostMapping
     public ResponseEntity<AddressResponse> createAddress(@Valid @RequestBody CreateAddressRequest request) {
         try {
+            final String mobileNumber = request.getUserMobileNumber() == null
+                    ? ""
+                    : request.getUserMobileNumber().trim();
+            if (mobileNumber.isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(AddressResponse.builder()
+                                .status(false)
+                                .message("User mobile number is required")
+                                .build());
+            }
+
+            long addressCount = addressRepository.countByUserMobileNumber(mobileNumber);
+            if (addressCount >= MAX_ADDRESSES_PER_USER) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(AddressResponse.builder()
+                                .status(false)
+                                .message("Maximum 5 addresses allowed per user")
+                                .build());
+            }
+
             Address address = Address.builder()
-                    .userMobileNumber(request.getUserMobileNumber())
+                    .userMobileNumber(mobileNumber)
                     .name(request.getName())
                     .addressLine1(request.getAddressLine1())
                     .addressLine2(request.getAddressLine2())

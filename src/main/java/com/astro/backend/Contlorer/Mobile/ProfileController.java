@@ -1,6 +1,8 @@
 package com.astro.backend.Contlorer.Mobile;
 
 import com.astro.backend.RequestDTO.CompleteProfileRequest;
+import com.astro.backend.RequestDTO.UpdateBasicProfileRequest;
+import com.astro.backend.RequestDTO.UpdateEmailRequest;
 import com.astro.backend.RequestDTO.UpdateProfileRequest;
 import com.astro.backend.ResponseDTO.UpdateProfileResponse;
 import com.astro.backend.Services.ProfileService;
@@ -165,6 +167,36 @@ public class ProfileController {
                     .body(UpdateProfileResponse.builder()
                             .status(false)
                             .message("Failed to update profile: " + e.getMessage())
+                            .build());
+        }
+    }
+
+    @PostMapping("/update-email")
+    @Operation(summary = "Update user email", description = "Update only email for a user by userId")
+    public ResponseEntity<UpdateProfileResponse> updateEmail(@Valid @RequestBody UpdateEmailRequest request) {
+        try {
+            UpdateProfileResponse response = profileService.updateEmail(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(UpdateProfileResponse.builder()
+                            .status(false)
+                            .message("Failed to update email: " + e.getMessage())
+                            .build());
+        }
+    }
+
+    @PostMapping("/update-basic")
+    @Operation(summary = "Update basic profile", description = "Update basic fields like name, DOB and address")
+    public ResponseEntity<UpdateProfileResponse> updateBasicProfile(@Valid @RequestBody UpdateBasicProfileRequest request) {
+        try {
+            UpdateProfileResponse response = profileService.updateBasicProfile(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(UpdateProfileResponse.builder()
+                            .status(false)
+                            .message("Failed to update basic profile: " + e.getMessage())
                             .build());
         }
     }

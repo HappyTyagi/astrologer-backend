@@ -33,7 +33,7 @@ public class AppConfig {
     private String description;        // Config description (for CMS)
     
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
-
+    @JsonIgnore
     private Boolean isActive;          // Enable/disable config
 
     // ===== CMS Metadata =====

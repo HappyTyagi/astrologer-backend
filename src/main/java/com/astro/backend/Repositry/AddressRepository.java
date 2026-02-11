@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface AddressRepository extends JpaRepository<Address, Long> {
     List<Address> findByUserMobileNumber(String userMobileNumber);
+
+    long countByUserMobileNumber(String userMobileNumber);
 }

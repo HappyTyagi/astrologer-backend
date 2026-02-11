@@ -10,14 +10,15 @@ import java.util.List;
 
 @Repository
 public interface RemidesPurchaseRepository extends JpaRepository<RemidesPurchase, Long> {
-    @EntityGraph(attributePaths = {"remides"})
+    @EntityGraph(attributePaths = {"remides", "address"})
     List<RemidesPurchase> findByUserIdOrderByPurchasedAtDesc(Long userId);
 
-    @EntityGraph(attributePaths = {"remides"})
+    @EntityGraph(attributePaths = {"remides", "address"})
     List<RemidesPurchase> findByUserIdAndPurchasedAtAfterOrderByPurchasedAtDesc(
             Long userId,
             LocalDateTime purchasedAt
     );
 
+    @EntityGraph(attributePaths = {"remides", "address"})
     List<RemidesPurchase> findByOrderIdOrderByIdAsc(String orderId);
 }

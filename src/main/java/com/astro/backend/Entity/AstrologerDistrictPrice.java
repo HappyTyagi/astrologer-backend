@@ -46,6 +46,7 @@ public class AstrologerDistrictPrice {
     // ===== Management =====
     
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    @JsonIgnore
     private Boolean isActive;  // Enable/disable pricing for this combination
 
     private String notes;  // Additional notes (e.g., "Peak season rate", "Special offer")

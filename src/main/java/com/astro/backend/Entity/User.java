@@ -41,10 +41,28 @@ public class User {
     private String country;
     
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
-
+    @JsonIgnore
     private Boolean isActive;
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (isActive == null) {
+            isActive = true;
+        }
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (updatedAt == null) {
+            updatedAt = LocalDateTime.now();
+        }
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 }

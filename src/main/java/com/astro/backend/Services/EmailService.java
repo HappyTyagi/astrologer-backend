@@ -1,59 +1,70 @@
 package com.astro.backend.Services;
 
-
-import com.sendgrid.*;
-import com.sendgrid.helpers.mail.Mail;
-import com.sendgrid.helpers.mail.objects.Content;
-import com.sendgrid.helpers.mail.objects.Email;
+import com.resend.Resend;
+import com.resend.services.emails.model.Attachment;
+import com.resend.services.emails.model.SendEmailRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import java.util.Base64;
+import java.util.List;
 
 @Service
 public class EmailService {
 
-    @Value("${sendgrid.api-key}")
+    @Value("${resend.api-key}")
     private String apiKey;
 
-    @Value("${sendgrid.from-email}")
+    @Value("${resend.from-email}")
     private String fromEmail;
 
     public void sendOtpEmail(String email, String otp) {
-        Email from = new Email(fromEmail);
-        String subject = "Your OTP Code";
-        Email to = new Email(email);
-        Content content = new Content("text/plain", "Your OTP is: " + otp);
-        Mail mail = new Mail(from, subject, to, content);
+        String html = "<p>Your OTP is: <strong>" + otp + "</strong></p>";
+        sendEmail(email, "Your OTP Code", html);
+    }
 
+    public void sendEmail(String toEmail, String subject, String htmlContent) {
         try {
-            SendGrid sg = new SendGrid(apiKey);
-            Request request = new Request();
-            request.setMethod(Method.POST);
-            request.setEndpoint("mail/send");
-            request.setBody(mail.build());
-            sg.api(request);
+            Resend resend = new Resend(apiKey);
+            SendEmailRequest sendEmailRequest = SendEmailRequest.builder()
+                    .from(fromEmail)
+                    .to(List.of(toEmail))
+                    .subject(subject)
+                    .html(htmlContent)
+                    .build();
+            resend.emails().send(sendEmailRequest);
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to send email: " + e.getMessage(), e);
         }
     }
 
-    /**
-     * Send generic email with subject and content
-     */
-    public void sendEmail(String toEmail, String subject, String htmlContent) {
-        Email from = new Email(fromEmail);
-        Email to = new Email(toEmail);
-        Content content = new Content("text/html", htmlContent);
-        Mail mail = new Mail(from, subject, to, content);
-
+    public void sendEmailWithAttachment(
+            String toEmail,
+            String subject,
+            String htmlContent,
+            String fileName,
+            byte[] fileBytes,
+            String mimeType
+    ) {
         try {
-            SendGrid sg = new SendGrid(apiKey);
-            Request request = new Request();
-            request.setMethod(Method.POST);
-            request.setEndpoint("mail/send");
-            request.setBody(mail.build());
-            sg.api(request);
+            Resend resend = new Resend(apiKey);
+            SendEmailRequest.Builder builder = SendEmailRequest.builder()
+                    .from(fromEmail)
+                    .to(List.of(toEmail))
+                    .subject(subject)
+                    .html(htmlContent);
+
+            if (fileBytes != null && fileBytes.length > 0) {
+                Attachment attachment = Attachment.builder()
+                        .fileName(fileName == null || fileName.isBlank() ? "attachment.pdf" : fileName)
+                        .content(Base64.getEncoder().encodeToString(fileBytes))
+                        .build();
+                builder.attachments(List.of(attachment));
+            }
+
+            resend.emails().send(builder.build());
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to send email with attachment: " + e.getMessage(), e);
         }
     }
 }

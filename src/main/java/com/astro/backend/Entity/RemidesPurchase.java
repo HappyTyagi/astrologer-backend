@@ -31,6 +31,11 @@ public class RemidesPurchase {
     @JsonIgnore
     private Remides remides;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "address_id", nullable = false)
+    @JsonIgnore
+    private Address address;
+
     @Column(nullable = false)
     private String title;
 
@@ -61,8 +66,14 @@ public class RemidesPurchase {
     public Long getRemidesId() {
         return remides != null ? remides.getId() : null;
     }
+
+    @JsonProperty("addressId")
+    public Long getAddressId() {
+        return address != null ? address.getId() : null;
+    }
     
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    @JsonIgnore
     private Boolean isActive;
 
     @PrePersist
@@ -77,7 +88,7 @@ public class RemidesPurchase {
             currency = "INR";
         }
         if (status == null || status.isBlank()) {
-            status = "WAITING";
+            status = "COMPLETED";
         }
     }
 }

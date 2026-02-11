@@ -3,25 +3,18 @@ package com.astro.backend.ResponseDTO;
 import lombok.Builder;
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 @Data
 @Builder
-public class RemidesPurchaseHistoryResponse {
+public class RemidesCartItemResponse {
     private Long id;
-    private String orderId;
     private Long userId;
     private Long remidesId;
-    private Long addressId;
+    private Integer quantity;
     private String title;
     private String subtitle;
     private String imageBase64;
-    private Integer totalItems;
-    private Double unitPrice;
+    private Double price;
     private Double discountPercentage;
-    private Double finalUnitPrice;
-    private Double amount;
+    private Double finalPrice;
     private String currency;
-    private String status;
-    private LocalDateTime purchasedAt;
 }

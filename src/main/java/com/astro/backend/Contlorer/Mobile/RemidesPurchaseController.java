@@ -1,7 +1,9 @@
 package com.astro.backend.Contlorer.Mobile;
 
 import com.astro.backend.RequestDTO.RemidesPurchaseRequest;
+import com.astro.backend.RequestDTO.ResendReceiptRequest;
 import com.astro.backend.Services.RemidesPurchaseService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -46,5 +48,20 @@ public class RemidesPurchaseController {
             sinceTime = LocalDateTime.parse(since);
         }
         return ResponseEntity.ok(remidesPurchaseService.getPurchaseHistoryRealtime(userId, sinceTime));
+    }
+
+    @PostMapping("/history/{orderId}/resend-receipt")
+    public ResponseEntity<?> resendReceipt(
+            @PathVariable String orderId,
+            @Valid @RequestBody ResendReceiptRequest request
+    ) {
+        try {
+            return ResponseEntity.ok(remidesPurchaseService.resendReceiptEmail(orderId, request));
+        } catch (Exception e) {
+            Map<String, Object> error = new LinkedHashMap<>();
+            error.put("status", false);
+            error.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
     }
 }

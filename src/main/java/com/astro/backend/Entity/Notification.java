@@ -51,6 +51,7 @@ public class Notification {
     private LocalDateTime expiresAt;   // Auto-delete after expiry
     
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    @JsonIgnore
     private Boolean isActive;
 
     @PrePersist

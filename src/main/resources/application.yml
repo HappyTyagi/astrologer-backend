@@ -32,9 +32,9 @@ textlocal:
   api-key: "YOUR_TEXTLOCAL_API_KEY"
   sender: "TXTLCL"
 
-sendgrid:
-  api-key: "YOUR_SENDGRID_API_KEY"
-  from-email: "noreply@yourdomain.com"
+resend:
+  api-key: "re_CCseECjB_Bv36rHa5RYTMWJwyjnQtd8j6"
+  from-email: "onboarding@resend.dev"
 
 razorpay:
   key-id: "YOUR_RAZORPAY_KEY"

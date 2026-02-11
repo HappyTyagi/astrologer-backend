@@ -46,6 +46,7 @@ public class ChatSession {
     private LocalDateTime createdAt;
     
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    @JsonIgnore
     private Boolean isActive;
 
     @PrePersist

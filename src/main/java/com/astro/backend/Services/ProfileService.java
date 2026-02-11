@@ -7,6 +7,8 @@ import com.astro.backend.Repositry.GenderMasterRepository;
 import com.astro.backend.Repositry.MobileUserProfileRepository;
 import com.astro.backend.Repositry.UserRepository;
 import com.astro.backend.RequestDTO.CompleteProfileRequest;
+import com.astro.backend.RequestDTO.UpdateBasicProfileRequest;
+import com.astro.backend.RequestDTO.UpdateEmailRequest;
 import com.astro.backend.RequestDTO.UpdateProfileRequest;
 import com.astro.backend.ResponseDTO.UpdateProfileResponse;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -27,6 +30,97 @@ public class ProfileService {
     private final UserRepository userRepository;
     private final MobileUserProfileRepository mobileUserProfileRepository;
     private final GenderMasterRepository genderMasterRepository;
+
+    @Transactional
+    public UpdateProfileResponse updateBasicProfile(UpdateBasicProfileRequest request) {
+        if (request == null || request.getUserId() == null || request.getUserId() <= 0) {
+            throw new RuntimeException("Valid userId is required");
+        }
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + request.getUserId()));
+
+        MobileUserProfile profile = mobileUserProfileRepository.findByUserId(user.getId())
+                .orElseGet(() -> MobileUserProfile.builder()
+                        .userId(user.getId())
+                        .name(user.getName() != null ? user.getName() : "User")
+                        .mobileNumber(user.getMobileNumber())
+                        .isProfileComplete(false)
+                        .createdAt(LocalDateTime.now())
+                        .updatedAt(LocalDateTime.now())
+                        .build());
+
+        if (request.getName() != null && !request.getName().isBlank()) {
+            String name = request.getName().trim();
+            user.setName(name);
+            profile.setName(name);
+        }
+
+        if (request.getAddress() != null) {
+            profile.setAddress(request.getAddress().trim());
+        }
+
+        if (request.getDateOfBirth() != null && !request.getDateOfBirth().isBlank()) {
+            String normalizedDob = normalizeDob(request.getDateOfBirth().trim());
+            profile.setDateOfBirth(normalizedDob);
+            profile.setAge(calculateAge(LocalDate.parse(normalizedDob, DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
+        }
+
+        user.setUpdatedAt(LocalDateTime.now());
+        profile.setMobileNumber(profile.getMobileNumber() == null ? user.getMobileNumber() : profile.getMobileNumber());
+        profile.setUpdatedAt(LocalDateTime.now());
+
+        userRepository.save(user);
+        MobileUserProfile savedProfile = mobileUserProfileRepository.save(profile);
+
+        return UpdateProfileResponse.builder()
+                .userId(user.getId())
+                .name(savedProfile.getName() != null ? savedProfile.getName() : user.getName())
+                .email(user.getEmail())
+                .mobileNumber(user.getMobileNumber())
+                .dateOfBirth(savedProfile.getDateOfBirth())
+                .age(savedProfile.getAge())
+                .address(savedProfile.getAddress())
+                .status(true)
+                .message("Basic profile updated successfully")
+                .build();
+    }
+
+    @Transactional
+    public UpdateProfileResponse updateEmail(UpdateEmailRequest request) {
+        if (request == null) {
+            throw new RuntimeException("Request body is required");
+        }
+        if (request.getUserId() == null || request.getUserId() <= 0) {
+            throw new RuntimeException("Valid userId is required");
+        }
+        if (request.getEmail() == null || request.getEmail().isBlank()) {
+            throw new RuntimeException("Valid email is required");
+        }
+
+        final String email = request.getEmail().trim();
+        final User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + request.getUserId()));
+
+        user.setEmail(email);
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        mobileUserProfileRepository.findByUserId(user.getId()).ifPresent(profile -> {
+            profile.setEmail(email);
+            profile.setUpdatedAt(LocalDateTime.now());
+            mobileUserProfileRepository.save(profile);
+        });
+
+        return UpdateProfileResponse.builder()
+                .userId(user.getId())
+                .name(user.getName())
+                .email(email)
+                .mobileNumber(user.getMobileNumber())
+                .status(true)
+                .message("Email updated successfully")
+                .build();
+    }
 
     /**
      * Get existing user profile by userId - for auto-fill form
@@ -317,6 +411,19 @@ public class ProfileService {
     private Integer calculateAge(LocalDate dateOfBirth) {
         LocalDate today = LocalDate.now();
         return Period.between(dateOfBirth, today).getYears();
+    }
+
+    private String normalizeDob(String input) {
+        try {
+            if (input.contains("/")) {
+                LocalDate date = LocalDate.parse(input, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                return date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            }
+            LocalDate date = LocalDate.parse(input, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            return date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        } catch (DateTimeParseException e) {
+            throw new RuntimeException("Invalid dateOfBirth format. Use YYYY-MM-DD or DD/MM/YYYY");
+        }
     }
 
     /**

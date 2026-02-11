@@ -38,6 +38,7 @@ public class PujaSlot {
     private String recurringPattern;   // DAILY, WEEKLY, MONTHLY
     
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    @JsonIgnore
     private Boolean isActive;
 
     @PrePersist

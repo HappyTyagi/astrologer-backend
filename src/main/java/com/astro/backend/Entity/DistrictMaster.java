@@ -37,6 +37,7 @@ public class DistrictMaster {
     private Double longitude;  // District center longitude
     
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    @JsonIgnore
     private Boolean isActive;
 
     @Temporal(TemporalType.TIMESTAMP)

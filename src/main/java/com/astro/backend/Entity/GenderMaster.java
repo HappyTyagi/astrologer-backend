@@ -25,6 +25,7 @@ public class GenderMaster {
     private String description;
     
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    @JsonIgnore
     private Boolean isActive;
 
     @Temporal(TemporalType.TIMESTAMP)

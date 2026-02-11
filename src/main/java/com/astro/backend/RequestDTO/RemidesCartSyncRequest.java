@@ -5,13 +5,12 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class RemidesPurchaseRequest {
+public class RemidesCartSyncRequest {
     private Long userId;
-    private Long addressId;
-    private List<PurchaseItem> items;
+    private List<CartItem> items;
 
     @Data
-    public static class PurchaseItem {
+    public static class CartItem {
         private Long remidesId;
         private Integer quantity;
     }
