@@ -1,5 +1,7 @@
 package com.astro.backend.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -44,9 +46,15 @@ public class Remides {
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+    
+    @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    private Boolean isActive;
 
     @PrePersist
     protected void onCreate() {
+        if (isActive == null) {
+            isActive = true;
+        }
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         if (currency == null || currency.isEmpty()) {

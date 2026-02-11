@@ -1,5 +1,7 @@
 package com.astro.backend.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -33,9 +35,15 @@ public class WalletTransaction {
     
     private Long orderId;              // Order reference
     private String invoiceUrl;         // For receipts
+    
+    @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    private Boolean isActive;
 
     @PrePersist
     protected void onCreate() {
+        if (isActive == null) {
+            isActive = true;
+        }
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         status = "PENDING";

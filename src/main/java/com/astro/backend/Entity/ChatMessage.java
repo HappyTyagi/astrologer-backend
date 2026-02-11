@@ -1,5 +1,7 @@
 package com.astro.backend.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -26,9 +28,15 @@ public class ChatMessage {
     private Boolean isEdited;          // Message edited status
     private LocalDateTime editedAt;
     private Long replyToMessageId;     // For message threading
+    
+    @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    private Boolean isActive;
 
     @PrePersist
     protected void onCreate() {
+        if (isActive == null) {
+            isActive = true;
+        }
         if (timestamp == null) {
             timestamp = LocalDateTime.now();
         }

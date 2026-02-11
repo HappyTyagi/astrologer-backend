@@ -1,0 +1,571 @@
+[
+  {
+    "name": "Register",
+    "method": "POST",
+    "url": "/auth/register",
+    "request": {
+      "name": "string",
+      "email": "string",
+      "password": "string",
+      "genderMasterId": 1,
+      "stateMasterId": 1,
+      "districtMasterId": 1
+    },
+    "response": {
+      "userId": 1,
+      "name": "string",
+      "email": "string",
+      "accessToken": "string",
+      "refreshToken": "string",
+      "role": "string",
+      "genderMasterId": 1,
+      "stateMasterId": 1,
+      "districtMasterId": 1,
+      "status": true,
+      "message": "User registered successfully"
+    }
+  },
+  {
+    "name": "Login",
+    "method": "POST",
+    "url": "/auth/login",
+    "request": {
+      "email": "string",
+      "password": "string"
+    },
+    "response": {
+      "userId": 1,
+      "name": "string",
+      "email": "string",
+      "accessToken": "string",
+      "refreshToken": "string",
+      "role": "string",
+      "genderMasterId": 1,
+      "stateMasterId": 1,
+      "districtMasterId": 1,
+      "status": true,
+      "message": "Login successful"
+    }
+  },
+  {
+    "name": "Refresh Token",
+    "method": "POST",
+    "url": "/auth/refresh",
+    "request": {
+      "refreshToken": "string"
+    },
+    "response": {
+      "userId": 1,
+      "name": "string",
+      "email": "string",
+      "accessToken": "string",
+      "refreshToken": "string",
+      "role": "string",
+      "genderMasterId": 1,
+      "stateMasterId": 1,
+      "districtMasterId": 1,
+      "status": true,
+      "message": "Token refreshed successfully"
+      },
+      {
+        "name": "Generate Full Kundli",
+        "method": "POST",
+        "url": "/api/v1/astro-services/kundli/calculate",
+        "request": {
+          "userId": 1,
+          "dateOfBirth": "YYYY-MM-DD",
+          "timeOfBirth": "HH:MM",
+          "latitude": 28.61,
+          "longitude": 77.23,
+          "timezone": "Asia/Kolkata"
+        },
+        "response": {
+          "status": "success",
+          "message": "Full Kundli generated successfully with planetary positions and HTML",
+          "data": {
+            "chartId": 1,
+            "name": "User",
+            "dateOfBirth": "YYYY-MM-DD",
+            "timeOfBirth": "HH:MM",
+            "latitude": 28.61,
+            "longitude": 77.23,
+            "lagna": "Aries",
+            "sunSign": "Leo",
+            "moonSign": "Cancer",
+            "nakshatra": "Ashwini",
+            "pada": "1",
+            "planets": [
+              {"planet": "Sun", "sign": "Leo", "degree": 120.5}
+            ],
+            "houses": {"1": "Aries"},
+            "navamsaChart": "{...}",
+            "dashamsa": "{...}",
+            "panchang": {"tithi": "Pratipada"},
+            "mangalDosha": {"present": false, "description": "", "remedyAdvice": ""},
+            "kaalSarpDosha": {"present": false},
+            "pitruDosha": {"present": false},
+            "grahanDosha": {"present": false},
+            "auspiciousYogas": ["Gajakesari"],
+            "inauspiciousYogas": [],
+            "elements": {"fire": 2.0},
+            "vimshottariDasha": {"dashaType": "Vimshottari"},
+            "remedies": {"general": "Do puja"},
+            "overallMessage": "Good health",
+            "healthScore": 90,
+            "locationMeta": {"place": "Delhi", "timezone": "Asia/Kolkata", "ayanamsa": "Lahiri", "julianDay": 2459580.5},
+            "planetaryPositions": {
+              "statusCode": 200,
+              "input": {"year": 2000, "month": 8, "date": 14, "hours": 12, "minutes": 0, "seconds": 0, "latitude": 28.61, "longitude": 77.23, "timezone": 5.5, "config": {"observationPoint": "topocentric", "ayanamsha": "lahiri"}},
+              "output": [{"planet": "Sun", "sign": "Leo"}],
+              "chartId": 1,
+              "svgUrl": "url",
+              "htmlContent": "<svg>...</svg>",
+              "htmlSections": {"main": "<div>...</div>"}
+            }
+          }
+        }
+      },
+      {
+        "name": "Get Today's Lagna Chart",
+        "method": "GET",
+        "url": "/api/v1/astro-services/lagna/today",
+        "request": {
+          "latitude": 28.61,
+          "longitude": 77.23
+        },
+        "response": {
+          "status": "success",
+          "message": "Today's Lagna calculated successfully",
+          "data": {"lagna": "Aries", "ascendantDegree": 120.5}
+        }
+      },
+      {
+        "name": "Get Today's Panchang",
+        "method": "GET",
+        "url": "/api/v1/astro-services/panchang/today",
+        "request": {
+          "latitude": 28.61,
+          "longitude": 77.23
+        },
+        "response": {
+          "status": "success",
+          "message": "Today's Panchang calculated successfully",
+          "data": {"tithi": "Pratipada", "nakshatra": "Ashwini"}
+        }
+      },
+      {
+        "name": "Get Dasha Calculations",
+        "method": "GET",
+        "url": "/api/v1/astro-services/dasha/{chartId}",
+        "request": {
+          "chartId": 1,
+          "dateOfBirth": "YYYY-MM-DD",
+          "nakshatra": "Ashwini",
+          "dashaType": "Vimshottari"
+        },
+        "response": {
+          "status": "success",
+          "data": {"dashaType": "Vimshottari", "currentMahadasha": "Sun", "mahadashaStartDate": "2024-01-01"}
+        }
+      },
+      {
+        "name": "Get Yogini Dasha",
+        "method": "GET",
+        "url": "/api/v1/astro-services/dasha/yogini/{chartId}",
+        "request": {
+          "chartId": 1,
+          "dateOfBirth": "YYYY-MM-DD",
+          "nakshatra": "Ashwini"
+        },
+        "response": {
+          "status": "success",
+          "data": {"dashaType": "Yogini", "currentMahadasha": "Sun"}
+        }
+      },
+      {
+        "name": "Check Compatibility (Gun Milan)",
+        "method": "POST",
+        "url": "/api/v1/astro-services/compatibility/match",
+        "request": {
+          "groomChartId": 1,
+          "brideChartId": 2,
+          "groomGunas": {"Varna": 1},
+          "brideGunas": {"Varna": 2}
+        },
+        "response": {
+          "status": "success",
+          "groomChart": 1,
+          "brideChart": 2,
+          "compatibility": {"totalPoints": 28, "match": true}
+        }
+      },
+      {
+        "name": "Check Compatibility By Details",
+        "method": "POST",
+        "url": "/api/v1/astro-services/compatibility/match-details",
+        "request": {
+          "groom": {"name": "A", "dateOfBirth": "YYYY-MM-DD", "timeOfBirth": "HH:MM", "latitude": 28.61, "longitude": 77.23, "timezone": "Asia/Kolkata"},
+          "bride": {"name": "B", "dateOfBirth": "YYYY-MM-DD", "timeOfBirth": "HH:MM", "latitude": 28.61, "longitude": 77.23, "timezone": "Asia/Kolkata"}
+        },
+        "response": {
+          "status": "success",
+          "groom": {"name": "A", "moonSign": "Cancer", "nakshatra": "Ashwini", "pada": "1", "mangalDosha": false},
+          "bride": {"name": "B", "moonSign": "Leo", "nakshatra": "Bharani", "pada": "2", "mangalDosha": false},
+          "compatibility": {"totalPoints": 28, "match": true}
+        }
+      },
+      {
+        "name": "Get Remedy Suggestions",
+        "method": "POST",
+        "url": "/api/v1/astro-services/remedy",
+        "request": {
+          "doshas": {"mangal": true},
+          "planets": {"sun": "weak"}
+        },
+        "response": {
+          "status": "success",
+          "remedies": {"mangal": "Do Hanuman puja"}
+        }
+      },
+      {
+        "name": "Find Muhurat",
+        "method": "GET",
+        "url": "/api/v1/astro-services/muhurat/find",
+        "request": {
+          "eventType": "Marriage",
+          "durationDays": 30
+        },
+        "response": {
+          "status": "success",
+          "eventType": "Marriage",
+          "muhurats": [{"date": "2024-02-15", "score": 9.5}]
+        }
+      },
+      {
+        "name": "Get Monthly Muhurat",
+        "method": "GET",
+        "url": "/api/v1/astro-services/muhurat/monthly",
+        "request": {
+          "eventType": "Marriage",
+          "month": 2,
+          "year": 2024
+        },
+        "response": {
+          "status": "success",
+          "data": [{"date": "2024-02-15", "score": 9.5}]
+        }
+      },
+      {
+        "name": "Get Daily Horoscope",
+        "method": "GET",
+        "url": "/api/v1/astro-services/prediction/daily-horoscope",
+        "request": {
+          "sunSign": "Aries",
+          "date": "2024-02-09"
+        },
+        "response": {
+          "status": "success",
+          "horoscope": "Today will be a good day."
+        }
+      },
+      {
+        "name": "Get Weekly Horoscope",
+        "method": "GET",
+        "url": "/api/v1/astro-services/prediction/weekly-horoscope",
+        "request": {
+          "sunSign": "Aries"
+        },
+        "response": {
+          "status": "success",
+          "horoscope": "This week brings new opportunities."
+        }
+      },
+      {
+        "name": "Get Monthly Horoscope",
+        "method": "GET",
+        "url": "/api/v1/astro-services/prediction/monthly-horoscope",
+        "request": {
+          "sunSign": "Aries",
+          "month": 2,
+          "year": 2024
+        },
+        "response": {
+          "status": "success",
+          "horoscope": "February is favorable for you."
+        }
+      },
+      {
+        "name": "Get Transit Analysis",
+        "method": "GET",
+        "url": "/api/v1/astro-services/prediction/transit-analysis",
+        "request": {
+          "birthChart": "{...}"
+        },
+        "response": {
+          "status": "success",
+          "transit": {"planet": "Saturn", "effect": "Positive"}
+        }
+      },
+      {
+        "name": "Get Sade Sati Analysis",
+        "method": "GET",
+        "url": "/api/v1/astro-services/prediction/sade-sati",
+        "request": {
+          "moonSign": "Cancer"
+        },
+        "response": {
+          "status": "success",
+          "sadeSati": {"phase": "Peak", "advice": "Be cautious"}
+        }
+      },
+      {
+        "name": "Get Dhaiya Analysis",
+        "method": "GET",
+        "url": "/api/v1/astro-services/prediction/dhaiya",
+        "request": {
+          "moonSign": "Cancer"
+        },
+        "response": {
+          "status": "success",
+          "dhaiya": {"phase": "Start", "advice": "Take care of health"}
+        }
+      },
+      {
+        "name": "Astrology Module Health Check",
+        "method": "GET",
+        "url": "/api/v1/astro-services/health",
+        "request": {},
+        "response": {
+          "status": "success",
+          "message": "Astrology module is running",
+          "services": [
+            "Kundli Calculator",
+            "Dasha Calculator",
+            "Compatibility Matcher",
+            "Remedy Recommender",
+            "Muhurat Finder",
+            "Prediction Engine"
+          ]
+        }
+      },
+  {
+    "name": "Get All Astrologers (Web)",
+    "method": "GET",
+    "url": "/api/web/astrologers/all",
+    "request": {},
+    "response": [
+      {"id": 1, "userId": 1, "name": "Astrologer A", "email": "a@email.com", "isActive": true, "status": true, "message": ""}
+    ]
+  },
+  {
+    "name": "Get Astrologer By ID (Web)",
+    "method": "GET",
+    "url": "/api/web/astrologers/{id}",
+    "request": {"id": 1},
+    "response": {"id": 1, "userId": 1, "name": "Astrologer A", "email": "a@email.com", "isActive": true, "status": true, "message": ""}
+  },
+  {
+    "name": "Get Astrologer By User ID (Web)",
+    "method": "GET",
+    "url": "/api/web/astrologers/user/{userId}",
+    "request": {"userId": 1},
+    "response": {"id": 1, "userId": 1, "name": "Astrologer A", "email": "a@email.com", "isActive": true, "status": true, "message": ""}
+  },
+  {
+    "name": "Create Astrologer Profile (Web)",
+    "method": "POST",
+    "url": "/api/web/astrologers/create",
+    "request": {
+      "userId": 1,
+      "consultationRate": 500,
+      "bio": "Experienced astrologer",
+      "certifications": "Jyotish Ratna",
+      "languages": "English, Hindi",
+      "specializations": "Vedic",
+      "experienceYears": 10,
+      "maxConcurrentChats": 3,
+      "isAvailable": true,
+      "isActive": true
+    },
+    "response": {"id": 1, "userId": 1, "name": "Astrologer A", "isActive": true, "status": true, "message": "Profile created"}
+  },
+  {
+    "name": "Update Astrologer Profile (Web)",
+    "method": "PUT",
+    "url": "/api/web/astrologers/update/{id}",
+    "request": {
+      "id": 1,
+      "userId": 1,
+      "consultationRate": 600,
+      "bio": "Updated bio",
+      "certifications": "Jyotish Bhushan",
+      "languages": "English, Hindi",
+      "specializations": "Vedic, KP",
+      "experienceYears": 12,
+      "maxConcurrentChats": 4,
+      "isAvailable": true,
+      "isActive": true
+    },
+    "response": {"id": 1, "userId": 1, "name": "Astrologer A", "isActive": true, "status": true, "message": "Profile updated"}
+  },
+  {
+    "name": "Approve Astrologer (Web)",
+    "method": "PUT",
+    "url": "/api/web/astrologers/approve/{id}",
+    "request": {"id": 1, "isApproved": true, "approvalNotes": "All documents verified"},
+    "response": {"id": 1, "isApproved": true, "status": true, "message": "Astrologer approved"}
+  },
+  {
+    "name": "Verify Astrologer (Web)",
+    "method": "PUT",
+    "url": "/api/web/astrologers/verify/{id}",
+    "request": {"id": 1, "isVerified": true},
+    "response": {"id": 1, "isVerified": true, "status": true, "message": "Astrologer verified"}
+  },
+  {
+    "name": "Get Pending Approval Astrologers (Web)",
+    "method": "GET",
+    "url": "/api/web/astrologers/pending",
+    "request": {},
+    "response": [
+      {"id": 2, "userId": 2, "name": "Astrologer B", "isApproved": false, "status": true, "message": ""}
+    ]
+  },
+  {
+    "name": "Toggle Astrologer Active Status (Web)",
+    "method": "PUT",
+    "url": "/api/web/astrologers/toggle-status/{id}",
+    "request": {"id": 1, "isActive": false},
+    "response": {"id": 1, "isActive": false, "status": true, "message": "Status updated"}
+  },
+  {
+    "name": "Search Astrologers (Web)",
+    "method": "POST",
+    "url": "/api/web/astrologers/search",
+    "request": {"specialization": "Vedic", "language": "Hindi", "minRating": 4.0, "maxRate": 1000, "availableOnly": true, "sortBy": "rating"},
+    "response": [
+      {"id": 1, "userId": 1, "name": "Astrologer A", "specializations": "Vedic", "languages": "Hindi", "rating": 4.5, "isAvailable": true, "status": true, "message": ""}
+    ]
+  },
+  {
+    "name": "Delete Astrologer Profile (Web)",
+    "method": "DELETE",
+    "url": "/api/web/astrologers/delete/{id}",
+    "request": {"id": 1},
+    "response": {"id": 1, "status": true, "message": "Profile deleted"}
+  },
+  {
+    "name": "Get Available Astrologers (Web)",
+    "method": "GET",
+    "url": "/api/web/astrologers/available",
+    "request": {},
+    "response": [
+      {"id": 1, "userId": 1, "name": "Astrologer A", "isAvailable": true, "status": true, "message": ""}
+    ]
+  },
+  {
+    "name": "Toggle Astrologer Availability (Web)",
+    "method": "PUT",
+    "url": "/api/web/astrologers/availability/{id}",
+    "request": {"id": 1, "isAvailable": false},
+    "response": {"id": 1, "isAvailable": false, "status": true, "message": "Availability updated"}
+  },
+  {
+    "name": "Dashboard Stats (Web)",
+    "method": "GET",
+    "url": "/api/web/dashboard/stats",
+    "request": {},
+    "response": {"totalRegisteredUsers": 1000, "totalAmount": 50000, "upcomingBirths": 10, "totalUpcomingPuja": 5, "status": true, "message": "Dashboard statistics retrieved successfully"}
+  },
+  {
+    "name": "Get All Districts",
+    "method": "GET",
+    "url": "/api/master/district/all",
+    "request": {},
+    "response": [{"id": 1, "name": "District A", "isActive": true}]
+  },
+  {
+    "name": "Get Active Districts",
+    "method": "GET",
+    "url": "/api/master/district/active",
+    "request": {},
+    "response": [{"id": 1, "name": "District A", "isActive": true}]
+  },
+  {
+    "name": "Get Districts By State",
+    "method": "GET",
+    "url": "/api/master/district/state/{stateId}",
+    "request": {"stateId": 1},
+    "response": [{"id": 1, "name": "District A", "stateId": 1, "isActive": true}]
+  },
+  {
+    "name": "Get All States",
+    "method": "GET",
+    "url": "/api/master/state/all",
+    "request": {},
+    "response": [{"id": 1, "name": "State A", "isActive": true}]
+  },
+  {
+    "name": "Get Active States",
+    "method": "GET",
+    "url": "/api/master/state/active",
+    "request": {},
+    "response": [{"id": 1, "name": "State A", "isActive": true}]
+  },
+  {
+    "name": "Get State By ID",
+    "method": "GET",
+    "url": "/api/master/state/{id}",
+    "request": {"id": 1},
+    "response": {"id": 1, "name": "State A", "isActive": true}
+  },
+  {
+    "name": "Get All Genders",
+    "method": "GET",
+    "url": "/api/master/gender/all",
+    "request": {},
+    "response": [{"id": 1, "name": "Male", "isActive": true}]
+  },
+  {
+    "name": "Get Active Genders",
+    "method": "GET",
+    "url": "/api/master/gender/active",
+    "request": {},
+    "response": [{"id": 1, "name": "Male", "isActive": true}]
+  },
+  {
+    "name": "Get Gender By ID",
+    "method": "GET",
+    "url": "/api/master/gender/{id}",
+    "request": {"id": 1},
+    "response": {"id": 1, "name": "Male", "isActive": true}
+  },
+  {
+    "name": "Get Astrologer District Price",
+    "method": "GET",
+    "url": "/api/master/astrologer-district-price/get/{astrologerId}/{districtMasterId}/{pujaId}",
+    "request": {"astrologerId": 1, "districtMasterId": 1, "pujaId": 1},
+    "response": {"price": 1000, "status": true, "message": "Price fetched"}
+  },
+  {
+    "name": "Create Astrologer District Price",
+    "method": "POST",
+    "url": "/api/master/astrologer-district-price/create",
+    "request": {"astrologerId": 1, "districtMasterId": 1, "pujaId": 1, "price": 1000},
+    "response": {"price": 1000, "status": true, "message": "Price created"}
+  },
+  {
+    "name": "Update Astrologer District Price",
+    "method": "PUT",
+    "url": "/api/master/astrologer-district-price/update/{priceId}",
+    "request": {"priceId": 1, "price": 1200},
+    "response": {"price": 1200, "status": true, "message": "Price updated"}
+  },
+  {
+    "name": "Web Login",
+    "method": "POST",
+    "url": "/api/web/auth/login",
+    "request": {"email": "admin@email.com", "password": "admin123"},
+    "response": {"userId": 1, "name": "Admin", "token": "jwt-token", "status": true, "message": "Login successful"}
+  }
+]

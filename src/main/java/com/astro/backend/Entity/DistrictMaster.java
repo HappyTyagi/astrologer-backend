@@ -1,5 +1,7 @@
 package com.astro.backend.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -33,8 +35,8 @@ public class DistrictMaster {
     private Double latitude;  // District center latitude
 
     private Double longitude;  // District center longitude
-
-    @Column(nullable = false)
+    
+    @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
     private Boolean isActive;
 
     @Temporal(TemporalType.TIMESTAMP)
@@ -45,6 +47,9 @@ public class DistrictMaster {
 
     @PrePersist
     protected void onCreate() {
+        if (isActive == null) {
+            isActive = true;
+        }
         createdAt = LocalDateTime.now();
         isActive = true;
     }

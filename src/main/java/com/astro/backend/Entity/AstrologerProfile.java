@@ -1,5 +1,7 @@
 package com.astro.backend.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -47,6 +49,8 @@ public class AstrologerProfile {
     private String approvalNotes;
 
     private Integer experienceYears;   // Years of experience
+    
+    @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
     private Boolean isActive;          // Account status
 
     @Temporal(TemporalType.TIMESTAMP)
@@ -57,6 +61,9 @@ public class AstrologerProfile {
 
     @PrePersist
     protected void onCreate() {
+        if (isActive == null) {
+            isActive = true;
+        }
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         isAvailable = false;

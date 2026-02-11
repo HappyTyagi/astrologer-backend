@@ -1,5 +1,7 @@
 package com.astro.backend.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 
 import com.astro.backend.EnumFile.Role;
 import jakarta.persistence.*;
@@ -37,6 +39,8 @@ public class User {
     private Boolean isVerified;
 
     private String country;
+    
+    @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
 
     private Boolean isActive;
 

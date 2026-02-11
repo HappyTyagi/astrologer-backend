@@ -1,5 +1,7 @@
 package com.astro.backend.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -42,6 +44,8 @@ public class AstrologerDistrictPrice {
     private Double finalPrice;  // Calculated: consultationPrice - (consultationPrice * discountPercentage/100)
 
     // ===== Management =====
+    
+    @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
     private Boolean isActive;  // Enable/disable pricing for this combination
 
     private String notes;  // Additional notes (e.g., "Peak season rate", "Special offer")
@@ -65,6 +69,9 @@ public class AstrologerDistrictPrice {
 
     @PrePersist
     protected void onCreate() {
+        if (isActive == null) {
+            isActive = true;
+        }
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         isActive = true;
