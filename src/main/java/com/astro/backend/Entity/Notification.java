@@ -42,6 +42,7 @@ public class Notification {
     // ===== Delivery Tracking =====
     private String deliveryStatus;     // PENDING, SENT, FAILED, DELIVERED
     private LocalDateTime sentAt;
+    @Column(columnDefinition = "TEXT")
     private String failureReason;      // Why delivery failed
 
     @Temporal(TemporalType.TIMESTAMP)
@@ -59,10 +60,18 @@ public class Notification {
         if (isActive == null) {
             isActive = true;
         }
-        createdAt = LocalDateTime.now();
-        isRead = false;
-        deliveryStatus = "PENDING";
-        expiresAt = LocalDateTime.now().plusDays(30); // 30 days expiry
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
+        if (isRead == null) {
+            isRead = false;
+        }
+        if (deliveryStatus == null || deliveryStatus.isBlank()) {
+            deliveryStatus = "PENDING";
+        }
+        if (expiresAt == null) {
+            expiresAt = LocalDateTime.now().plusDays(30); // 30 days expiry
+        }
     }
 
     public enum NotificationType {

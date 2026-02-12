@@ -9,6 +9,7 @@ import com.astro.backend.Repositry.AdminNotificationDispatchRepository;
 import com.astro.backend.Repositry.MobileUserProfileRepository;
 import com.astro.backend.Repositry.NotificationRepository;
 import com.astro.backend.Repositry.UserRepository;
+import com.astro.backend.Services.ErrorLogService;
 import com.astro.backend.Services.FcmPushService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,7 @@ public class AdminNotificationController {
     private final NotificationRepository notificationRepository;
     private final AdminNotificationDispatchRepository dispatchRepository;
     private final FcmPushService fcmPushService;
+    private final ErrorLogService errorLogService;
 
     @GetMapping("/history")
     public ResponseEntity<?> history() {
@@ -143,147 +145,166 @@ public class AdminNotificationController {
                     "message", "Access denied"
             ));
         }
+        try {
+            String title = safe(request.getTitle());
+            String message = safe(request.getMessage());
+            String audienceType = safe(request.getAudienceType()).toUpperCase(Locale.ROOT);
+            String typeRaw = safe(request.getType()).toUpperCase(Locale.ROOT);
 
-        String title = safe(request.getTitle());
-        String message = safe(request.getMessage());
-        String audienceType = safe(request.getAudienceType()).toUpperCase(Locale.ROOT);
-        String typeRaw = safe(request.getType()).toUpperCase(Locale.ROOT);
-
-        if (title.isBlank() || message.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "status", false,
-                    "message", "Title and message are required"
-            ));
-        }
-
-        if (!"BROADCAST".equals(audienceType) && !"INDIVIDUAL".equals(audienceType)) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "status", false,
-                    "message", "audienceType must be BROADCAST or INDIVIDUAL"
-            ));
-        }
-
-        Notification.NotificationType type = parseType(typeRaw);
-
-        List<MobileUserProfile> targets;
-        if ("INDIVIDUAL".equals(audienceType)) {
-            if (request.getTargetUserId() == null) {
+            if (title.isBlank() || message.isBlank()) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "status", false,
-                        "message", "targetUserId is required for INDIVIDUAL send"
+                        "message", "Title and message are required"
                 ));
             }
-            Optional<MobileUserProfile> target = mobileUserProfileRepository.findByUserId(request.getTargetUserId());
-            if (target.isEmpty()) {
+
+            if (!"BROADCAST".equals(audienceType) && !"INDIVIDUAL".equals(audienceType)) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "status", false,
-                        "message", "Mobile profile not found for targetUserId"
+                        "message", "audienceType must be BROADCAST or INDIVIDUAL"
                 ));
             }
-            targets = List.of(target.get());
-        } else {
-            targets = mobileUserProfileRepository.findAll();
-        }
 
-        if (targets.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "status", false,
-                    "message", "No target users found"
-            ));
-        }
+            Notification.NotificationType type = parseType(typeRaw);
 
-        Set<Long> targetUserIds = targets.stream().map(MobileUserProfile::getUserId).collect(Collectors.toSet());
-        Map<Long, User> userMap = userRepository.findAllById(targetUserIds)
-                .stream()
-                .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
-
-        List<Notification> notifications = new ArrayList<>();
-        int successCount = 0;
-        int failedCount = 0;
-
-        String resolvedImage = blankToNull(request.getImageBase64());
-        if (resolvedImage == null) resolvedImage = blankToNull(request.getImageUrl());
-        String pushImageUrl = blankToNull(request.getImageUrl());
-
-        for (MobileUserProfile profile : targets) {
-            User targetUser = userMap.get(profile.getUserId());
-
-            if (type == Notification.NotificationType.PROMO
-                    && targetUser != null
-                    && Boolean.FALSE.equals(targetUser.getPromotionalNotificationsEnabled())) {
-                failedCount++;
-                continue;
+            List<MobileUserProfile> targets;
+            if ("INDIVIDUAL".equals(audienceType)) {
+                if (request.getTargetUserId() == null) {
+                    return ResponseEntity.badRequest().body(Map.of(
+                            "status", false,
+                            "message", "targetUserId is required for INDIVIDUAL send"
+                    ));
+                }
+                Optional<MobileUserProfile> target = mobileUserProfileRepository.findByUserId(request.getTargetUserId());
+                if (target.isEmpty()) {
+                    return ResponseEntity.badRequest().body(Map.of(
+                            "status", false,
+                            "message", "Mobile profile not found for targetUserId"
+                    ));
+                }
+                targets = List.of(target.get());
+            } else {
+                targets = mobileUserProfileRepository.findAll();
             }
 
-            Notification notification = Notification.builder()
-                    .userId(profile.getUserId())
+            if (targets.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", false,
+                        "message", "No target users found"
+                ));
+            }
+
+            Set<Long> targetUserIds = targets.stream().map(MobileUserProfile::getUserId).collect(Collectors.toSet());
+            Map<Long, User> userMap = userRepository.findAllById(targetUserIds)
+                    .stream()
+                    .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
+
+            List<Notification> notifications = new ArrayList<>();
+            int successCount = 0;
+            int failedCount = 0;
+
+            String resolvedImage = blankToNull(request.getImageBase64());
+            if (resolvedImage == null) resolvedImage = blankToNull(request.getImageUrl());
+            String pushImageUrl = blankToNull(request.getImageUrl());
+
+            for (MobileUserProfile profile : targets) {
+                User targetUser = userMap.get(profile.getUserId());
+
+                if (type == Notification.NotificationType.PROMO
+                        && targetUser != null
+                        && Boolean.FALSE.equals(targetUser.getPromotionalNotificationsEnabled())) {
+                    failedCount++;
+                    continue;
+                }
+
+                Notification notification = Notification.builder()
+                        .userId(profile.getUserId())
+                        .title(title)
+                        .message(message)
+                        .type(type)
+                        .imageUrl(resolvedImage)
+                        .actionUrl(blankToNull(request.getActionUrl()))
+                        .actionData(buildActionData(sender, audienceType, profile))
+                        .isRead(false)
+                        .deliveryStatus("PENDING")
+                        .build();
+
+                String token = safe(profile.getFcmToken());
+                if (token.isBlank()) {
+                    notification.setDeliveryStatus("FAILED");
+                    notification.setFailureReason("Missing FCM token");
+                    failedCount++;
+                } else {
+                    FcmPushService.PushResult pushResult = fcmPushService.sendToToken(
+                            token,
+                            title,
+                            message,
+                            type.name(),
+                            pushImageUrl,
+                            blankToNull(request.getActionUrl()),
+                            notification.getActionData()
+                    );
+                    if (pushResult.isSuccess()) {
+                        notification.setDeliveryStatus("SENT");
+                        notification.setSentAt(LocalDateTime.now());
+                        successCount++;
+                    } else {
+                        notification.setDeliveryStatus("FAILED");
+                        String failure = pushResult.getReason();
+                        if (pushResult.getRawResponse() != null && !pushResult.getRawResponse().isBlank()) {
+                            failure = failure + " | " + pushResult.getRawResponse();
+                        }
+                        notification.setFailureReason(limitFailureReason(failure));
+                        failedCount++;
+                    }
+                }
+                notifications.add(notification);
+            }
+
+            if (!notifications.isEmpty()) {
+                notificationRepository.saveAll(notifications);
+            }
+
+            MobileUserProfile firstTarget = targets.get(0);
+            AdminNotificationDispatch dispatch = AdminNotificationDispatch.builder()
+                    .senderUserId(sender.getId())
+                    .senderEmail(safe(sender.getEmail()))
+                    .audienceType(audienceType)
+                    .targetUserId("INDIVIDUAL".equals(audienceType) ? firstTarget.getUserId() : null)
+                    .targetUserName("INDIVIDUAL".equals(audienceType) ? firstTarget.getName() : null)
+                    .targetMobileNumber("INDIVIDUAL".equals(audienceType) ? firstTarget.getMobileNumber() : null)
                     .title(title)
                     .message(message)
-                    .type(type)
-                    .imageUrl(resolvedImage)
-                    .actionUrl(blankToNull(request.getActionUrl()))
-                    .actionData(buildActionData(sender, audienceType, profile))
-                    .isRead(false)
-                    .deliveryStatus("PENDING")
+                    .notificationType(type.name())
+                    .requestedCount(targets.size())
+                    .successCount(successCount)
+                    .failedCount(failedCount)
+                    .status(failedCount > 0 ? "PARTIAL" : "SENT")
+                    .notes("Push dispatch attempted via FCM. DB entries reflect per-user deliveryStatus.")
                     .build();
 
-            String token = safe(profile.getFcmToken());
-            if (token.isBlank()) {
-                notification.setDeliveryStatus("FAILED");
-                notification.setFailureReason("Missing FCM token");
-                failedCount++;
-            } else {
-                FcmPushService.PushResult pushResult = fcmPushService.sendToToken(
-                        token,
-                        title,
-                        message,
-                        type.name(),
-                        pushImageUrl,
-                        blankToNull(request.getActionUrl()),
-                        notification.getActionData()
-                );
-                if (pushResult.isSuccess()) {
-                    notification.setDeliveryStatus("SENT");
-                    notification.setSentAt(LocalDateTime.now());
-                    successCount++;
-                } else {
-                    notification.setDeliveryStatus("FAILED");
-                    notification.setFailureReason(pushResult.getReason());
-                    failedCount++;
-                }
-            }
-            notifications.add(notification);
+            AdminNotificationDispatch savedDispatch = dispatchRepository.save(dispatch);
+
+            Map<String, Object> response = new LinkedHashMap<>();
+            response.put("status", true);
+            response.put("message", "Notification processed");
+            response.put("dispatch", toDispatchRow(savedDispatch));
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Long errorId = errorLogService.log(
+                    "ADMIN_NOTIFICATION",
+                    "/api/web/notifications/send",
+                    e,
+                    "{audienceType:" + safe(request.getAudienceType()) + ",targetUserId:" + request.getTargetUserId() + "}",
+                    sender.getId()
+            );
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", false,
+                    "message", errorId == null
+                            ? "Notification request failed. Please try again."
+                            : "Notification request failed. Ref: " + errorId
+            ));
         }
-
-        if (!notifications.isEmpty()) {
-            notificationRepository.saveAll(notifications);
-        }
-
-        MobileUserProfile firstTarget = targets.get(0);
-        AdminNotificationDispatch dispatch = AdminNotificationDispatch.builder()
-                .senderUserId(sender.getId())
-                .senderEmail(safe(sender.getEmail()))
-                .audienceType(audienceType)
-                .targetUserId("INDIVIDUAL".equals(audienceType) ? firstTarget.getUserId() : null)
-                .targetUserName("INDIVIDUAL".equals(audienceType) ? firstTarget.getName() : null)
-                .targetMobileNumber("INDIVIDUAL".equals(audienceType) ? firstTarget.getMobileNumber() : null)
-                .title(title)
-                .message(message)
-                .notificationType(type.name())
-                .requestedCount(targets.size())
-                .successCount(successCount)
-                .failedCount(failedCount)
-                .status(failedCount > 0 ? "PARTIAL" : "SENT")
-                .notes("Push dispatch attempted via FCM. DB entries reflect per-user deliveryStatus.")
-                .build();
-
-        AdminNotificationDispatch savedDispatch = dispatchRepository.save(dispatch);
-
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("status", true);
-        response.put("message", "Notification processed");
-        response.put("dispatch", toDispatchRow(savedDispatch));
-        return ResponseEntity.ok(response);
     }
 
     private Map<String, Object> toDispatchRow(AdminNotificationDispatch d) {
@@ -334,6 +355,12 @@ public class AdminNotificationController {
     private String blankToNull(String value) {
         String v = safe(value);
         return v.isBlank() ? null : v;
+    }
+
+    private String limitFailureReason(String value) {
+        if (value == null) return null;
+        if (value.length() <= 1500) return value;
+        return value.substring(0, 1500);
     }
 
     @Data

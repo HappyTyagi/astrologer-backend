@@ -8,6 +8,7 @@ import com.astro.backend.Repositry.UserRepository;
 import com.astro.backend.RequestDTO.SendNotificationRequest;
 import com.astro.backend.RequestDTO.TestNotificationRequest;
 import com.astro.backend.ResponseDTO.NotificationResponse;
+import com.astro.backend.Services.ErrorLogService;
 import com.astro.backend.Services.FcmPushService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,6 +28,7 @@ public class NotificationController {
     private final UserRepository userRepository;
     private final MobileUserProfileRepository mobileUserProfileRepository;
     private final FcmPushService fcmPushService;
+    private final ErrorLogService errorLogService;
 
     /**
      * Test notification endpoint
@@ -115,6 +117,10 @@ public class NotificationController {
                     deliveryStatus = "SENT";
                 } else {
                     failureReason = pushResult.getReason();
+                    if (pushResult.getRawResponse() != null && !pushResult.getRawResponse().isBlank()) {
+                        failureReason = failureReason + " | " + pushResult.getRawResponse();
+                    }
+                    failureReason = limitFailureReason(failureReason);
                 }
             }
 
@@ -155,10 +161,19 @@ public class NotificationController {
             return ResponseEntity.ok(response);
 
         } catch (Exception e) {
+            Long errorId = errorLogService.log(
+                    "MOBILE_NOTIFICATION",
+                    "/notification/send",
+                    e,
+                    "{userId:" + request.getUserId() + "}",
+                    request.getUserId()
+            );
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(NotificationResponse.builder()
                             .status(false)
-                            .message("Failed to send notification: " + e.getMessage())
+                            .message(errorId == null
+                                    ? "Notification request failed. Please try again."
+                                    : "Notification request failed. Ref: " + errorId)
                             .build());
         }
     }
@@ -169,5 +184,11 @@ public class NotificationController {
      */
     private boolean isValidLabel(String label) {
         return label != null && !label.isEmpty() && label.matches("^[a-zA-Z0-9_-]+$");
+    }
+
+    private String limitFailureReason(String value) {
+        if (value == null) return null;
+        if (value.length() <= 1500) return value;
+        return value.substring(0, 1500);
     }
 }

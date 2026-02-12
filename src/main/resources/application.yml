@@ -46,5 +46,7 @@ free-astrology:
 
 fcm:
   enabled: true
-  server-key: ${FCM_SERVER_KEY:}
-  legacy-endpoint: "https://fcm.googleapis.com/fcm/send"
+  project-id: ${FCM_PROJECT_ID:}
+  service-account-file: ${FCM_SERVICE_ACCOUNT_FILE:classpath:firebase-service-account.json}
+  service-account-json: ${FCM_SERVICE_ACCOUNT_JSON:}
+  service-account-base64: ${FCM_SERVICE_ACCOUNT_BASE64:}
