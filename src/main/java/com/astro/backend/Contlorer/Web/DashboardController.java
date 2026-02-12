@@ -6,6 +6,7 @@ import com.astro.backend.Entity.User;
 import com.astro.backend.Entity.WalletTransaction;
 import com.astro.backend.Repositry.MobileUserProfileRepository;
 import com.astro.backend.Repositry.PujaBookingRepository;
+import com.astro.backend.Repositry.RemidesPurchaseRepository;
 import com.astro.backend.Repositry.UserRepository;
 import com.astro.backend.Repositry.WalletTransactionRepository;
 import com.astro.backend.ResponseDTO.DashboardResponse;
@@ -24,6 +25,7 @@ public class DashboardController {
     private final UserRepository userRepository;
     private final MobileUserProfileRepository mobileUserProfileRepository;
     private final PujaBookingRepository pujaBookingRepository;
+    private final RemidesPurchaseRepository remidesPurchaseRepository;
     private final WalletTransactionRepository walletTransactionRepository;
 
     /**
@@ -44,12 +46,16 @@ public class DashboardController {
 
             // 4. Count total upcoming puja (bookings with PENDING or CONFIRMED status)
             Integer totalUpcomingPuja = countUpcomingPuja();
+            Long totalRemediesBooked = remidesPurchaseRepository.count();
+            Long totalPujaBooked = pujaBookingRepository.count();
 
             DashboardResponse response = DashboardResponse.builder()
                     .totalRegisteredUsers(totalRegisteredUsers)
                     .totalAmount(totalAmount)
                     .upcomingBirths(upcomingBirths)
                     .totalUpcomingPuja(totalUpcomingPuja)
+                    .totalRemediesBooked(totalRemediesBooked)
+                    .totalPujaBooked(totalPujaBooked)
                     .status(true)
                     .message("Dashboard statistics retrieved successfully")
                     .build();

@@ -12,14 +12,18 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/chat")
 @RequiredArgsConstructor
 public class ChatRestController {
+    private static final Long ADMIN_ASTROLOGER_ID = 1L;
 
     private final ChatSessionService sessionService;
     private final ChatSessionRepository sessionRepo;
     private final ChatMessageRepository messageRepo;
 
     @PostMapping("/start")
-    public ChatSession start(@RequestParam Long userId, @RequestParam Long astrologerId) {
-        return sessionService.startSession(userId, astrologerId);
+    public ChatSession start(@RequestParam Long userId, @RequestParam(required = false) Long astrologerId) {
+        if (astrologerId != null && !ADMIN_ASTROLOGER_ID.equals(astrologerId)) {
+            throw new IllegalArgumentException("Users can chat only with admin");
+        }
+        return sessionService.startSession(userId, ADMIN_ASTROLOGER_ID);
     }
 
     @PostMapping("/stop/{sessionId}")

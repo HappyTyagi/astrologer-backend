@@ -1,6 +1,7 @@
 package com.astro.backend.Entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
@@ -16,6 +17,10 @@ public class PujaBooking {
     private Long userId;
     private Long pujaId;
     private Long slotId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "address_id")
+    @JsonIgnore
+    private Address address;
 
     private LocalDateTime bookedAt;
 
@@ -37,6 +42,11 @@ public class PujaBooking {
     private String review;             // User review
     private String notificationStatus; // For reminder tracking
     private LocalDateTime reminderSentAt;
+
+    @JsonProperty("addressId")
+    public Long getAddressId() {
+        return address != null ? address.getId() : null;
+    }
 
     @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime createdAt;

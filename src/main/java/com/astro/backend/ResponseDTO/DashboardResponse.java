@@ -14,6 +14,8 @@ public class DashboardResponse {
     private Double totalAmount;
     private Integer upcomingBirths;
     private Integer totalUpcomingPuja;
+    private Long totalRemediesBooked;
+    private Long totalPujaBooked;
     private Boolean status;
     private String message;
 }

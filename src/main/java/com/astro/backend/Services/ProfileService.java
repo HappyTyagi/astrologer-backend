@@ -7,6 +7,7 @@ import com.astro.backend.Repositry.GenderMasterRepository;
 import com.astro.backend.Repositry.MobileUserProfileRepository;
 import com.astro.backend.Repositry.UserRepository;
 import com.astro.backend.RequestDTO.CompleteProfileRequest;
+import com.astro.backend.RequestDTO.DeleteAccountRequest;
 import com.astro.backend.RequestDTO.UpdateBasicProfileRequest;
 import com.astro.backend.RequestDTO.UpdateEmailRequest;
 import com.astro.backend.RequestDTO.UpdateProfileRequest;
@@ -30,6 +31,43 @@ public class ProfileService {
     private final UserRepository userRepository;
     private final MobileUserProfileRepository mobileUserProfileRepository;
     private final GenderMasterRepository genderMasterRepository;
+
+    private int getEmailChangeCount(User user) {
+        return user.getEmailChangeCount() == null ? 0 : user.getEmailChangeCount();
+    }
+
+    private boolean isEmailChangeAllowed(User user) {
+        return getEmailChangeCount(user) < 1;
+    }
+
+    private void updateEmailWithLimit(User user, MobileUserProfile profile, String emailInput) {
+        if (emailInput == null || emailInput.isBlank()) {
+            throw new RuntimeException("Valid email is required");
+        }
+
+        String newEmail = emailInput.trim();
+        String existingEmail = user.getEmail() == null ? null : user.getEmail().trim();
+        boolean hasExistingEmail = existingEmail != null && !existingEmail.isBlank();
+        boolean isDifferentEmail = !Objects.equals(
+                existingEmail == null ? null : existingEmail.toLowerCase(),
+                newEmail.toLowerCase()
+        );
+
+        if (isDifferentEmail && hasExistingEmail && !isEmailChangeAllowed(user)) {
+            throw new RuntimeException("Email can be changed only once");
+        }
+
+        if (isDifferentEmail) {
+            user.setEmail(newEmail);
+            if (hasExistingEmail) {
+                user.setEmailChangeCount(getEmailChangeCount(user) + 1);
+            }
+        }
+
+        if (profile != null) {
+            profile.setEmail(user.getEmail());
+        }
+    }
 
     @Transactional
     public UpdateProfileResponse updateBasicProfile(UpdateBasicProfileRequest request) {
@@ -56,6 +94,10 @@ public class ProfileService {
             profile.setName(name);
         }
 
+        if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            updateEmailWithLimit(user, profile, request.getEmail());
+        }
+
         if (request.getAddress() != null) {
             profile.setAddress(request.getAddress().trim());
         }
@@ -64,6 +106,22 @@ public class ProfileService {
             String normalizedDob = normalizeDob(request.getDateOfBirth().trim());
             profile.setDateOfBirth(normalizedDob);
             profile.setAge(calculateAge(LocalDate.parse(normalizedDob, DateTimeFormatter.ofPattern("yyyy-MM-dd"))));
+        }
+
+        if (request.getBirthTime() != null && !request.getBirthTime().isBlank()) {
+            profile.setBirthTime(request.getBirthTime().trim());
+        }
+        if (request.getBirthAmPm() != null && !request.getBirthAmPm().isBlank()) {
+            profile.setBirthAmPm(request.getBirthAmPm().trim());
+        }
+        if (request.getGenderMasterId() != null) {
+            profile.setGenderMasterId(request.getGenderMasterId());
+        }
+        if (request.getStateMasterId() != null) {
+            profile.setStateMasterId(request.getStateMasterId());
+        }
+        if (request.getDistrictMasterId() != null) {
+            profile.setDistrictMasterId(request.getDistrictMasterId());
         }
 
         user.setUpdatedAt(LocalDateTime.now());
@@ -77,9 +135,16 @@ public class ProfileService {
                 .userId(user.getId())
                 .name(savedProfile.getName() != null ? savedProfile.getName() : user.getName())
                 .email(user.getEmail())
+                .emailChangeCount(getEmailChangeCount(user))
+                .emailChangeAllowed(isEmailChangeAllowed(user))
                 .mobileNumber(user.getMobileNumber())
                 .dateOfBirth(savedProfile.getDateOfBirth())
                 .age(savedProfile.getAge())
+                .genderMasterId(savedProfile.getGenderMasterId())
+                .stateMasterId(savedProfile.getStateMasterId())
+                .districtMasterId(savedProfile.getDistrictMasterId())
+                .birthTime(savedProfile.getBirthTime())
+                .birthAmPm(savedProfile.getBirthAmPm())
                 .address(savedProfile.getAddress())
                 .status(true)
                 .message("Basic profile updated successfully")
@@ -98,27 +163,51 @@ public class ProfileService {
             throw new RuntimeException("Valid email is required");
         }
 
-        final String email = request.getEmail().trim();
         final User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + request.getUserId()));
-
-        user.setEmail(email);
+        MobileUserProfile profile = mobileUserProfileRepository.findByUserId(user.getId()).orElse(null);
+        updateEmailWithLimit(user, profile, request.getEmail());
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
-
-        mobileUserProfileRepository.findByUserId(user.getId()).ifPresent(profile -> {
-            profile.setEmail(email);
+        if (profile != null) {
             profile.setUpdatedAt(LocalDateTime.now());
             mobileUserProfileRepository.save(profile);
-        });
+        }
 
         return UpdateProfileResponse.builder()
                 .userId(user.getId())
                 .name(user.getName())
-                .email(email)
+                .email(user.getEmail())
+                .emailChangeCount(getEmailChangeCount(user))
+                .emailChangeAllowed(isEmailChangeAllowed(user))
                 .mobileNumber(user.getMobileNumber())
                 .status(true)
                 .message("Email updated successfully")
+                .build();
+    }
+
+    @Transactional
+    public UpdateProfileResponse deleteAccount(DeleteAccountRequest request) {
+        if (request == null || request.getUserId() == null || request.getUserId() <= 0) {
+            throw new RuntimeException("Valid userId is required");
+        }
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + request.getUserId()));
+
+        user.setPromotionalNotificationsEnabled(false);
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        return UpdateProfileResponse.builder()
+                .userId(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .emailChangeCount(getEmailChangeCount(user))
+                .emailChangeAllowed(isEmailChangeAllowed(user))
+                .mobileNumber(user.getMobileNumber())
+                .status(true)
+                .message("Account marked deleted for promotions. Promotional notifications are disabled permanently.")
                 .build();
     }
 
@@ -142,6 +231,8 @@ public class ProfileService {
                     .userId(user.getId())
                     .name(user.getName())
                     .email(user.getEmail())
+                    .emailChangeCount(getEmailChangeCount(user))
+                    .emailChangeAllowed(isEmailChangeAllowed(user))
                     .mobileNumber(user.getMobileNumber())
                     .status(true)
                     .message("User found but profile not completed yet")
@@ -155,6 +246,8 @@ public class ProfileService {
                 .userId(user.getId())
                 .name(profile.getName() != null ? profile.getName() : user.getName())
                 .email(user.getEmail())
+                .emailChangeCount(getEmailChangeCount(user))
+                .emailChangeAllowed(isEmailChangeAllowed(user))
                 .mobileNumber(user.getMobileNumber())
                 .dateOfBirth(profile.getDateOfBirth())
                 .age(profile.getAge())
@@ -163,6 +256,9 @@ public class ProfileService {
                 .districtMasterId(profile.getDistrictMasterId())
                 .latitude(profile.getLatitude())
                 .longitude(profile.getLongitude())
+                .birthTime(profile.getBirthTime())
+                .birthAmPm(profile.getBirthAmPm())
+                .address(profile.getAddress())
                 .status(true)
                 .message("Profile data retrieved successfully")
                 .build();
@@ -188,6 +284,8 @@ public class ProfileService {
                     .userId(user.getId())
                     .name(user.getName())
                     .email(user.getEmail())
+                    .emailChangeCount(getEmailChangeCount(user))
+                    .emailChangeAllowed(isEmailChangeAllowed(user))
                     .mobileNumber(user.getMobileNumber())
                     .status(true)
                     .message("User found but profile not completed yet")
@@ -201,6 +299,8 @@ public class ProfileService {
                 .userId(user.getId())
                 .name(profile.getName() != null ? profile.getName() : user.getName())
                 .email(user.getEmail())
+                .emailChangeCount(getEmailChangeCount(user))
+                .emailChangeAllowed(isEmailChangeAllowed(user))
                 .mobileNumber(user.getMobileNumber())
                 .dateOfBirth(profile.getDateOfBirth())
                 .age(profile.getAge())
@@ -209,6 +309,9 @@ public class ProfileService {
                 .districtMasterId(profile.getDistrictMasterId())
                 .latitude(profile.getLatitude())
                 .longitude(profile.getLongitude())
+                .birthTime(profile.getBirthTime())
+                .birthAmPm(profile.getBirthAmPm())
+                .address(profile.getAddress())
                 .status(true)
                 .message("Profile data retrieved successfully")
                 .build();
@@ -384,7 +487,9 @@ public class ProfileService {
                 return UpdateProfileResponse.builder()
                     .userId(updatedProfile.getUserId())
                     .name(updatedProfile.getName() != null ? updatedProfile.getName() : "User")
-                    .email(updatedProfile.getEmail())
+                    .email(user != null ? user.getEmail() : updatedProfile.getEmail())
+                    .emailChangeCount(user != null ? getEmailChangeCount(user) : 0)
+                    .emailChangeAllowed(user == null || isEmailChangeAllowed(user))
                     .mobileNumber(updatedProfile.getMobileNumber())
                     .dateOfBirth(updatedProfile.getDateOfBirth())
                     .age(updatedProfile.getAge())
@@ -503,6 +608,8 @@ public class ProfileService {
                     .userId(savedUser.getId())
                     .name(savedUser.getName())
                     .email(savedUser.getEmail())
+                    .emailChangeCount(getEmailChangeCount(savedUser))
+                    .emailChangeAllowed(isEmailChangeAllowed(savedUser))
                     .mobileNumber(savedUser.getMobileNumber())
                     .dateOfBirth(savedProfile.getDateOfBirth())
                     .age(savedProfile.getAge())
@@ -511,6 +618,9 @@ public class ProfileService {
                     .districtMasterId(savedProfile.getDistrictMasterId())
                     .latitude(savedProfile.getLatitude())
                     .longitude(savedProfile.getLongitude())
+                    .birthTime(savedProfile.getBirthTime())
+                    .birthAmPm(savedProfile.getBirthAmPm())
+                    .address(savedProfile.getAddress())
                     .status(true)
                     .message("Profile completed successfully")
                     .build();

@@ -40,6 +40,7 @@ public class RemidesPurchaseService {
     private final AddressRepository addressRepository;
     private final RemidesCartRepository remidesCartRepository;
     private final EmailService emailService;
+    private final OrderHistoryService orderHistoryService;
 
     @Transactional
     public Map<String, Object> purchaseCart(RemidesPurchaseRequest request) {
@@ -84,6 +85,7 @@ public class RemidesPurchaseService {
         }
 
         List<RemidesPurchase> saved = remidesPurchaseRepository.saveAll(purchases);
+        orderHistoryService.recordRemedyPurchases(saved);
         deactivateUserCart(request.getUserId());
 
         Map<String, Object> response = new LinkedHashMap<>();
@@ -111,21 +113,16 @@ public class RemidesPurchaseService {
         remidesCartRepository.saveAll(activeCartItems);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<RemidesPurchaseHistoryResponse> getPurchaseHistory(Long userId) {
-        List<RemidesPurchase> purchases =
-                remidesPurchaseRepository.findByUserIdOrderByPurchasedAtDesc(userId);
-        return purchases.stream().map(this::toHistoryResponse).toList();
+        return orderHistoryService.getUserHistory(userId);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public Map<String, Object> getPurchaseHistoryRealtime(Long userId, LocalDateTime since) {
-        List<RemidesPurchase> purchases = since == null
-                ? remidesPurchaseRepository.findByUserIdOrderByPurchasedAtDesc(userId)
-                : remidesPurchaseRepository.findByUserIdAndPurchasedAtAfterOrderByPurchasedAtDesc(userId, since);
-
-        List<RemidesPurchaseHistoryResponse> data =
-                purchases.stream().map(this::toHistoryResponse).toList();
+        List<RemidesPurchaseHistoryResponse> data = since == null
+                ? orderHistoryService.getUserHistory(userId)
+                : orderHistoryService.getUserHistorySince(userId, since);
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", true);
@@ -193,34 +190,6 @@ public class RemidesPurchaseService {
         if (request.getAddressId() == null || request.getAddressId() <= 0) {
             throw new RuntimeException("Valid addressId is required");
         }
-    }
-
-    private RemidesPurchaseHistoryResponse toHistoryResponse(RemidesPurchase purchase) {
-        String subtitle = purchase.getRemides() != null
-                ? purchase.getRemides().getDescription()
-                : null;
-        String imageBase64 = purchase.getRemides() != null
-                ? purchase.getRemides().getImageBase64()
-                : null;
-
-        return RemidesPurchaseHistoryResponse.builder()
-                .id(purchase.getId())
-                .orderId(purchase.getOrderId())
-                .userId(purchase.getUserId())
-                .remidesId(purchase.getRemidesId())
-                .addressId(purchase.getAddressId())
-                .title(purchase.getTitle())
-                .subtitle(subtitle)
-                .imageBase64(imageBase64)
-                .totalItems(purchase.getQuantity())
-                .unitPrice(purchase.getUnitPrice())
-                .discountPercentage(purchase.getDiscountPercentage())
-                .finalUnitPrice(purchase.getFinalUnitPrice())
-                .amount(purchase.getLineTotal())
-                .currency(purchase.getCurrency())
-                .status(purchase.getStatus())
-                .purchasedAt(purchase.getPurchasedAt())
-                .build();
     }
 
     private String buildPremiumReceiptHtml(List<RemidesPurchase> purchases) {

@@ -18,23 +18,27 @@ public class SmsService {
     private String sender;
 
     public void sendOtpSms(String mobile, String otp) {
+        sendTextMessage(mobile, "Your OTP is " + otp);
+    }
+
+    public void sendTextMessage(String mobile, String message) {
         try {
             // DUMMY IMPLEMENTATION FOR TESTING
             // In production, replace with actual SMS service
-            
-            // For development: Just log the OTP
+
+            // For development: Just log the outgoing SMS
             System.out.println("=".repeat(60));
-            System.out.println("[DUMMY SMS] OTP Sent Successfully");
+            System.out.println("[DUMMY SMS] Message Sent Successfully");
             System.out.println("Mobile: " + mobile);
-            System.out.println("OTP: " + otp);
-            System.out.println("Message: Your OTP is " + otp);
+            System.out.println("Sender: " + sender);
+            System.out.println("Message: " + message);
             System.out.println("=".repeat(60));
-            
+
             /* PRODUCTION: Uncomment this block when you have TextLocal account
-            String message = URLEncoder.encode("Your OTP is " + otp, "UTF-8");
+            String encodedMessage = URLEncoder.encode(message, "UTF-8");
             String data = "apikey=" + apiKey
                     + "&numbers=" + mobile
-                    + "&message=" + message
+                    + "&message=" + encodedMessage
                     + "&sender=" + sender;
 
             HttpURLConnection conn = (HttpURLConnection) new URL("https://api.textlocal.in/send/?").openConnection();
@@ -53,12 +57,11 @@ public class SmsService {
             rd.close();
             System.out.println("SMS Response: " + result);
             */
-            
+
         } catch (Exception e) {
             System.err.println("Error in SMS service: " + e.getMessage());
             e.printStackTrace();
-            // Don't throw exception - OTP is already saved
+            // Don't throw exception - caller decides retry/fallback
         }
     }
 }
-

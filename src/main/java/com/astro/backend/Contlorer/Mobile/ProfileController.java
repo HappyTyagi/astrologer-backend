@@ -1,6 +1,7 @@
 package com.astro.backend.Contlorer.Mobile;
 
 import com.astro.backend.RequestDTO.CompleteProfileRequest;
+import com.astro.backend.RequestDTO.DeleteAccountRequest;
 import com.astro.backend.RequestDTO.UpdateBasicProfileRequest;
 import com.astro.backend.RequestDTO.UpdateEmailRequest;
 import com.astro.backend.RequestDTO.UpdateProfileRequest;
@@ -197,6 +198,21 @@ public class ProfileController {
                     .body(UpdateProfileResponse.builder()
                             .status(false)
                             .message("Failed to update basic profile: " + e.getMessage())
+                            .build());
+        }
+    }
+
+    @PostMapping("/delete-account")
+    @Operation(summary = "Delete account for promotions", description = "Mark user to never receive promotional notifications")
+    public ResponseEntity<UpdateProfileResponse> deleteAccount(@Valid @RequestBody DeleteAccountRequest request) {
+        try {
+            UpdateProfileResponse response = profileService.deleteAccount(request);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(UpdateProfileResponse.builder()
+                            .status(false)
+                            .message("Failed to delete account: " + e.getMessage())
                             .build());
         }
     }

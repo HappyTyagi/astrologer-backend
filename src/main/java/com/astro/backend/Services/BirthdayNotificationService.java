@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,17 +28,17 @@ public class BirthdayNotificationService {
     private final UserRepository userRepository;
     private final MobileUserProfileRepository mobileUserProfileRepository;
     private final EmailService emailService;
+    private final SmsService smsService;
     private final NotificationRepository notificationRepo;
 
     /**
-     * Scheduler: Check for upcoming birthdays daily
-     * Runs at 8:00 AM every day
+     * Scheduler: Check for today's birthdays daily
+     * Runs at 11:00 PM IST every day
      */
-    @Scheduled(cron = "0 0 8 * * ?")
-    public void checkUpcomingBirthdays() {
+    @Scheduled(cron = "0 0 23 * * ?", zone = "Asia/Kolkata")
+    public void checkTodayBirthdaysAtNight() {
         LocalDate today = LocalDate.now();
-        LocalDate tomorrowDate = today.plusDays(1);  // Check for tomorrow's birthdays
-        Integer currentYear = today.getYear();
+        int currentYear = today.getYear();
 
         // Get all mobile user profiles from database
         List<MobileUserProfile> allProfiles = mobileUserProfileRepository.findAll();
@@ -48,32 +49,45 @@ public class BirthdayNotificationService {
             }
 
             try {
-                // Parse user's date of birth
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-                LocalDate dob = LocalDate.parse(profile.getDateOfBirth(), formatter);
-                
-                // Get birthday in current/next year
-                LocalDate upcomingBirthday = dob.withYear(currentYear);
-                if (upcomingBirthday.isBefore(today)) {
-                    upcomingBirthday = dob.withYear(currentYear + 1);
+                LocalDate dob = parseDateOfBirth(profile.getDateOfBirth());
+                if (dob == null) {
+                    continue;
                 }
 
-                // Check if birthday is tomorrow
-                if (upcomingBirthday.equals(tomorrowDate)) {
-                    // Get user details
-                    User user = userRepository.findById(profile.getUserId()).orElse(null);
-                    if (user == null) continue;
-                    
-                    // Check if notification already exists for this year
-                    var existingNotification = notificationRepository.findByUserAndYear(user.getId(), upcomingBirthday.getYear());
-                    
-                    if (existingNotification.isEmpty()) {
-                        createBirthdayNotification(user, profile, upcomingBirthday);
-                    }
+                // Match month/day with today
+                LocalDate birthdayThisYear = dob.withYear(currentYear);
+                if (!birthdayThisYear.equals(today)) {
+                    continue;
+                }
+
+                User user = userRepository.findById(profile.getUserId()).orElse(null);
+                if (user == null) continue;
+                if (Boolean.FALSE.equals(user.getPromotionalNotificationsEnabled())) continue;
+
+                // Ensure one birthday notification per user per year
+                var existingNotification = notificationRepository.findByUserAndYear(user.getId(), birthdayThisYear.getYear());
+                if (existingNotification.isEmpty()) {
+                    createBirthdayNotification(user, profile, birthdayThisYear);
                 }
             } catch (Exception e) {
                 System.err.println("Error processing birthday for profile " + profile.getId() + ": " + e.getMessage());
             }
+        }
+    }
+
+    private LocalDate parseDateOfBirth(String dateOfBirth) {
+        if (dateOfBirth == null || dateOfBirth.isBlank()) return null;
+
+        try {
+            return LocalDate.parse(dateOfBirth.trim(), DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        } catch (DateTimeParseException ignored) {
+            // Try alternate format below
+        }
+
+        try {
+            return LocalDate.parse(dateOfBirth.trim(), DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        } catch (DateTimeParseException ignored) {
+            return null;
         }
     }
 
@@ -110,19 +124,30 @@ public class BirthdayNotificationService {
     }
 
     /**
-     * Send birthday notifications via email and app
+     * Send birthday notifications via email, SMS and app
      */
     private void sendBirthdayNotifications(BirthdayNotification notification) {
         try {
-            // Send Email
+            User user = userRepository.findById(notification.getUserId()).orElse(null);
+            if (user != null && Boolean.FALSE.equals(user.getPromotionalNotificationsEnabled())) {
+                notification.setStatus("SKIPPED");
+                notification.setFailureReason("User opted out from promotional notifications");
+                notificationRepository.save(notification);
+                return;
+            }
+
+            boolean smsSent = false;
+            boolean emailSent = false;
+            boolean appSent = false;
+
+            // Send Email (if email available)
             if (notification.getUserEmail() != null && !notification.getUserEmail().isEmpty()) {
                 try {
-                    String emailContent = String.format(
-                            "<h1>%s</h1><p>%s</p><p>Use code: <strong>%s</strong> for %s%% off!</p>",
-                            notification.getTitle(),
+                    String emailContent = buildBirthdayEmailTemplate(
+                            notification.getUserFullName(),
                             notification.getMessage(),
                             notification.getDiscountCode(),
-                            notification.getDiscountPercentage().intValue()
+                            notification.getDiscountPercentage()
                     );
                     
                     emailService.sendEmail(
@@ -133,8 +158,26 @@ public class BirthdayNotificationService {
                     
                     notification.setEmailSent(true);
                     notification.setEmailSentAt(LocalDateTime.now());
+                    emailSent = true;
                 } catch (Exception e) {
                     System.err.println("Failed to send birthday email: " + e.getMessage());
+                }
+            }
+
+            // Send SMS (always preferred when mobile is available)
+            if (notification.getUserMobileNumber() != null && !notification.getUserMobileNumber().isBlank()) {
+                try {
+                    String smsMessage = String.format(
+                            "Happy Birthday %s! %s Code: %s. Valid till %s.",
+                            notification.getUserFullName(),
+                            notification.getMessage(),
+                            notification.getDiscountCode(),
+                            notification.getOfferValidTill() != null ? notification.getOfferValidTill().toLocalDate() : ""
+                    );
+                    smsService.sendTextMessage(notification.getUserMobileNumber(), smsMessage);
+                    smsSent = true;
+                } catch (Exception e) {
+                    System.err.println("Failed to send birthday SMS: " + e.getMessage());
                 }
             }
 
@@ -153,14 +196,18 @@ public class BirthdayNotificationService {
                 
                 notification.setAppNotificationSent(true);
                 notification.setAppNotificationSentAt(LocalDateTime.now());
+                appSent = true;
             } catch (Exception e) {
                 System.err.println("Failed to send app notification: " + e.getMessage());
             }
 
             // Update status
-            if (notification.getEmailSent() || notification.getAppNotificationSent()) {
+            if (emailSent || appSent || smsSent) {
                 notification.setStatus("SENT");
                 notification.setIsSent(true);
+            } else {
+                notification.setStatus("FAILED");
+                notification.setFailureReason("No delivery channel succeeded");
             }
 
             notificationRepository.save(notification);
@@ -221,6 +268,9 @@ public class BirthdayNotificationService {
     public BirthdayNotificationResponse createManualBirthdayNotification(BirthdayNotificationRequest request) {
         User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + request.getUserId()));
+        if (Boolean.FALSE.equals(user.getPromotionalNotificationsEnabled())) {
+            throw new RuntimeException("User has opted out from promotional notifications");
+        }
 
         MobileUserProfile profile = mobileUserProfileRepository.findByUserId(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("Mobile user profile not found for user ID: " + request.getUserId()));
@@ -269,6 +319,31 @@ public class BirthdayNotificationService {
                 "</div>",
                 userName,
                 message
+        );
+    }
+
+    private String buildBirthdayEmailTemplate(String userName, String message, String discountCode, Double discountPercentage) {
+        String safeName = userName == null || userName.isBlank() ? "User" : userName;
+        String safeMessage = message == null || message.isBlank()
+                ? "Celebrate your special day with us."
+                : message;
+        String code = discountCode == null || discountCode.isBlank() ? "BIRTHDAY" : discountCode;
+        String discountText = discountPercentage == null ? "" : discountPercentage.intValue() + "%";
+
+        return String.format(
+                "<div style='font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:16px;'>" +
+                "<h2 style='color:#e67e22;'>Happy Birthday, %s! 🎉</h2>" +
+                "<p style='font-size:15px;color:#333;'>%s</p>" +
+                "<div style='background:#fff6eb;border:1px solid #ffd9b3;border-radius:10px;padding:12px;margin-top:12px;'>" +
+                "<p style='margin:0;color:#9c4f00;'><strong>Your Birthday Code:</strong> %s</p>" +
+                "<p style='margin:8px 0 0 0;color:#9c4f00;'><strong>Discount:</strong> %s</p>" +
+                "</div>" +
+                "<p style='margin-top:14px;color:#666;'>Wishing you joy, health and prosperity.</p>" +
+                "</div>",
+                safeName,
+                safeMessage,
+                code,
+                discountText
         );
     }
 

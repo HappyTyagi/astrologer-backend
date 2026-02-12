@@ -7,4 +7,5 @@ public class PujaBookingRequest {
     private Long userId;
     private Long pujaId;
     private Long slotId;
+    private Long addressId;
 }

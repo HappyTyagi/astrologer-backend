@@ -29,6 +29,35 @@ public class AstrologerDistrictPriceService {
     }
 
     /**
+     * Get current price by location for mobile flow.
+     * If astrologerId is provided, exact match is preferred.
+     */
+    public AstrologerDistrictPriceResponse getLocationBasedPrice(Long pujaId, Long districtMasterId, Long astrologerId) {
+        LocalDateTime now = LocalDateTime.now();
+        AstrologerDistrictPrice selectedPrice = null;
+
+        if (astrologerId != null) {
+            selectedPrice = priceRepository
+                    .findActivePrice(astrologerId, districtMasterId, pujaId, now)
+                    .orElse(null);
+        }
+
+        if (selectedPrice == null) {
+            List<AstrologerDistrictPrice> priceList =
+                    priceRepository.findActivePricesByDistrictAndPuja(districtMasterId, pujaId, now);
+            if (!priceList.isEmpty()) {
+                selectedPrice = priceList.get(0);
+            }
+        }
+
+        if (selectedPrice == null) {
+            throw new RuntimeException("No active location-based price found");
+        }
+
+        return mapToResponse(selectedPrice, true, "Location-based price fetched successfully");
+    }
+
+    /**
      * Create new astrologer district price mapping
      */
     public AstrologerDistrictPriceResponse createPrice(AstrologerDistrictPriceRequest request) {

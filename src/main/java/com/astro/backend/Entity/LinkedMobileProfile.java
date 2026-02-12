@@ -1,69 +1,67 @@
 package com.astro.backend.Entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-
-import com.astro.backend.EnumFile.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(
+        name = "linked_mobile_profiles",
+        indexes = {
+                @Index(name = "idx_lmp_mobile", columnList = "mobileNo"),
+                @Index(name = "idx_lmp_user", columnList = "userId")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User {
+public class LinkedMobileProfile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ===== Basic Details =====
     @Column(nullable = false)
-    private String name;
+    private Long userId;
+
+    @Column(nullable = false, length = 20)
+    private String mobileNo;
+
+    @Column(nullable = false, length = 120)
+    private String profileName;
 
     private String email;
-    
-    @Column(nullable = false, columnDefinition = "INT DEFAULT 0")
-    private Integer emailChangeCount;
-    
-    @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
-    private Boolean promotionalNotificationsEnabled;
+    private String dateOfBirth;
+    private String birthTime;
+    private String birthAmPm;
+    private Long genderMasterId;
+    private Long stateMasterId;
+    private Long districtMasterId;
 
-    @Column(unique = true, nullable = false, length = 10)
-    private String mobileNumber;
+    @Column(columnDefinition = "TEXT")
+    private String address;
 
-    private String password;
+    @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
+    private Boolean isPrimary;
 
-    @Enumerated(EnumType.STRING)
-    private Role role; // ASTROLOGER, ADMIN, USER
-
-    private Boolean isVerified;
-
-    private String country;
-    
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
     @JsonIgnore
     private Boolean isActive;
 
     private LocalDateTime createdAt;
-
     private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
+        if (isPrimary == null) {
+            isPrimary = false;
+        }
         if (isActive == null) {
             isActive = true;
-        }
-        if (emailChangeCount == null) {
-            emailChangeCount = 0;
-        }
-        if (promotionalNotificationsEnabled == null) {
-            promotionalNotificationsEnabled = true;
         }
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
@@ -78,3 +76,4 @@ public class User {
         updatedAt = LocalDateTime.now();
     }
 }
+

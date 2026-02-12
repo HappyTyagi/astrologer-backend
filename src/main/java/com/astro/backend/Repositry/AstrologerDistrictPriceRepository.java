@@ -30,6 +30,21 @@ public interface AstrologerDistrictPriceRepository extends JpaRepository<Astrolo
             @Param("currentTime") LocalDateTime currentTime);
 
     /**
+     * Find active price by district and puja when astrologer is not provided
+     */
+    @Query("SELECT adp FROM AstrologerDistrictPrice adp " +
+           "WHERE adp.districtMasterId = :districtMasterId " +
+           "AND adp.pujaId = :pujaId " +
+           "AND adp.isActive = true " +
+           "AND (adp.validFrom <= :currentTime OR adp.validFrom IS NULL) " +
+           "AND (adp.validTill >= :currentTime OR adp.validTill IS NULL) " +
+           "ORDER BY adp.updatedAt DESC")
+    List<AstrologerDistrictPrice> findActivePricesByDistrictAndPuja(
+            @Param("districtMasterId") Long districtMasterId,
+            @Param("pujaId") Long pujaId,
+            @Param("currentTime") LocalDateTime currentTime);
+
+    /**
      * Find all prices for a specific astrologer
      */
     List<AstrologerDistrictPrice> findByAstrologerIdAndIsActiveTrue(Long astrologerId);

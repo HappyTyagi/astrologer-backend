@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -25,6 +26,8 @@ public class Puja {
     private String category;
 
     // ===== Enhanced Details =====
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String image;              // Puja image URL (for mobile app)
     private String benefits;           // Benefits of puja
     private String rituals;            // Rituals involved
@@ -37,6 +40,12 @@ public class Puja {
     private Integer viewCount;         // Track popularity
     private Boolean isFeatured;        // For mobile showcase
     private LocalDateTime featureExpiry;
+    @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
+    private Boolean popupEnabled;      // Popup visibility flag
+    private LocalDate popupStartDate;  // Popup starts from this date
+    private LocalDate popupEndDate;    // Popup valid till this date
+    private Integer popupPriority;     // Higher priority first
+    private String popupLabel;         // Optional badge text
 
     @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime createdAt;
@@ -52,6 +61,12 @@ public class Puja {
     protected void onCreate() {
         if (isActive == null) {
             isActive = true;
+        }
+        if (popupEnabled == null) {
+            popupEnabled = true;
+        }
+        if (popupPriority == null) {
+            popupPriority = 0;
         }
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();

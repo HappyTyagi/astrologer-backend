@@ -2,6 +2,7 @@ package com.astro.backend.Contlorer.Web;
 
 import com.astro.backend.Auth.JwtService;
 import com.astro.backend.Entity.User;
+import com.astro.backend.EnumFile.Role;
 import com.astro.backend.Repositry.UserRepository;
 import com.astro.backend.RequestDTO.AuthRequest;
 import com.astro.backend.ResponseDTO.WebLoginResponse;
@@ -45,8 +46,43 @@ public class WebLoginController {
                         .build());
             }
 
-            // Verify password
-            if (!passwordEncoder.matches(password, user.getPassword())) {
+            if (user.getRole() != Role.ADMIN) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(WebLoginResponse.builder()
+                        .status(false)
+                        .message("Only admin can login to web panel")
+                        .build());
+            }
+
+            if (Boolean.FALSE.equals(user.getIsActive())) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(WebLoginResponse.builder()
+                        .status(false)
+                        .message("Admin account is inactive")
+                        .build());
+            }
+
+            // Login is blocked when password is not set in User entity
+            if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(WebLoginResponse.builder()
+                        .status(false)
+                        .message("Password is not set for this admin account")
+                        .build());
+            }
+
+            // Verify password (and auto-migrate plain text to BCrypt if needed)
+            String storedPassword = user.getPassword() == null ? "" : user.getPassword();
+            boolean passwordMatched;
+            try {
+                passwordMatched = passwordEncoder.matches(password, storedPassword);
+            } catch (Exception ignored) {
+                passwordMatched = false;
+            }
+            if (!passwordMatched && storedPassword.equals(password)) {
+                user.setPassword(passwordEncoder.encode(password));
+                userRepository.save(user);
+                passwordMatched = true;
+            }
+
+            if (!passwordMatched) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(WebLoginResponse.builder()
                         .status(false)
                         .message("Invalid email or password")

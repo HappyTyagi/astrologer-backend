@@ -16,6 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StateMasterController {
 
+    private static final String DEFAULT_COUNTRY_CODE = "IN";
     private final StateMasterRepository stateRepository;
 
     /**
@@ -67,7 +68,7 @@ public class StateMasterController {
             StateMaster state = StateMaster.builder()
                     .name(request.getName())
                     .code(request.getCode())
-                    .country(request.getCountry())
+                    .country(DEFAULT_COUNTRY_CODE)
                     .description(request.getDescription())
                     .isActive(request.getIsActive() != null ? request.getIsActive() : true)
                     .build();
@@ -107,7 +108,7 @@ public class StateMasterController {
 
             state.setName(request.getName());
             state.setCode(request.getCode());
-            state.setCountry(request.getCountry());
+            state.setCountry(DEFAULT_COUNTRY_CODE);
             state.setDescription(request.getDescription());
             if (request.getIsActive() != null) {
                 state.setIsActive(request.getIsActive());

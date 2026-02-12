@@ -10,8 +10,10 @@ import java.time.LocalDateTime;
 public class RemidesPurchaseHistoryResponse {
     private Long id;
     private String orderId;
+    private String orderType;
     private Long userId;
     private Long remidesId;
+    private Long pujaId;
     private Long addressId;
     private String title;
     private String subtitle;

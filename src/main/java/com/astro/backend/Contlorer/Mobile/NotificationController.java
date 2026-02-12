@@ -2,11 +2,13 @@ package com.astro.backend.Contlorer.Mobile;
 
 import com.astro.backend.Entity.Notification;
 import com.astro.backend.Entity.User;
+import com.astro.backend.Repositry.MobileUserProfileRepository;
 import com.astro.backend.Repositry.NotificationRepository;
 import com.astro.backend.Repositry.UserRepository;
 import com.astro.backend.RequestDTO.SendNotificationRequest;
 import com.astro.backend.RequestDTO.TestNotificationRequest;
 import com.astro.backend.ResponseDTO.NotificationResponse;
+import com.astro.backend.Services.FcmPushService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +25,8 @@ public class NotificationController {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final MobileUserProfileRepository mobileUserProfileRepository;
+    private final FcmPushService fcmPushService;
 
     /**
      * Test notification endpoint
@@ -73,19 +77,60 @@ public class NotificationController {
             // Validate user exists
             User user = userRepository.findById(request.getUserId())
                     .orElseThrow(() -> new RuntimeException("User not found with ID: " + request.getUserId()));
+            Notification.NotificationType notificationType =
+                    request.getType() != null ? request.getType() : Notification.NotificationType.PROMO;
+
+            // If user opted out from promotional notifications, ignore promo sends
+            if (notificationType == Notification.NotificationType.PROMO
+                    && Boolean.FALSE.equals(user.getPromotionalNotificationsEnabled())) {
+                return ResponseEntity.ok(
+                        NotificationResponse.builder()
+                                .userId(request.getUserId())
+                                .type(notificationType.toString())
+                                .status(false)
+                                .message("User has opted out from promotional notifications")
+                                .build()
+                );
+            }
+
+            String fcmToken = mobileUserProfileRepository.findByUserId(request.getUserId())
+                    .map(p -> p.getFcmToken() == null ? "" : p.getFcmToken().trim())
+                    .orElse("");
+
+            String deliveryStatus = "FAILED";
+            String failureReason = null;
+            if (fcmToken.isBlank()) {
+                failureReason = "Missing FCM token";
+            } else {
+                FcmPushService.PushResult pushResult = fcmPushService.sendToToken(
+                        fcmToken,
+                        request.getTitle().trim(),
+                        request.getMessage().trim(),
+                        notificationType.name(),
+                        request.getImageUrl(),
+                        request.getActionUrl(),
+                        request.getActionData()
+                );
+                if (pushResult.isSuccess()) {
+                    deliveryStatus = "SENT";
+                } else {
+                    failureReason = pushResult.getReason();
+                }
+            }
 
             // Build notification object
             Notification notification = Notification.builder()
                     .userId(request.getUserId())
                     .title(request.getTitle().trim())
                     .message(request.getMessage().trim())
-                    .type(request.getType() != null ? request.getType() : Notification.NotificationType.PROMO)
+                    .type(notificationType)
                     .imageUrl(request.getImageUrl())
                     .actionUrl(request.getActionUrl())
                     .actionData(request.getActionData())
                     .isRead(false)
-                    .deliveryStatus("SENT")
-                    .sentAt(LocalDateTime.now())
+                    .deliveryStatus(deliveryStatus)
+                    .failureReason(failureReason)
+                    .sentAt("SENT".equals(deliveryStatus) ? LocalDateTime.now() : null)
                     .build();
 
             // Save notification to database
@@ -101,8 +146,10 @@ public class NotificationController {
                     .imageUrl(savedNotification.getImageUrl())
                     .deliveryStatus(savedNotification.getDeliveryStatus())
                     .isRead(savedNotification.getIsRead())
-                    .status(true)
-                    .message("Notification sent successfully to user")
+                    .status("SENT".equals(savedNotification.getDeliveryStatus()))
+                    .message("SENT".equals(savedNotification.getDeliveryStatus())
+                            ? "Notification sent successfully to user"
+                            : "Notification saved, but push send failed: " + savedNotification.getFailureReason())
                     .build();
 
             return ResponseEntity.ok(response);

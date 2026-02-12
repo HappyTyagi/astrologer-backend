@@ -4,11 +4,12 @@ package com.astro.backend.Auth;
 import com.astro.backend.Repositry.UserRepository;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Component;
 import java.io.IOException;
-import java.util.Collections;
+import java.util.List;
 
 @Component
 public class JwtAuthFilter implements Filter {
@@ -29,17 +30,25 @@ public class JwtAuthFilter implements Filter {
         String authHeader = req.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            String email = jwtService.extractEmail(token);
+            try {
+                String token = authHeader.substring(7);
+                String email = jwtService.extractEmail(token);
 
-            userRepo.findByEmail(email).ifPresent(user -> {
-                var auth = new UsernamePasswordAuthenticationToken(
-                        user.getEmail(),
-                        null,
-                        Collections.emptyList()
-                );
-                SecurityContextHolder.getContext().setAuthentication(auth);
-            });
+                userRepo.findByEmail(email).ifPresent(user -> {
+                    var authorities = user.getRole() == null
+                            ? List.<SimpleGrantedAuthority>of()
+                            : List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+
+                    var auth = new UsernamePasswordAuthenticationToken(
+                            user.getEmail(),
+                            null,
+                            authorities
+                    );
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                });
+            } catch (Exception ignored) {
+                SecurityContextHolder.clearContext();
+            }
         }
 
         chain.doFilter(request, response);
