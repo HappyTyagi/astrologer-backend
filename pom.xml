@@ -125,6 +125,13 @@
 			<version>1.4.3</version>
 		</dependency>
 
+		<!-- AGORA TOKEN BUILDER -->
+		<dependency>
+			<groupId>io.agora</groupId>
+			<artifactId>authentication</artifactId>
+			<version>2.0.0</version>
+		</dependency>
+
 
         <dependency>
             <groupId>org.projectlombok</groupId>

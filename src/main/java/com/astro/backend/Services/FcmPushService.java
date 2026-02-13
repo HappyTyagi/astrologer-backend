@@ -110,6 +110,9 @@ public class FcmPushService {
 
             Map<String, Object> android = new LinkedHashMap<>();
             android.put("priority", "HIGH");
+            android.put("notification", Map.of(
+                    "sound", "default"
+            ));
             message.put("android", android);
 
             Map<String, Object> apns = new LinkedHashMap<>();

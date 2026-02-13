@@ -95,7 +95,7 @@ public class PujaDataInitializationService implements CommandLineRunner {
         }
 
         if (inserted > 0) {
-            log.info("✅ Inserted {} upcoming puja entries", inserted);
+            log.info("Inserted {} upcoming puja entries", inserted);
         } else {
             log.info("Upcoming puja entries already exist. Skipping seed.");
         }
@@ -154,7 +154,7 @@ public class PujaDataInitializationService implements CommandLineRunner {
         }
 
         if (slotSeededPujaCount > 0) {
-            log.info("✅ Generated default future slots for {} puja(s)", slotSeededPujaCount);
+            log.info("Generated default future slots for {} puja(s)", slotSeededPujaCount);
         } else {
             log.info("Default future puja slots already present. Skipping slot generation.");
         }

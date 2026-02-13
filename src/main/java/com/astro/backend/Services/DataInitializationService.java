@@ -75,10 +75,10 @@ public class DataInitializationService implements CommandLineRunner {
             // Save all genders
             genderMasterRepository.saveAll(genders);
             
-            log.info("✅ Gender Master data initialized: Male, Female, Other");
+            log.info("Gender Master data initialized: Male, Female, Other");
             
         } catch (Exception e) {
-            log.error("❌ Error initializing Gender Master data: {}", e.getMessage());
+            log.error("Error initializing Gender Master data: {}", e.getMessage());
         }
     }
 
@@ -140,10 +140,10 @@ public class DataInitializationService implements CommandLineRunner {
             // Save all states
             stateMasterRepository.saveAll(states);
             
-            log.info("✅ State Master data initialized: {} states inserted", states.size());
+            log.info("State Master data initialized: {} states inserted", states.size());
             
         } catch (Exception e) {
-            log.error("❌ Error initializing State Master data: {}", e.getMessage());
+            log.error("Error initializing State Master data: {}", e.getMessage());
         }
     }
 
@@ -781,10 +781,10 @@ public class DataInitializationService implements CommandLineRunner {
             );
 
             districtMasterRepository.saveAll(allDistricts);
-            log.info("✅ District Master data initialized: {} districts inserted", allDistricts.size());
+            log.info("District Master data initialized: {} districts inserted", allDistricts.size());
 
         } catch (Exception e) {
-            log.error("❌ Error initializing District Master data: {}", e.getMessage());
+            log.error("Error initializing District Master data: {}", e.getMessage());
         }
     }
 

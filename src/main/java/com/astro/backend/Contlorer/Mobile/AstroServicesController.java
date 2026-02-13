@@ -84,9 +84,9 @@ public class AstroServicesController {
                 planetaryData.setSvgUrl(svgUrl);
 
                 kundliData.setPlanetaryPositions(planetaryData);
-                log.info("✅ Planetary positions added to kundli response");
+                log.info("Planetary positions added to kundli response");
             } catch (Exception e) {
-                log.warn("⚠️ Failed to add planetary positions: {}", e.getMessage());
+                log.warn("Failed to add planetary positions: {}", e.getMessage());
                 // Continue without planetary positions if calculation fails
             }
 

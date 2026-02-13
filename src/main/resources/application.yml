@@ -50,3 +50,8 @@ fcm:
   service-account-file: ${FCM_SERVICE_ACCOUNT_FILE:classpath:firebase-service-account.json}
   service-account-json: ${FCM_SERVICE_ACCOUNT_JSON:}
   service-account-base64: ${FCM_SERVICE_ACCOUNT_BASE64:}
+
+agora:
+  app-id: ${AGORA_APP_ID:cbe31f2b8684484a92cdcb6b81ca8ab6}
+  app-certificate: ${AGORA_APP_CERTIFICATE:}
+  token-expire-seconds: ${AGORA_TOKEN_EXPIRE_SECONDS:3600}

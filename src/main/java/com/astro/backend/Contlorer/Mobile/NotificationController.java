@@ -6,6 +6,7 @@ import com.astro.backend.Repositry.MobileUserProfileRepository;
 import com.astro.backend.Repositry.NotificationRepository;
 import com.astro.backend.Repositry.UserRepository;
 import com.astro.backend.RequestDTO.SendNotificationRequest;
+import com.astro.backend.RequestDTO.SendNotificationByMobileRequest;
 import com.astro.backend.RequestDTO.TestNotificationRequest;
 import com.astro.backend.ResponseDTO.NotificationResponse;
 import com.astro.backend.Services.ErrorLogService;
@@ -75,19 +76,74 @@ public class NotificationController {
      */
     @PostMapping("/send")
     public ResponseEntity<NotificationResponse> sendNotification(@Valid @RequestBody SendNotificationRequest request) {
+        return sendNotificationToUserId(
+                request.getUserId(),
+                request.getTitle(),
+                request.getMessage(),
+                request.getType(),
+                request.getImageUrl(),
+                request.getActionUrl(),
+                request.getActionData()
+        );
+    }
+
+    @PostMapping("/send-by-mobile")
+    public ResponseEntity<NotificationResponse> sendNotificationByMobile(
+            @Valid @RequestBody SendNotificationByMobileRequest request
+    ) {
+        String normalizedMobile = normalizeMobile(request.getMobileNumber());
+        if (normalizedMobile.isBlank()) {
+            return ResponseEntity.badRequest().body(
+                    NotificationResponse.builder()
+                            .status(false)
+                            .message("Invalid mobile number")
+                            .build()
+            );
+        }
+
+        User user = userRepository.findByMobileNumber(normalizedMobile).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    NotificationResponse.builder()
+                            .status(false)
+                            .message("User not found for mobile number: " + normalizedMobile)
+                            .build()
+            );
+        }
+
+        return sendNotificationToUserId(
+                user.getId(),
+                request.getTitle(),
+                request.getMessage(),
+                request.getType(),
+                request.getImageUrl(),
+                request.getActionUrl(),
+                request.getActionData()
+        );
+    }
+
+    private ResponseEntity<NotificationResponse> sendNotificationToUserId(
+            Long userId,
+            String title,
+            String message,
+            Notification.NotificationType type,
+            String imageUrl,
+            String actionUrl,
+            String actionData
+    ) {
         try {
             // Validate user exists
-            User user = userRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new RuntimeException("User not found with ID: " + request.getUserId()));
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
             Notification.NotificationType notificationType =
-                    request.getType() != null ? request.getType() : Notification.NotificationType.PROMO;
+                    type != null ? type : Notification.NotificationType.PROMO;
 
             // If user opted out from promotional notifications, ignore promo sends
             if (notificationType == Notification.NotificationType.PROMO
                     && Boolean.FALSE.equals(user.getPromotionalNotificationsEnabled())) {
                 return ResponseEntity.ok(
                         NotificationResponse.builder()
-                                .userId(request.getUserId())
+                                .userId(userId)
                                 .type(notificationType.toString())
                                 .status(false)
                                 .message("User has opted out from promotional notifications")
@@ -95,7 +151,7 @@ public class NotificationController {
                 );
             }
 
-            String fcmToken = mobileUserProfileRepository.findByUserId(request.getUserId())
+            String fcmToken = mobileUserProfileRepository.findByUserId(userId)
                     .map(p -> p.getFcmToken() == null ? "" : p.getFcmToken().trim())
                     .orElse("");
 
@@ -106,12 +162,12 @@ public class NotificationController {
             } else {
                 FcmPushService.PushResult pushResult = fcmPushService.sendToToken(
                         fcmToken,
-                        request.getTitle().trim(),
-                        request.getMessage().trim(),
+                        title.trim(),
+                        message.trim(),
                         notificationType.name(),
-                        request.getImageUrl(),
-                        request.getActionUrl(),
-                        request.getActionData()
+                        imageUrl,
+                        actionUrl,
+                        actionData
                 );
                 if (pushResult.isSuccess()) {
                     deliveryStatus = "SENT";
@@ -126,13 +182,13 @@ public class NotificationController {
 
             // Build notification object
             Notification notification = Notification.builder()
-                    .userId(request.getUserId())
-                    .title(request.getTitle().trim())
-                    .message(request.getMessage().trim())
+                    .userId(userId)
+                    .title(title.trim())
+                    .message(message.trim())
                     .type(notificationType)
-                    .imageUrl(request.getImageUrl())
-                    .actionUrl(request.getActionUrl())
-                    .actionData(request.getActionData())
+                    .imageUrl(imageUrl)
+                    .actionUrl(actionUrl)
+                    .actionData(actionData)
                     .isRead(false)
                     .deliveryStatus(deliveryStatus)
                     .failureReason(failureReason)
@@ -165,8 +221,8 @@ public class NotificationController {
                     "MOBILE_NOTIFICATION",
                     "/notification/send",
                     e,
-                    "{userId:" + request.getUserId() + "}",
-                    request.getUserId()
+                    "{userId:" + userId + "}",
+                    userId
             );
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(NotificationResponse.builder()
@@ -176,6 +232,15 @@ public class NotificationController {
                                     : "Notification request failed. Ref: " + errorId)
                             .build());
         }
+    }
+
+    private String normalizeMobile(String mobile) {
+        if (mobile == null) return "";
+        String digits = mobile.replaceAll("[^0-9]", "");
+        if (digits.length() > 10) {
+            digits = digits.substring(digits.length() - 10);
+        }
+        return digits;
     }
 
     /**

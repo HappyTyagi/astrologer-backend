@@ -77,6 +77,30 @@ public class MobileUserController {
     }
 
     /**
+     * Update device details by mobile number
+     * PUT /api/mobile/user/device/by-mobile/{mobileNumber}
+     */
+    @PutMapping("/device/by-mobile/{mobileNumber}")
+    public ResponseEntity<MobileUserProfileResponse> updateDeviceDetailsByMobile(
+            @PathVariable String mobileNumber,
+            @RequestParam String deviceToken,
+            @RequestParam String fcmToken,
+            @RequestParam String appVersion) {
+        try {
+            String normalized = normalizeMobile(mobileNumber);
+            MobileUserProfileResponse response = mobileUserService.updateDeviceDetailsByMobileNumber(
+                    normalized, deviceToken, fcmToken, appVersion);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(MobileUserProfileResponse.builder()
+                            .status(false)
+                            .message("Failed to update device details by mobile: " + e.getMessage())
+                            .build());
+        }
+    }
+
+    /**
      * Update language preference
      * PUT /api/mobile/user/language/{userId}
      */
@@ -94,5 +118,14 @@ public class MobileUserController {
                             .message("Failed to update language: " + e.getMessage())
                             .build());
         }
+    }
+
+    private String normalizeMobile(String mobile) {
+        if (mobile == null) return "";
+        String digits = mobile.replaceAll("[^0-9]", "");
+        if (digits.length() > 10) {
+            digits = digits.substring(digits.length() - 10);
+        }
+        return digits;
     }
 }
