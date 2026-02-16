@@ -1,5 +1,6 @@
 package com.astro.backend.Exception;
 
+import com.astro.backend.Auth.JwtAuthFilter;
 import com.astro.backend.Services.ErrorLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
@@ -59,6 +60,10 @@ public class ApiErrorResponseLoggingAdvice implements ResponseBodyAdvice<Object>
             }
         }
 
+        if (userId == null && request instanceof ServletServerHttpRequest servletRequest) {
+            userId = resolveUserIdFromRequest(servletRequest);
+        }
+
         if (!shouldLog) {
             return body;
         }
@@ -83,6 +88,15 @@ public class ApiErrorResponseLoggingAdvice implements ResponseBodyAdvice<Object>
         return body;
     }
 
+    private Long resolveUserIdFromRequest(ServletServerHttpRequest servletRequest) {
+        Object attr = servletRequest.getServletRequest().getAttribute(JwtAuthFilter.AUTH_USER_ID_ATTR);
+        Long parsed = parseLong(attr);
+        if (parsed != null) {
+            return parsed;
+        }
+        return parseLong(servletRequest.getServletRequest().getParameter("userId"));
+    }
+
     private boolean hasFalseStatus(Object body) {
         try {
             Method method = body.getClass().getMethod("getStatus");
@@ -99,6 +113,20 @@ public class ApiErrorResponseLoggingAdvice implements ResponseBodyAdvice<Object>
             Object message = method.invoke(body);
             return message == null ? null : String.valueOf(message);
         } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private Long parseLong(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        try {
+            return Long.parseLong(String.valueOf(value).trim());
+        } catch (NumberFormatException ignored) {
             return null;
         }
     }

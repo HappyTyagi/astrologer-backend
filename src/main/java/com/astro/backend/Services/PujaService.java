@@ -19,6 +19,7 @@ import com.lowagie.text.Chunk;
 import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
+import com.lowagie.text.FontFactory;
 import com.lowagie.text.Image;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
@@ -513,163 +514,141 @@ public class PujaService {
                 ? "Puja Booking"
                 : puja.getName();
         final String orderId = "PUJA-" + (booking.getId() == null ? 0L : booking.getId());
-        final String bookingId = booking.getId() == null ? "-" : booking.getId().toString();
-        final String userId = booking.getUserId() == null ? "-" : booking.getUserId().toString();
-        final String pujaId = booking.getPujaId() == null ? "-" : booking.getPujaId().toString();
-        final String slotId = booking.getSlotId() == null ? "-" : booking.getSlotId().toString();
+        final String userId = booking.getUserId() == null ? "-" : String.valueOf(booking.getUserId());
         final String bookedAt = formatDateTime(booking.getBookedAt());
         final String slotTime = formatDateTime(slot == null ? null : slot.getSlotTime());
-        final String duration = puja == null || puja.getDurationMinutes() <= 0
-                ? "-"
-                : puja.getDurationMinutes() + " min";
-        final String category = puja == null || puja.getCategory() == null || puja.getCategory().isBlank()
-                ? "-"
-                : puja.getCategory();
         final String paymentMethod = booking.getPaymentMethod() == null || booking.getPaymentMethod().isBlank()
                 ? "-"
                 : booking.getPaymentMethod();
         final String txnId = booking.getTransactionId() == null || booking.getTransactionId().isBlank()
                 ? "-"
                 : booking.getTransactionId();
-        final String status = formatStatus(booking.getStatus() == null ? null : booking.getStatus().name());
-        final double amount = booking.getTotalPrice() == null ? 0.0 : booking.getTotalPrice();
-        final String amountText = formatMoney(amount, "INR");
+        final double finalTotal = booking.getTotalPrice() == null ? 0.0 : booking.getTotalPrice();
+        final String amountText = formatMoney(finalTotal, "INR");
         final String addressText = formatAddress(booking.getAddress());
+        final String customerName = booking.getAddress() != null && booking.getAddress().getName() != null
+                ? booking.getAddress().getName()
+                : "-";
+        final String customerMobile = booking.getAddress() != null && booking.getAddress().getUserMobileNumber() != null
+                ? booking.getAddress().getUserMobileNumber()
+                : "-";
+        final String meetLink = booking.getMeetingLink() == null || booking.getMeetingLink().isBlank()
+                ? defaultGoogleMeetLink()
+                : booking.getMeetingLink();
 
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            Document document = new Document(PageSize.A4, 32, 32, 28, 28);
+            Document document = new Document(PageSize.A4, 28, 28, 24, 24);
             PdfWriter writer = PdfWriter.getInstance(document, out);
             document.open();
             addLogoWatermark(writer, document);
 
-            Font titleFont = new Font(Font.HELVETICA, 19, Font.BOLD, new Color(28, 40, 100));
-            Font subFont = new Font(Font.HELVETICA, 10, Font.NORMAL, new Color(94, 100, 116));
-            Font labelFont = new Font(Font.HELVETICA, 10, Font.BOLD, new Color(62, 70, 88));
-            Font valueFont = new Font(Font.HELVETICA, 10, Font.NORMAL, new Color(29, 35, 47));
-            Font amountFont = new Font(Font.HELVETICA, 12, Font.BOLD, new Color(15, 27, 80));
-            Font sectionFont = new Font(Font.HELVETICA, 11, Font.BOLD, new Color(28, 40, 100));
+            FontFactory.registerDirectories();
+            Font titleFont = calibriFont(30, Font.BOLD, Color.BLACK);
+            Font subTitleFont = calibriFont(15, Font.BOLD, Color.BLACK);
+            Font sectionFont = calibriFont(12, Font.BOLD, Color.BLACK);
+            Font bodyFont = calibriFont(11, Font.NORMAL, Color.BLACK);
+            Font boldFont = calibriFont(11, Font.BOLD, Color.BLACK);
+            Font totalFont = calibriFont(13, Font.BOLD, Color.BLACK);
 
-            document.add(new Paragraph("Astrologer", titleFont));
-            document.add(new Paragraph("Puja Booking Invoice", sectionFont));
-            document.add(new Paragraph("Thank you for booking with Astrologer.", subFont));
+            Paragraph title = new Paragraph("Tax Invoice", titleFont);
+            title.setAlignment(Element.ALIGN_CENTER);
+            title.setSpacingAfter(2f);
+            document.add(title);
+            Paragraph subTitle = new Paragraph("ORIGINAL FOR RECIPIENT", subTitleFont);
+            subTitle.setAlignment(Element.ALIGN_CENTER);
+            subTitle.setSpacingAfter(14f);
+            document.add(subTitle);
+
+            document.add(new Paragraph("ASTROLOGER SERVICES PRIVATE LIMITED", sectionFont));
+            document.add(new Paragraph("Address: Digital Astrology Services, India", bodyFont));
+            document.add(new Paragraph("GSTIN: 09ASTRO1234X1Z9    Email: support@astrologer.app", bodyFont));
+            document.add(new Paragraph("Invoice No: " + orderId, boldFont));
+            document.add(new Paragraph("Invoice Date: " + LocalDate.now(), boldFont));
             document.add(Chunk.NEWLINE);
 
-            PdfPTable summary = new PdfPTable(new float[]{1.2f, 1.3f, 1.2f, 1.3f});
-            summary.setWidthPercentage(100);
-            summary.setSpacingAfter(10f);
-            summary.addCell(pdfInfoLabelCell("Invoice No", labelFont));
-            summary.addCell(pdfInfoValueCell(orderId, valueFont));
-            summary.addCell(pdfInfoLabelCell("Invoice Date", labelFont));
-            summary.addCell(pdfInfoValueCell(formatDateTime(LocalDateTime.now()), valueFont));
-            summary.addCell(pdfInfoLabelCell("Status", labelFont));
-            summary.addCell(pdfInfoValueCell(status, valueFont));
-            summary.addCell(pdfInfoLabelCell("Total Amount", labelFont));
-            summary.addCell(pdfInfoValueCell(amountText, amountFont));
-            document.add(summary);
+            document.add(new Paragraph("User Details", sectionFont));
+            document.add(new Paragraph("Name: " + customerName, bodyFont));
+            document.add(new Paragraph("User ID: " + userId, bodyFont));
+            document.add(new Paragraph("Mobile: " + customerMobile, bodyFont));
+            document.add(new Paragraph("Address: " + addressText, bodyFont));
+            document.add(Chunk.NEWLINE);
 
-            PdfPTable bookingMeta = new PdfPTable(new float[]{1.2f, 1.3f, 1.2f, 1.3f});
-            bookingMeta.setWidthPercentage(100);
-            bookingMeta.setSpacingAfter(10f);
-            bookingMeta.addCell(pdfInfoLabelCell("Booking ID", labelFont));
-            bookingMeta.addCell(pdfInfoValueCell(bookingId, valueFont));
-            bookingMeta.addCell(pdfInfoLabelCell("Puja ID", labelFont));
-            bookingMeta.addCell(pdfInfoValueCell(pujaId, valueFont));
-            bookingMeta.addCell(pdfInfoLabelCell("Slot ID", labelFont));
-            bookingMeta.addCell(pdfInfoValueCell(slotId, valueFont));
-            bookingMeta.addCell(pdfInfoLabelCell("Booked At", labelFont));
-            bookingMeta.addCell(pdfInfoValueCell(bookedAt, valueFont));
-            bookingMeta.addCell(pdfInfoLabelCell("Slot Time", labelFont));
-            bookingMeta.addCell(pdfInfoValueCell(slotTime, valueFont));
-            document.add(bookingMeta);
+            document.add(new Paragraph("Service Details", sectionFont));
+            document.add(new Paragraph("HSN Code: 999799", bodyFont));
+            document.add(new Paragraph("Service Description: Puja booking services", bodyFont));
+            document.add(new Paragraph("Work Description:", bodyFont));
+            document.add(Chunk.NEWLINE);
 
-            Paragraph userSection = new Paragraph("User Details", sectionFont);
-            userSection.setSpacingAfter(6f);
-            document.add(userSection);
-            PdfPTable userMeta = new PdfPTable(new float[]{1.5f, 3.5f});
-            userMeta.setWidthPercentage(100);
-            userMeta.setSpacingAfter(10f);
-            userMeta.addCell(pdfInfoLabelCell("User ID", labelFont));
-            userMeta.addCell(pdfInfoValueCell(userId, valueFont));
-            userMeta.addCell(pdfInfoLabelCell("Name", labelFont));
-            userMeta.addCell(pdfInfoValueCell(
-                    booking.getAddress() != null && booking.getAddress().getName() != null
-                            ? booking.getAddress().getName()
-                            : "-",
-                    valueFont
-            ));
-            userMeta.addCell(pdfInfoLabelCell("Mobile", labelFont));
-            userMeta.addCell(pdfInfoValueCell(
-                    booking.getAddress() != null && booking.getAddress().getUserMobileNumber() != null
-                            ? booking.getAddress().getUserMobileNumber()
-                            : "-",
-                    valueFont
-            ));
-            document.add(userMeta);
+            PdfPTable table = new PdfPTable(new float[]{1.1f, 6.5f, 1.9f});
+            table.setWidthPercentage(100);
+            table.setSpacingAfter(8f);
+            table.addCell(taxHeaderCell("Sr. No"));
+            table.addCell(taxHeaderCell("Particulars"));
+            table.addCell(taxHeaderCell("Amount (Rs.)"));
 
-            Paragraph pujaSection = new Paragraph("Puja Details", sectionFont);
-            pujaSection.setSpacingAfter(6f);
-            document.add(pujaSection);
+            table.addCell(taxBodyCell("", Element.ALIGN_LEFT, bodyFont, 1f));
+            table.addCell(taxBodyCell("Order ID: " + orderId, Element.ALIGN_LEFT, boldFont, 1f));
+            table.addCell(taxBodyCell("", Element.ALIGN_RIGHT, bodyFont, 1f));
+            table.addCell(taxBodyCell("", Element.ALIGN_LEFT, bodyFont, 1f));
+            table.addCell(taxBodyCell("Order Date: " + bookedAt, Element.ALIGN_LEFT, boldFont, 1f));
+            table.addCell(taxBodyCell("", Element.ALIGN_RIGHT, bodyFont, 1f));
 
-            PdfPTable pujaTable = new PdfPTable(new float[]{3.8f, 1.3f, 1.3f, 1.6f});
-            pujaTable.setWidthPercentage(100);
-            pujaTable.setSpacingAfter(10f);
-            pujaTable.addCell(pdfHeaderCell("Puja Name"));
-            pujaTable.addCell(pdfHeaderCell("Category"));
-            pujaTable.addCell(pdfHeaderCell("Duration"));
-            pujaTable.addCell(pdfHeaderCell("Amount"));
-            pujaTable.addCell(pdfBodyCell(pujaName, Element.ALIGN_LEFT));
-            pujaTable.addCell(pdfBodyCell(category, Element.ALIGN_LEFT));
-            pujaTable.addCell(pdfBodyCell(duration, Element.ALIGN_LEFT));
-            pujaTable.addCell(pdfBodyCell(amountText, Element.ALIGN_RIGHT));
-            document.add(pujaTable);
+            String particulars = pujaName
+                    + " | Slot: " + slotTime
+                    + " | Payment: " + paymentMethod
+                    + " | Txn: " + txnId
+                    + " | Meet: " + meetLink;
+            table.addCell(taxBodyCell("1", Element.ALIGN_LEFT, bodyFont, 1f));
+            table.addCell(taxBodyCell(particulars, Element.ALIGN_LEFT, bodyFont, 1f));
+            table.addCell(taxBodyCell(amountText, Element.ALIGN_RIGHT, bodyFont, 1f));
 
-            Paragraph paymentSection = new Paragraph("Payment Details", sectionFont);
-            paymentSection.setSpacingAfter(6f);
-            document.add(paymentSection);
-            PdfPTable paymentMeta = new PdfPTable(new float[]{1.5f, 3.5f});
-            paymentMeta.setWidthPercentage(100);
-            paymentMeta.setSpacingAfter(10f);
-            paymentMeta.addCell(pdfInfoLabelCell("Payment Method", labelFont));
-            paymentMeta.addCell(pdfInfoValueCell(paymentMethod, valueFont));
-            paymentMeta.addCell(pdfInfoLabelCell("Transaction ID", labelFont));
-            paymentMeta.addCell(pdfInfoValueCell(txnId, valueFont));
-            paymentMeta.addCell(pdfInfoLabelCell("Currency", labelFont));
-            paymentMeta.addCell(pdfInfoValueCell("INR", valueFont));
-            document.add(paymentMeta);
+            table.addCell(taxBodyCell("", Element.ALIGN_LEFT, bodyFont, 1f));
+            table.addCell(taxBodyCell("Taxable Amount", Element.ALIGN_RIGHT, bodyFont, 1f));
+            table.addCell(taxBodyCell(amountText, Element.ALIGN_RIGHT, bodyFont, 1f));
+            table.addCell(taxBodyCell("", Element.ALIGN_LEFT, bodyFont, 1f));
+            table.addCell(taxBodyCell("IGST @ 0.00%", Element.ALIGN_RIGHT, bodyFont, 1f));
+            table.addCell(taxBodyCell(formatMoney(0.0, "INR"), Element.ALIGN_RIGHT, bodyFont, 1f));
+            table.addCell(taxBodyCell("", Element.ALIGN_LEFT, bodyFont, 1f));
+            table.addCell(taxBodyCell("Total Amount", Element.ALIGN_RIGHT, totalFont, 1.3f));
+            table.addCell(taxBodyCell(amountText, Element.ALIGN_RIGHT, totalFont, 1.3f));
 
-            Paragraph addressSection = new Paragraph("Address Details", sectionFont);
-            addressSection.setSpacingAfter(6f);
-            document.add(addressSection);
-            PdfPTable addressTable = new PdfPTable(1);
-            addressTable.setWidthPercentage(100);
-            addressTable.setSpacingAfter(10f);
-            PdfPCell addressCell = new PdfPCell(new Phrase(addressText, valueFont));
-            addressCell.setPadding(10f);
-            addressCell.setBorderColor(new Color(225, 231, 240));
-            addressCell.setBackgroundColor(new Color(249, 251, 255));
-            addressTable.addCell(addressCell);
-            document.add(addressTable);
-
-            Paragraph policySection = new Paragraph("Computer Generated Policy", sectionFont);
-            policySection.setSpacingAfter(6f);
-            document.add(policySection);
-            PdfPTable policyTable = new PdfPTable(1);
-            policyTable.setWidthPercentage(100);
-            PdfPCell policyCell = new PdfPCell(new Phrase(
-                    "This is a computer-generated invoice and does not require a physical signature.",
-                    subFont
-            ));
-            policyCell.setPadding(10f);
-            policyCell.setBorderColor(new Color(225, 231, 240));
-            policyCell.setBackgroundColor(new Color(250, 252, 255));
-            policyTable.addCell(policyCell);
-            document.add(policyTable);
-            document.add(new Paragraph("For support, contact: deepak.kumar.rd2013@gmail.com", subFont));
+            document.add(table);
+            document.add(new Paragraph("Total Amount: " + amountText + " only", sectionFont));
+            document.add(Chunk.NEWLINE);
+            document.add(new Paragraph("This is a computer generated invoice and does not require signature.", bodyFont));
+            document.add(new Paragraph("For support: deepak.kumar.rd2013@gmail.com", bodyFont));
             document.close();
             return out.toByteArray();
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate puja receipt PDF: " + e.getMessage(), e);
         }
+    }
+
+    private PdfPCell taxHeaderCell(String value) {
+        PdfPCell cell = new PdfPCell(new Phrase(value, calibriFont(11, Font.BOLD, Color.BLACK)));
+        cell.setHorizontalAlignment(Element.ALIGN_LEFT);
+        cell.setBackgroundColor(new Color(238, 238, 238));
+        cell.setPadding(8f);
+        cell.setBorderColor(Color.BLACK);
+        cell.setBorderWidth(1.2f);
+        return cell;
+    }
+
+    private PdfPCell taxBodyCell(String value, int align, Font font, float borderWidth) {
+        PdfPCell cell = new PdfPCell(new Phrase(value == null || value.isBlank() ? "-" : value, font));
+        cell.setHorizontalAlignment(align);
+        cell.setPadding(7f);
+        cell.setBorderColor(Color.BLACK);
+        cell.setBorderWidth(borderWidth);
+        return cell;
+    }
+
+    private Font calibriFont(float size, int style, Color color) {
+        Font font = FontFactory.getFont("Calibri", size, style, color);
+        if (font == null || font.getFamilyname() == null || "unknown".equalsIgnoreCase(font.getFamilyname())) {
+            return new Font(Font.HELVETICA, size, style, color);
+        }
+        return font;
     }
 
     private PdfPCell pdfInfoLabelCell(String text, Font font) {
@@ -807,35 +786,14 @@ public class PujaService {
             String pujaName = puja == null || puja.getName() == null || puja.getName().isBlank()
                     ? "Puja Booking"
                     : puja.getName();
-            String subject = "Puja Booking Confirmed - Calendar Invite";
+            String subject = "Puja Booking Confirmed - PUJA-" + (booking.getId() == null ? 0L : booking.getId());
             String meetLink = booking.getMeetingLink() == null || booking.getMeetingLink().isBlank()
                     ? defaultGoogleMeetLink()
                     : booking.getMeetingLink();
             String slotTimeText = slot == null || slot.getSlotTime() == null
                     ? "-"
                     : formatDateTime(slot.getSlotTime());
-            String html = """
-                    <html>
-                    <body style="font-family:Arial,sans-serif;background:#f6f8fc;padding:16px;">
-                      <div style="max-width:680px;margin:auto;background:#fff;border:1px solid #e6ebf2;border-radius:12px;padding:18px;">
-                        <h2 style="margin:0 0 8px 0;color:#1f2f73;">Puja Booking Confirmed</h2>
-                        <p style="margin:0 0 12px 0;">Your puja booking is confirmed. A calendar invite is attached.</p>
-                        <table style="width:100%%;border-collapse:collapse;">
-                          <tr><td style="padding:8px 0;color:#546074;">Booking ID</td><td style="padding:8px 0;text-align:right;">PUJA-%d</td></tr>
-                          <tr><td style="padding:8px 0;color:#546074;">Puja Name</td><td style="padding:8px 0;text-align:right;">%s</td></tr>
-                          <tr><td style="padding:8px 0;color:#546074;">Slot Time</td><td style="padding:8px 0;text-align:right;">%s</td></tr>
-                          <tr><td style="padding:8px 0;color:#546074;">Google Meet</td><td style="padding:8px 0;text-align:right;"><a href="%s">Join Link</a></td></tr>
-                        </table>
-                        <p style="margin-top:14px;color:#6a7383;">Reminder email with meeting link will be sent 10 minutes before slot time.</p>
-                      </div>
-                    </body>
-                    </html>
-                    """.formatted(
-                    booking.getId() == null ? 0L : booking.getId(),
-                    escapeHtml(pujaName),
-                    escapeHtml(slotTimeText),
-                    escapeHtml(meetLink)
-            );
+            String html = buildPujaConfirmationMailHtml(booking, pujaName, slotTimeText, meetLink);
 
             byte[] ics = buildCalendarInviteIcs(booking, pujaName, slot, meetLink);
             emailService.sendEmailWithAttachmentAsync(
@@ -849,6 +807,59 @@ public class PujaService {
         } catch (Exception ignored) {
             // Booking flow should not fail if invite mail cannot be generated/sent.
         }
+    }
+
+    private String buildPujaConfirmationMailHtml(
+            PujaBooking booking,
+            String pujaName,
+            String slotTimeText,
+            String meetLink
+    ) {
+        String paymentMethod = booking.getPaymentMethod() == null || booking.getPaymentMethod().isBlank()
+                ? "-"
+                : booking.getPaymentMethod();
+        String txnId = booking.getTransactionId() == null || booking.getTransactionId().isBlank()
+                ? "-"
+                : booking.getTransactionId();
+        String amount = formatMoney(booking.getTotalPrice() == null ? 0.0 : booking.getTotalPrice(), "INR");
+
+        return """
+                <html>
+                <body style="margin:0;padding:0;background:#f4f7fd;font-family:Arial,sans-serif;color:#222a3a;">
+                  <div style="max-width:700px;margin:0 auto;padding:20px 14px;">
+                    <div style="background:#ffffff;border:1px solid #e3e8f3;border-radius:14px;overflow:hidden;">
+                      <div style="padding:18px 20px;background:linear-gradient(90deg,#1f2f73,#3247a9);color:#ffffff;">
+                        <h2 style="margin:0;font-size:22px;">Puja Booking Confirmed</h2>
+                        <p style="margin:8px 0 0 0;font-size:13px;color:#dce3ff;">Your booking is successful and calendar invite is attached.</p>
+                      </div>
+                      <div style="padding:18px 20px;">
+                        <table style="width:100%%;border-collapse:collapse;">
+                          <tr><td style="padding:9px 0;color:#5e6679;">Order ID</td><td style="padding:9px 0;text-align:right;"><strong>PUJA-%d</strong></td></tr>
+                          <tr><td style="padding:9px 0;color:#5e6679;">Puja Name</td><td style="padding:9px 0;text-align:right;">%s</td></tr>
+                          <tr><td style="padding:9px 0;color:#5e6679;">Slot Time</td><td style="padding:9px 0;text-align:right;">%s</td></tr>
+                          <tr><td style="padding:9px 0;color:#5e6679;">Payment Method</td><td style="padding:9px 0;text-align:right;">%s</td></tr>
+                          <tr><td style="padding:9px 0;color:#5e6679;">Transaction ID</td><td style="padding:9px 0;text-align:right;">%s</td></tr>
+                          <tr><td style="padding:9px 0;color:#5e6679;">Amount</td><td style="padding:9px 0;text-align:right;"><strong>%s</strong></td></tr>
+                          <tr><td style="padding:9px 0;color:#5e6679;">Google Meet Link</td><td style="padding:9px 0;text-align:right;"><a href="%s">Join Meeting</a></td></tr>
+                        </table>
+                        <div style="margin-top:12px;padding:12px;background:#f8fbff;border:1px solid #dfe7f5;border-radius:10px;">
+                          <p style="margin:0;color:#4b5874;font-size:13px;"><strong>Reminder Schedule:</strong> 3 days, 1 day, 6 hours, 2 hours, 30 minutes and 5 minutes before slot time via Email + Push Notification.</p>
+                        </div>
+                        <p style="margin:12px 0 0 0;color:#6d7486;font-size:12px;">This is a system-generated confirmation from Astrologer.</p>
+                      </div>
+                    </div>
+                  </div>
+                </body>
+                </html>
+                """.formatted(
+                booking.getId() == null ? 0L : booking.getId(),
+                escapeHtml(pujaName),
+                escapeHtml(slotTimeText),
+                escapeHtml(paymentMethod),
+                escapeHtml(txnId),
+                escapeHtml(amount),
+                escapeHtml(meetLink)
+        );
     }
 
     private byte[] buildCalendarInviteIcs(PujaBooking booking, String pujaName, PujaSlot slot, String meetLink) {

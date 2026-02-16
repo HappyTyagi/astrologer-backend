@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/wallet")
@@ -27,10 +28,11 @@ public class WalletController {
         if (req == null || req.getAmount() <= 0) {
             throw new RuntimeException("Valid amount is required");
         }
+        String referenceId = "TOPUP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         walletService.credit(
                 userId,
                 req.getAmount(),
-                "WALLET_TOPUP",
+                referenceId,
                 "Wallet top-up via app"
         );
         return walletService.getWallet(userId);

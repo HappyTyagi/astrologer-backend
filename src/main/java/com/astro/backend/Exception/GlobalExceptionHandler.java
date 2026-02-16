@@ -1,5 +1,6 @@
 package com.astro.backend.Exception;
 
+import com.astro.backend.Auth.JwtAuthFilter;
 import com.astro.backend.Services.ErrorLogService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +21,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex, HttpServletRequest request) {
+        Long userId = extractUserId(request);
         Long errorId = errorLogService.log(
                 "GLOBAL",
                 request == null ? null : request.getRequestURI(),
                 ex,
                 null,
-                null
+                userId
         );
         if (request != null) {
             request.setAttribute(ERROR_LOGGED_ATTR, Boolean.TRUE);
@@ -44,12 +46,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleException(Exception ex, HttpServletRequest request) {
+        Long userId = extractUserId(request);
         Long errorId = errorLogService.log(
                 "GLOBAL",
                 request == null ? null : request.getRequestURI(),
                 ex,
                 null,
-                null
+                userId
         );
         if (request != null) {
             request.setAttribute(ERROR_LOGGED_ATTR, Boolean.TRUE);
@@ -62,5 +65,23 @@ public class GlobalExceptionHandler {
             body.put("errorId", errorId);
         }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+    }
+
+    private Long extractUserId(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        Object userIdAttr = request.getAttribute(JwtAuthFilter.AUTH_USER_ID_ATTR);
+        if (userIdAttr instanceof Number number) {
+            return number.longValue();
+        }
+        if (userIdAttr != null) {
+            try {
+                return Long.parseLong(String.valueOf(userIdAttr).trim());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 }

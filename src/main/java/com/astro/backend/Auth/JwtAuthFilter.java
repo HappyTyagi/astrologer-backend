@@ -15,6 +15,7 @@ import java.util.List;
 @Component
 public class JwtAuthFilter implements Filter {
 
+    public static final String AUTH_USER_ID_ATTR = "AUTH_USER_ID";
     private final JwtService jwtService;
     private final UserRepository userRepo;
 
@@ -64,6 +65,7 @@ public class JwtAuthFilter implements Filter {
                             authorities
                     );
                     SecurityContextHolder.getContext().setAuthentication(auth);
+                    req.setAttribute(AUTH_USER_ID_ATTR, user.getId());
                 });
             } catch (Exception ignored) {
                 SecurityContextHolder.clearContext();
