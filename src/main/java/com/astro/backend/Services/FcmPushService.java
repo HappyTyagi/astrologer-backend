@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -22,6 +23,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.concurrent.CompletableFuture;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -140,6 +142,20 @@ public class FcmPushService {
         } catch (Exception e) {
             return PushResult.fail("FCM v1 unexpected error: " + e.getMessage());
         }
+    }
+
+    @Async("emailTaskExecutor")
+    public CompletableFuture<PushResult> sendToTokenAsync(
+            String fcmToken,
+            String title,
+            String body,
+            String type,
+            String imageUrl,
+            String actionUrl,
+            String actionData
+    ) {
+        PushResult result = sendToToken(fcmToken, title, body, type, imageUrl, actionUrl, actionData);
+        return CompletableFuture.completedFuture(result);
     }
 
     private CredentialsAndProject loadCredentialsAndProject() {

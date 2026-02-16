@@ -42,6 +42,8 @@ public class PujaBooking {
     private String review;             // User review
     private String notificationStatus; // For reminder tracking
     private LocalDateTime reminderSentAt;
+    private String meetingLink;        // Google Meet link
+    private LocalDateTime meetLinkGeneratedAt;
 
     @JsonProperty("addressId")
     public Long getAddressId() {

@@ -146,6 +146,9 @@ public class PujaController {
             row.put("totalPrice", b.getTotalPrice());
             row.put("paymentMethod", b.getPaymentMethod());
             row.put("transactionId", b.getTransactionId());
+            row.put("meetingLink", b.getMeetingLink());
+            row.put("notificationStatus", b.getNotificationStatus());
+            row.put("reminderSentAt", b.getReminderSentAt());
             return row;
         }).toList();
     }

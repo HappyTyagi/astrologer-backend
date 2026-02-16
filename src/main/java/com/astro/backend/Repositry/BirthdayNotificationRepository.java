@@ -46,6 +46,8 @@ public interface BirthdayNotificationRepository extends JpaRepository<BirthdayNo
            "AND bn.upcomingYear = :year")
     Optional<BirthdayNotification> findByUserAndYear(@Param("userId") Long userId, @Param("year") Integer year);
 
+    Optional<BirthdayNotification> findFirstByDiscountCode(String discountCode);
+
     /**
      * Find all unviewed notifications across all users
      */

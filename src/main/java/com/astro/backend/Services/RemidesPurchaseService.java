@@ -223,7 +223,8 @@ public class RemidesPurchaseService {
             throw new RuntimeException("Valid email is required");
         }
 
-        final List<RemidesPurchase> purchases = remidesPurchaseRepository.findByOrderIdOrderByIdAsc(orderId);
+        final String resolvedOrderId = resolveOrderId(orderId);
+        final List<RemidesPurchase> purchases = remidesPurchaseRepository.findByOrderIdOrderByIdAsc(resolvedOrderId);
         if (purchases.isEmpty()) {
             throw new RuntimeException("Order not found: " + orderId);
         }
@@ -232,10 +233,10 @@ public class RemidesPurchaseService {
             throw new RuntimeException("Order does not belong to this user");
         }
 
-        final String subject = "Your Astrologer Remedy Receipt - " + shortOrderId(orderId);
+        final String subject = "Your Astrologer Remedy Receipt - " + shortOrderId(resolvedOrderId);
         final String html = buildPremiumReceiptHtml(purchases);
         final byte[] pdf = buildReceiptPdf(purchases);
-        final String fileName = "receipt-" + shortOrderId(orderId).replace("#", "") + ".pdf";
+        final String fileName = "receipt-" + shortOrderId(resolvedOrderId).replace("#", "") + ".pdf";
 
         emailService.sendEmailWithAttachmentAsync(
                 toEmail,
@@ -250,10 +251,43 @@ public class RemidesPurchaseService {
         response.put("status", true);
         response.put("message", "Receipt mail request sent successfully. You will receive the email shortly.");
         response.put("queued", true);
-        response.put("orderId", orderId);
+        response.put("orderId", resolvedOrderId);
+        response.put("requestedOrderCode", orderId);
         response.put("email", toEmail);
         response.put("requestedAt", LocalDateTime.now());
         return response;
+    }
+
+    private String resolveOrderId(String rawOrderId) {
+        final String input = rawOrderId == null ? "" : rawOrderId.trim();
+        if (input.isEmpty()) {
+            throw new RuntimeException("Valid orderId is required");
+        }
+
+        // Direct DB orderId (UUID) path
+        if (remidesPurchaseRepository.findFirstByOrderIdOrderByIdDesc(input).isPresent()) {
+            return input;
+        }
+
+        // Accept display code like #OC90EEAF
+        final String upper = input.toUpperCase(Locale.ROOT);
+        final String compactPrefix;
+        if (upper.startsWith("#OC")) {
+            compactPrefix = upper.substring(3).replaceAll("[^A-Z0-9]", "");
+        } else if (!input.contains("-")) {
+            compactPrefix = upper.replaceAll("[^A-Z0-9]", "");
+        } else {
+            compactPrefix = "";
+        }
+
+        if (compactPrefix.length() >= 4) {
+            final String matched = remidesPurchaseRepository.findLatestOrderIdByCompactPrefix(compactPrefix);
+            if (matched != null && !matched.isBlank()) {
+                return matched;
+            }
+        }
+
+        throw new RuntimeException("Order not found: " + rawOrderId);
     }
 
     private void validateRequest(RemidesPurchaseRequest request) {
