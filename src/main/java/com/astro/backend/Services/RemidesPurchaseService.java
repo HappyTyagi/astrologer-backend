@@ -237,7 +237,7 @@ public class RemidesPurchaseService {
         final byte[] pdf = buildReceiptPdf(purchases);
         final String fileName = "receipt-" + shortOrderId(orderId).replace("#", "") + ".pdf";
 
-        emailService.sendEmailWithAttachment(
+        emailService.sendEmailWithAttachmentAsync(
                 toEmail,
                 subject,
                 html,
@@ -248,10 +248,11 @@ public class RemidesPurchaseService {
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", true);
-        response.put("message", "Receipt sent successfully");
+        response.put("message", "Receipt mail request sent successfully. You will receive the email shortly.");
+        response.put("queued", true);
         response.put("orderId", orderId);
         response.put("email", toEmail);
-        response.put("sentAt", LocalDateTime.now());
+        response.put("requestedAt", LocalDateTime.now());
         return response;
     }
 

@@ -10,6 +10,7 @@ import com.astro.backend.Repositry.PujaSlotRepository;
 import com.astro.backend.RequestDTO.PujaBookingRequest;
 import com.astro.backend.RequestDTO.PujaRescheduleRequest;
 import com.astro.backend.RequestDTO.PujaSlotMasterRequest;
+import com.astro.backend.RequestDTO.ResendReceiptRequest;
 import com.astro.backend.ResponseDTO.AstrologerDistrictPriceResponse;
 import com.astro.backend.ResponseDTO.PujaRescheduleItemResponse;
 import com.astro.backend.Services.AstrologerDistrictPriceService;
@@ -147,6 +148,21 @@ public class PujaController {
             row.put("transactionId", b.getTransactionId());
             return row;
         }).toList();
+    }
+
+    @PostMapping("/history/{orderId}/resend-receipt")
+    public Object resendReceipt(
+            @PathVariable String orderId,
+            @RequestBody ResendReceiptRequest request
+    ) {
+        try {
+            return pujaService.resendReceiptEmail(orderId, request);
+        } catch (Exception e) {
+            return Map.of(
+                    "status", false,
+                    "message", e.getMessage()
+            );
+        }
     }
 
     @GetMapping("/reschedule-list/{userId}")
