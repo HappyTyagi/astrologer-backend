@@ -2,12 +2,12 @@ package com.astro.backend.Contlorer.Web;
 
 import com.astro.backend.Entity.AdminNotificationDispatch;
 import com.astro.backend.Entity.MobileUserProfile;
-import com.astro.backend.Entity.Notification;
+import com.astro.backend.Entity.WebNotification;
 import com.astro.backend.Entity.User;
 import com.astro.backend.EnumFile.Role;
 import com.astro.backend.Repositry.AdminNotificationDispatchRepository;
 import com.astro.backend.Repositry.MobileUserProfileRepository;
-import com.astro.backend.Repositry.NotificationRepository;
+import com.astro.backend.Repositry.WebNotificationRepository;
 import com.astro.backend.Repositry.UserRepository;
 import com.astro.backend.Services.ErrorLogService;
 import com.astro.backend.Services.FcmPushService;
@@ -40,7 +40,7 @@ public class AdminNotificationController {
 
     private final UserRepository userRepository;
     private final MobileUserProfileRepository mobileUserProfileRepository;
-    private final NotificationRepository notificationRepository;
+    private final WebNotificationRepository webNotificationRepository;
     private final AdminNotificationDispatchRepository dispatchRepository;
     private final FcmPushService fcmPushService;
     private final ErrorLogService errorLogService;
@@ -165,7 +165,7 @@ public class AdminNotificationController {
                 ));
             }
 
-            Notification.NotificationType type = parseType(typeRaw);
+            WebNotification.NotificationType type = parseType(typeRaw);
 
             List<MobileUserProfile> targets;
             if ("INDIVIDUAL".equals(audienceType)) {
@@ -199,7 +199,7 @@ public class AdminNotificationController {
                     .stream()
                     .collect(Collectors.toMap(User::getId, u -> u, (a, b) -> a));
 
-            List<Notification> notifications = new ArrayList<>();
+            List<WebNotification> notifications = new ArrayList<>();
             int successCount = 0;
             int failedCount = 0;
 
@@ -210,15 +210,17 @@ public class AdminNotificationController {
             for (MobileUserProfile profile : targets) {
                 User targetUser = userMap.get(profile.getUserId());
 
-                if (type == Notification.NotificationType.PROMO
+                if (type == WebNotification.NotificationType.PROMO
                         && targetUser != null
                         && Boolean.FALSE.equals(targetUser.getPromotionalNotificationsEnabled())) {
                     failedCount++;
                     continue;
                 }
 
-                Notification notification = Notification.builder()
+                WebNotification notification = WebNotification.builder()
                         .userId(profile.getUserId())
+                        .senderUserId(sender.getId())
+                        .audienceType(audienceType)
                         .title(title)
                         .message(message)
                         .type(type)
@@ -262,7 +264,7 @@ public class AdminNotificationController {
             }
 
             if (!notifications.isEmpty()) {
-                notificationRepository.saveAll(notifications);
+                webNotificationRepository.saveAll(notifications);
             }
 
             MobileUserProfile firstTarget = targets.get(0);
@@ -333,12 +335,12 @@ public class AdminNotificationController {
         return userRepository.findByEmail(principalEmail).orElse(null);
     }
 
-    private Notification.NotificationType parseType(String raw) {
-        if (raw == null || raw.isBlank()) return Notification.NotificationType.PROMO;
+    private WebNotification.NotificationType parseType(String raw) {
+        if (raw == null || raw.isBlank()) return WebNotification.NotificationType.PROMO;
         try {
-            return Notification.NotificationType.valueOf(raw);
+            return WebNotification.NotificationType.valueOf(raw);
         } catch (Exception ignored) {
-            return Notification.NotificationType.PROMO;
+            return WebNotification.NotificationType.PROMO;
         }
     }
 

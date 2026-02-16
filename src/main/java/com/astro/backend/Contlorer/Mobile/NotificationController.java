@@ -1,9 +1,9 @@
 package com.astro.backend.Contlorer.Mobile;
 
-import com.astro.backend.Entity.Notification;
+import com.astro.backend.Entity.ChatNotification;
 import com.astro.backend.Entity.User;
 import com.astro.backend.Repositry.MobileUserProfileRepository;
-import com.astro.backend.Repositry.NotificationRepository;
+import com.astro.backend.Repositry.ChatNotificationRepository;
 import com.astro.backend.Repositry.UserRepository;
 import com.astro.backend.RequestDTO.SendNotificationRequest;
 import com.astro.backend.RequestDTO.SendNotificationByMobileRequest;
@@ -25,7 +25,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class NotificationController {
 
-    private final NotificationRepository notificationRepository;
+    private final ChatNotificationRepository chatNotificationRepository;
     private final UserRepository userRepository;
     private final MobileUserProfileRepository mobileUserProfileRepository;
     private final FcmPushService fcmPushService;
@@ -126,7 +126,7 @@ public class NotificationController {
             Long userId,
             String title,
             String message,
-            Notification.NotificationType type,
+            com.astro.backend.Entity.Notification.NotificationType type,
             String imageUrl,
             String actionUrl,
             String actionData
@@ -135,11 +135,12 @@ public class NotificationController {
             // Validate user exists
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
-            Notification.NotificationType notificationType =
-                    type != null ? type : Notification.NotificationType.PROMO;
+            ChatNotification.NotificationType notificationType = type != null
+                    ? ChatNotification.NotificationType.valueOf(type.name())
+                    : ChatNotification.NotificationType.PROMO;
 
             // If user opted out from promotional notifications, ignore promo sends
-            if (notificationType == Notification.NotificationType.PROMO
+            if (notificationType == ChatNotification.NotificationType.PROMO
                     && Boolean.FALSE.equals(user.getPromotionalNotificationsEnabled())) {
                 return ResponseEntity.ok(
                         NotificationResponse.builder()
@@ -181,7 +182,7 @@ public class NotificationController {
             }
 
             // Build notification object
-            Notification notification = Notification.builder()
+            ChatNotification notification = ChatNotification.builder()
                     .userId(userId)
                     .title(title.trim())
                     .message(message.trim())
@@ -196,7 +197,7 @@ public class NotificationController {
                     .build();
 
             // Save notification to database
-            Notification savedNotification = notificationRepository.save(notification);
+            ChatNotification savedNotification = chatNotificationRepository.save(notification);
 
             // Build response
             NotificationResponse response = NotificationResponse.builder()

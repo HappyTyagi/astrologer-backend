@@ -3,6 +3,7 @@ package com.astro.backend.RequestDTO;
 import lombok.Data;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 @Data
 public class UpdateProfileRequest {
@@ -12,6 +13,7 @@ public class UpdateProfileRequest {
     private String name;  // Optional - user name
 
     @NotBlank(message = "Mobile number is required (primary lookup key)")
+    @Pattern(regexp = "^[0-9]{10}$", message = "Mobile number must be 10 digits")
     private String mobileNo; // REQUIRED - primary identifier for user lookup
 
     private String deviceToken; // Optional - device push token
@@ -48,4 +50,6 @@ public class UpdateProfileRequest {
     private Double longitude;   // Optional
     
     private String address;  // Optional - full address
+    private Boolean isMarried; // Optional - marital status
+    private String anniversaryDate; // Optional - format: YYYY-MM-DD
 }

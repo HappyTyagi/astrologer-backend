@@ -123,6 +123,17 @@ public class ProfileService {
         if (request.getDistrictMasterId() != null) {
             profile.setDistrictMasterId(request.getDistrictMasterId());
         }
+        if (request.getIsMarried() != null) {
+            profile.setIsMarried(request.getIsMarried());
+        }
+        if (Boolean.TRUE.equals(request.getIsMarried())) {
+            if (request.getAnniversaryDate() == null || request.getAnniversaryDate().isBlank()) {
+                throw new RuntimeException("Anniversary date is required when married is yes");
+            }
+            profile.setAnniversaryDate(normalizeIsoDate(request.getAnniversaryDate().trim(), "anniversaryDate"));
+        } else if (Boolean.FALSE.equals(request.getIsMarried())) {
+            profile.setAnniversaryDate(null);
+        }
 
         user.setUpdatedAt(LocalDateTime.now());
         profile.setMobileNumber(profile.getMobileNumber() == null ? user.getMobileNumber() : profile.getMobileNumber());
@@ -146,6 +157,8 @@ public class ProfileService {
                 .birthTime(savedProfile.getBirthTime())
                 .birthAmPm(savedProfile.getBirthAmPm())
                 .address(savedProfile.getAddress())
+                .isMarried(savedProfile.getIsMarried())
+                .anniversaryDate(savedProfile.getAnniversaryDate())
                 .status(true)
                 .message("Basic profile updated successfully")
                 .build();
@@ -181,6 +194,8 @@ public class ProfileService {
                 .emailChangeCount(getEmailChangeCount(user))
                 .emailChangeAllowed(isEmailChangeAllowed(user))
                 .mobileNumber(user.getMobileNumber())
+                .isMarried(profile != null ? profile.getIsMarried() : null)
+                .anniversaryDate(profile != null ? profile.getAnniversaryDate() : null)
                 .status(true)
                 .message("Email updated successfully")
                 .build();
@@ -206,6 +221,8 @@ public class ProfileService {
                 .emailChangeCount(getEmailChangeCount(user))
                 .emailChangeAllowed(isEmailChangeAllowed(user))
                 .mobileNumber(user.getMobileNumber())
+                .isMarried(null)
+                .anniversaryDate(null)
                 .status(true)
                 .message("Account marked deleted for promotions. Promotional notifications are disabled permanently.")
                 .build();
@@ -234,6 +251,8 @@ public class ProfileService {
                     .emailChangeCount(getEmailChangeCount(user))
                     .emailChangeAllowed(isEmailChangeAllowed(user))
                     .mobileNumber(user.getMobileNumber())
+                    .isMarried(null)
+                    .anniversaryDate(null)
                     .status(true)
                     .message("User found but profile not completed yet")
                     .build();
@@ -259,6 +278,8 @@ public class ProfileService {
                 .birthTime(profile.getBirthTime())
                 .birthAmPm(profile.getBirthAmPm())
                 .address(profile.getAddress())
+                .isMarried(profile.getIsMarried())
+                .anniversaryDate(profile.getAnniversaryDate())
                 .status(true)
                 .message("Profile data retrieved successfully")
                 .build();
@@ -287,6 +308,8 @@ public class ProfileService {
                     .emailChangeCount(getEmailChangeCount(user))
                     .emailChangeAllowed(isEmailChangeAllowed(user))
                     .mobileNumber(user.getMobileNumber())
+                    .isMarried(null)
+                    .anniversaryDate(null)
                     .status(true)
                     .message("User found but profile not completed yet")
                     .build();
@@ -312,6 +335,8 @@ public class ProfileService {
                 .birthTime(profile.getBirthTime())
                 .birthAmPm(profile.getBirthAmPm())
                 .address(profile.getAddress())
+                .isMarried(profile.getIsMarried())
+                .anniversaryDate(profile.getAnniversaryDate())
                 .status(true)
                 .message("Profile data retrieved successfully")
                 .build();
@@ -477,6 +502,17 @@ public class ProfileService {
             if (request.getAddress() != null && !request.getAddress().isEmpty()) {
                 mobileProfile.setAddress(request.getAddress());
             }
+            if (request.getIsMarried() != null) {
+                mobileProfile.setIsMarried(request.getIsMarried());
+            }
+            if (Boolean.TRUE.equals(request.getIsMarried())) {
+                if (request.getAnniversaryDate() == null || request.getAnniversaryDate().isBlank()) {
+                    throw new RuntimeException("Anniversary date is required when married is yes");
+                }
+                mobileProfile.setAnniversaryDate(normalizeIsoDate(request.getAnniversaryDate().trim(), "anniversaryDate"));
+            } else if (Boolean.FALSE.equals(request.getIsMarried())) {
+                mobileProfile.setAnniversaryDate(null);
+            }
 
             mobileProfile.setUpdatedAt(LocalDateTime.now());
 
@@ -501,6 +537,8 @@ public class ProfileService {
                     .birthTime(updatedProfile.getBirthTime())
                     .birthAmPm(updatedProfile.getBirthAmPm())
                     .address(updatedProfile.getAddress())
+                    .isMarried(updatedProfile.getIsMarried())
+                    .anniversaryDate(updatedProfile.getAnniversaryDate())
                     .status(true)
                     .message("Profile updated successfully")
                     .build();
@@ -528,6 +566,15 @@ public class ProfileService {
             return date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         } catch (DateTimeParseException e) {
             throw new RuntimeException("Invalid dateOfBirth format. Use YYYY-MM-DD or DD/MM/YYYY");
+        }
+    }
+
+    private String normalizeIsoDate(String input, String fieldName) {
+        try {
+            LocalDate date = LocalDate.parse(input, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            return date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        } catch (DateTimeParseException e) {
+            throw new RuntimeException("Invalid " + fieldName + " format. Use YYYY-MM-DD");
         }
     }
 
@@ -621,6 +668,8 @@ public class ProfileService {
                     .birthTime(savedProfile.getBirthTime())
                     .birthAmPm(savedProfile.getBirthAmPm())
                     .address(savedProfile.getAddress())
+                    .isMarried(savedProfile.getIsMarried())
+                    .anniversaryDate(savedProfile.getAnniversaryDate())
                     .status(true)
                     .message("Profile completed successfully")
                     .build();

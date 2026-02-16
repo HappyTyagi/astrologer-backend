@@ -2,11 +2,13 @@ package com.astro.backend.Contlorer.Mobile;
 
 
 import com.astro.backend.Entity.Wallet;
+import com.astro.backend.Entity.WalletTransaction;
 import com.astro.backend.RequestDTO.AddMoneyRequest;
-import com.astro.backend.Services.RazorpayService;
 import com.astro.backend.Services.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/wallet")
@@ -14,7 +16,6 @@ import org.springframework.web.bind.annotation.*;
 public class WalletController {
 
     private final WalletService walletService;
-    private final RazorpayService razorpayService;
 
     @GetMapping("/balance/{userId}")
     public Wallet getBalance(@PathVariable Long userId) {
@@ -22,12 +23,21 @@ public class WalletController {
     }
 
     @PostMapping("/add-money/{userId}")
-    public String createOrder(@PathVariable Long userId, @RequestBody AddMoneyRequest req) throws Exception {
-        return razorpayService.createOrder(req.getAmount(), req.getCurrency());
+    public Wallet addMoney(@PathVariable Long userId, @RequestBody AddMoneyRequest req) throws Exception {
+        if (req == null || req.getAmount() <= 0) {
+            throw new RuntimeException("Valid amount is required");
+        }
+        walletService.credit(
+                userId,
+                req.getAmount(),
+                "WALLET_TOPUP",
+                "Wallet top-up via app"
+        );
+        return walletService.getWallet(userId);
     }
 
-    @PostMapping("/transactions/{userId}")
-    public Object getTransactions(@PathVariable Long userId) {
-        return walletService.getWallet(userId);
+    @GetMapping("/transactions/{userId}")
+    public List<WalletTransaction> getTransactions(@PathVariable Long userId) {
+        return walletService.getTransactions(userId);
     }
 }

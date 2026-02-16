@@ -54,6 +54,33 @@ public class JwtService {
     }
 
     /**
+     * Generate non-expiring JWT token with subject only.
+     */
+    public String generateTokenWithoutExpiry(String subject) {
+        return Jwts.builder()
+                .setSubject(subject)
+                .setIssuedAt(new Date())
+                .signWith(key)
+                .compact();
+    }
+
+    /**
+     * Generate non-expiring JWT token with mobile claims.
+     */
+    public String generateTokenWithClaimsWithoutExpiry(String mobileNumber, String name) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("mobileNumber", mobileNumber);
+        claims.put("name", name);
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(mobileNumber)
+                .setIssuedAt(new Date())
+                .signWith(key)
+                .compact();
+    }
+
+    /**
      * Extract email from token
      */
     public String extractEmail(String token) {

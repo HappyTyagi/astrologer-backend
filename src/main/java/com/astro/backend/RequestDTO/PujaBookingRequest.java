@@ -8,4 +8,7 @@ public class PujaBookingRequest {
     private Long pujaId;
     private Long slotId;
     private Long addressId;
+    private String paymentMethod; // WALLET / GATEWAY / UPI / CARD
+    private String transactionId; // optional for gateway flows
+    private Boolean useWallet;    // if true, force wallet debit
 }

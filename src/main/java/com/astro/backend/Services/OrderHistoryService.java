@@ -8,6 +8,7 @@ import com.astro.backend.Entity.RemidesPurchase;
 import com.astro.backend.Repositry.OrderHistoryRepository;
 import com.astro.backend.Repositry.PujaBookingRepository;
 import com.astro.backend.Repositry.PujaRepository;
+import com.astro.backend.Repositry.PujaSlotRepository;
 import com.astro.backend.Repositry.RemidesPurchaseRepository;
 import com.astro.backend.ResponseDTO.RemidesPurchaseHistoryResponse;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class OrderHistoryService {
     private final RemidesPurchaseRepository remidesPurchaseRepository;
     private final PujaBookingRepository pujaBookingRepository;
     private final PujaRepository pujaRepository;
+    private final PujaSlotRepository pujaSlotRepository;
 
     @Transactional
     public void recordRemedyPurchases(List<RemidesPurchase> purchases) {
@@ -129,6 +131,36 @@ public class OrderHistoryService {
     }
 
     private RemidesPurchaseHistoryResponse toResponse(OrderHistoryEntry e) {
+        String paymentMethod = null;
+        String transactionId = null;
+        Double walletUsed = null;
+        Double gatewayPaid = null;
+        LocalDateTime slotTime = null;
+
+        if ("REMEDY".equalsIgnoreCase(e.getOrderType()) && e.getSourceId() != null) {
+            RemidesPurchase purchase = remidesPurchaseRepository.findById(e.getSourceId()).orElse(null);
+            if (purchase != null) {
+                paymentMethod = purchase.getPaymentMethod();
+                transactionId = purchase.getTransactionId();
+                walletUsed = purchase.getWalletUsed();
+                gatewayPaid = purchase.getGatewayPaid();
+            }
+        }
+
+        if ("PUJA".equalsIgnoreCase(e.getOrderType()) && e.getSourceId() != null) {
+            PujaBooking booking = pujaBookingRepository.findById(e.getSourceId()).orElse(null);
+            if (booking != null) {
+                paymentMethod = booking.getPaymentMethod();
+                transactionId = booking.getTransactionId();
+                if (booking.getSlotId() != null) {
+                    PujaSlot slot = pujaSlotRepository.findById(booking.getSlotId()).orElse(null);
+                    if (slot != null) {
+                        slotTime = slot.getSlotTime();
+                    }
+                }
+            }
+        }
+
         return RemidesPurchaseHistoryResponse.builder()
                 .id(e.getId())
                 .orderId(e.getOrderId())
@@ -148,6 +180,11 @@ public class OrderHistoryService {
                 .currency(e.getCurrency())
                 .status(e.getStatus())
                 .purchasedAt(e.getPurchasedAt())
+                .paymentMethod(paymentMethod)
+                .transactionId(transactionId)
+                .walletUsed(walletUsed)
+                .gatewayPaid(gatewayPaid)
+                .slotTime(slotTime)
                 .build();
     }
 

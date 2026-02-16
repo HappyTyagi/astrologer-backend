@@ -15,7 +15,32 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
+    public static final String ERROR_LOGGED_ATTR = "ERROR_LOGGED";
     private final ErrorLogService errorLogService;
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException ex, HttpServletRequest request) {
+        Long errorId = errorLogService.log(
+                "GLOBAL",
+                request == null ? null : request.getRequestURI(),
+                ex,
+                null,
+                null
+        );
+        if (request != null) {
+            request.setAttribute(ERROR_LOGGED_ATTR, Boolean.TRUE);
+        }
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("status", false);
+        body.put("message", ex.getMessage() == null || ex.getMessage().isBlank()
+                ? "Request failed."
+                : ex.getMessage());
+        if (errorId != null) {
+            body.put("errorId", errorId);
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleException(Exception ex, HttpServletRequest request) {
@@ -26,6 +51,9 @@ public class GlobalExceptionHandler {
                 null,
                 null
         );
+        if (request != null) {
+            request.setAttribute(ERROR_LOGGED_ATTR, Boolean.TRUE);
+        }
 
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("status", false);

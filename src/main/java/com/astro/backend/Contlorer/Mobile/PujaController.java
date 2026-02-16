@@ -19,10 +19,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/puja")
@@ -95,7 +98,15 @@ public class PujaController {
 
     @PostMapping("/book")
     public PujaBooking book(@RequestBody PujaBookingRequest req) {
-        return pujaService.bookPuja(req.getUserId(), req.getPujaId(), req.getSlotId(), req.getAddressId());
+        return pujaService.bookPuja(
+                req.getUserId(),
+                req.getPujaId(),
+                req.getSlotId(),
+                req.getAddressId(),
+                req.getPaymentMethod(),
+                req.getTransactionId(),
+                req.getUseWallet()
+        );
     }
 
     @PostMapping("/slot-master/generate")
@@ -112,7 +123,30 @@ public class PujaController {
 
     @GetMapping("/history/{userId}")
     public Object history(@PathVariable Long userId) {
-        return bookingRepo.findByUserIdOrderByBookedAtDesc(userId);
+        final List<PujaBooking> bookings = bookingRepo.findByUserIdOrderByBookedAtDesc(userId);
+        final Set<Long> slotIds = bookings.stream()
+                .map(PujaBooking::getSlotId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
+        final Map<Long, LocalDateTime> slotTimeById = slotRepo.findAllById(slotIds)
+                .stream()
+                .collect(Collectors.toMap(PujaSlot::getId, PujaSlot::getSlotTime));
+
+        return bookings.stream().map(b -> {
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("id", b.getId());
+            row.put("userId", b.getUserId());
+            row.put("pujaId", b.getPujaId());
+            row.put("slotId", b.getSlotId());
+            row.put("slotTime", b.getSlotId() == null ? null : slotTimeById.get(b.getSlotId()));
+            row.put("addressId", b.getAddressId());
+            row.put("bookedAt", b.getBookedAt());
+            row.put("status", b.getStatus());
+            row.put("totalPrice", b.getTotalPrice());
+            row.put("paymentMethod", b.getPaymentMethod());
+            row.put("transactionId", b.getTransactionId());
+            return row;
+        }).toList();
     }
 
     @GetMapping("/reschedule-list/{userId}")

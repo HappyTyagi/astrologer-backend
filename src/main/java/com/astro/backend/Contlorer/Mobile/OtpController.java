@@ -2,6 +2,7 @@ package com.astro.backend.Contlorer.Mobile;
 
 import com.astro.backend.Entity.MobileUserProfile;
 import com.astro.backend.Entity.OtpTransaction;
+import com.astro.backend.Auth.JwtService;
 import com.astro.backend.Helper.AstrologyHelper;
 import com.astro.backend.RequestDTO.SendOtpRequest;
 import com.astro.backend.RequestDTO.VerifyOtpRequest;
@@ -26,6 +27,7 @@ public class OtpController {
 
     private final OtpService otpService;
     private final MobileUserProfileRepository mobileUserProfileRepository;
+    private final JwtService jwtService;
 
     /**
      * Send OTP to mobile number (mLogin)
@@ -123,12 +125,19 @@ public class OtpController {
                     if (profileOpt.isPresent()) {
                     MobileUserProfile profile = profileOpt.get();
                     boolean profileComplete = Boolean.TRUE.equals(profile.getIsProfileComplete()) || hasAllRequiredFields(profile);
+                    String nameForToken = (profile.getName() == null || profile.getName().isBlank())
+                            ? "User"
+                            : profile.getName().trim();
+                    String accessToken = jwtService.generateTokenWithClaimsWithoutExpiry(mobileNumber, nameForToken);
+                    String refreshToken = jwtService.generateTokenWithClaimsWithoutExpiry(mobileNumber, nameForToken);
 
                     VerifyOtpResponse response = VerifyOtpResponse.builder()
                         .success(true)
                         .message(profileComplete
                             ? "OTP verified successfully. Profile is complete."
                             : "OTP verified successfully. Proceed to complete profile.")
+                        .token(accessToken)
+                        .refreshToken(refreshToken)
                         .userId(profile.getUserId())
                         .name(profile.getName())
                         .email(profile.getEmail())
@@ -152,9 +161,13 @@ public class OtpController {
                     return ResponseEntity.ok(response);
                     }
 
+                    String accessToken = jwtService.generateTokenWithClaimsWithoutExpiry(mobileNumber, "User");
+                    String refreshToken = jwtService.generateTokenWithClaimsWithoutExpiry(mobileNumber, "User");
                     VerifyOtpResponse response = VerifyOtpResponse.builder()
                         .success(true)
                         .message("OTP verified successfully. Proceed to complete profile.")
+                        .token(accessToken)
+                        .refreshToken(refreshToken)
                         .mobileNo(mobileNumber)
                         .isNewUser(true)
                         .isProfileComplete(false)

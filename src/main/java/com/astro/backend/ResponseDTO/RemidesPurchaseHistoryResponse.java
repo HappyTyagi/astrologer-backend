@@ -26,4 +26,9 @@ public class RemidesPurchaseHistoryResponse {
     private String currency;
     private String status;
     private LocalDateTime purchasedAt;
+    private String paymentMethod;
+    private String transactionId;
+    private Double walletUsed;
+    private Double gatewayPaid;
+    private LocalDateTime slotTime;
 }

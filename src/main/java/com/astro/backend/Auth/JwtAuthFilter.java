@@ -2,6 +2,7 @@ package com.astro.backend.Auth;
 
 
 import com.astro.backend.Repositry.UserRepository;
+import com.astro.backend.Entity.User;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -32,15 +33,33 @@ public class JwtAuthFilter implements Filter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             try {
                 String token = authHeader.substring(7);
-                String email = jwtService.extractEmail(token);
+                if (!jwtService.isTokenValid(token)) {
+                    SecurityContextHolder.clearContext();
+                    chain.doFilter(request, response);
+                    return;
+                }
+                String subject = jwtService.extractEmail(token);
+                String normalizedSubject = subject == null ? "" : subject.trim();
+                if (normalizedSubject.isEmpty()) {
+                    SecurityContextHolder.clearContext();
+                    chain.doFilter(request, response);
+                    return;
+                }
 
-                userRepo.findByEmail(email).ifPresent(user -> {
+                java.util.Optional<User> userOptional;
+                if (normalizedSubject.contains("@")) {
+                    userOptional = userRepo.findByEmail(normalizedSubject);
+                } else {
+                    userOptional = userRepo.findByMobileNumber(normalizedSubject);
+                }
+
+                userOptional.ifPresent(user -> {
                     var authorities = user.getRole() == null
                             ? List.<SimpleGrantedAuthority>of()
                             : List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
 
                     var auth = new UsernamePasswordAuthenticationToken(
-                            user.getEmail(),
+                            user.getEmail() != null ? user.getEmail() : user.getMobileNumber(),
                             null,
                             authorities
                     );

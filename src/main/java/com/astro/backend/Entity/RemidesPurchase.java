@@ -62,6 +62,11 @@ public class RemidesPurchase {
     @Column(nullable = false)
     private LocalDateTime purchasedAt;
 
+    private String paymentMethod;
+    private String transactionId;
+    private Double walletUsed;
+    private Double gatewayPaid;
+
     @JsonProperty("remidesId")
     public Long getRemidesId() {
         return remides != null ? remides.getId() : null;

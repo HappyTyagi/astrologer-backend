@@ -8,6 +8,7 @@ import com.astro.backend.Repositry.WalletTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -61,5 +62,31 @@ public class WalletService {
                 .build());
 
         return true;
+    }
+
+    public double debitUpTo(Long userId, double requestedAmount, String ref, String desc) {
+        if (requestedAmount <= 0) return 0.0;
+        Wallet wallet = getWallet(userId);
+        double currentBalance = wallet.getBalance();
+        double toDebit = Math.min(currentBalance, requestedAmount);
+        if (toDebit <= 0) return 0.0;
+
+        wallet.setBalance(currentBalance - toDebit);
+        walletRepo.save(wallet);
+
+        txnRepo.save(WalletTransaction.builder()
+                .userId(userId)
+                .amount(-toDebit)
+                .type("DEBIT")
+                .refId(ref)
+                .description(desc)
+                .createdAt(LocalDateTime.now())
+                .build());
+
+        return toDebit;
+    }
+
+    public List<WalletTransaction> getTransactions(Long userId) {
+        return txnRepo.findByUserIdOrderByCreatedAtDesc(userId);
     }
 }

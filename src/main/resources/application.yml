@@ -8,6 +8,15 @@ spring:
     username: root
     password: root
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: deepak.kumar.rd2013@gmail.com
+    password: ouyb tauv udkd cssf
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -35,6 +44,10 @@ textlocal:
 resend:
   api-key: "re_CCseECjB_Bv36rHa5RYTMWJwyjnQtd8j6"
   from-email: "onboarding@resend.dev"
+
+app:
+  mail:
+    from: "deepak.kumar.rd2013@gmail.com"
 
 razorpay:
   key-id: "YOUR_RAZORPAY_KEY"

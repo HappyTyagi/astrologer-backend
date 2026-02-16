@@ -5,6 +5,7 @@ import com.astro.backend.Entity.Address;
 import com.astro.backend.Entity.Puja;
 import com.astro.backend.Entity.PujaBooking;
 import com.astro.backend.Entity.PujaSlot;
+import com.astro.backend.Entity.Wallet;
 import com.astro.backend.Repositry.AddressRepository;
 import com.astro.backend.RequestDTO.PujaSlotMasterRequest;
 import com.astro.backend.Repositry.PujaBookingRepository;
@@ -21,6 +22,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +38,15 @@ public class PujaService {
     private static final LocalTime DEFAULT_DAY_END = LocalTime.of(20, 0);
     private static final int DEFAULT_GAP_MINUTES = 30;
 
-    public PujaBooking bookPuja(Long userId, Long pujaId, Long slotId, Long addressId) {
+    public PujaBooking bookPuja(
+            Long userId,
+            Long pujaId,
+            Long slotId,
+            Long addressId,
+            String paymentMethod,
+            String transactionId,
+            Boolean useWallet
+    ) {
 
         if (addressId == null || addressId <= 0) {
             throw new RuntimeException("Valid addressId is required");
@@ -54,15 +64,66 @@ public class PujaService {
             throw new RuntimeException("Slot not available");
         }
 
-        boolean debited = walletService.debit(
-                userId,
-                puja.getPrice(),
-                "PUJA_BOOKING",
-                "Puja booking: " + puja.getName()
-        );
+        final String normalizedMethod = paymentMethod == null ? "WALLET" : paymentMethod.trim().toUpperCase();
+        final boolean wantsWallet = Boolean.TRUE.equals(useWallet);
+        final boolean isWalletPayment = "WALLET".equals(normalizedMethod);
+        final boolean isGatewayPayment = "GATEWAY".equals(normalizedMethod)
+                || "UPI".equals(normalizedMethod)
+                || "CARD".equals(normalizedMethod)
+                || "NETBANKING".equals(normalizedMethod);
 
-        if (!debited) {
-            throw new RuntimeException("Insufficient wallet balance");
+        if (!isWalletPayment && !isGatewayPayment) {
+            throw new RuntimeException("Invalid paymentMethod. Use WALLET or GATEWAY.");
+        }
+
+        String finalTransactionId = transactionId == null ? "" : transactionId.trim();
+        String finalPaymentMethod = normalizedMethod;
+        final double pujaAmount = puja.getPrice();
+        if (isWalletPayment) {
+            boolean debited = walletService.debit(
+                    userId,
+                    pujaAmount,
+                    "PUJA_BOOKING",
+                    "Puja booking: " + puja.getName()
+            );
+
+            if (!debited) {
+                throw new RuntimeException("Insufficient wallet balance. Please add money to wallet or continue with gateway payment.");
+            }
+            if (finalTransactionId.isEmpty()) {
+                finalTransactionId = "WALLET-" + UUID.randomUUID();
+            }
+            finalPaymentMethod = "WALLET";
+        } else {
+            double walletUsed = 0.0;
+            if (wantsWallet) {
+                Wallet wallet = walletService.getWallet(userId);
+                double balance = wallet.getBalance();
+                if (balance > 0) {
+                    walletUsed = walletService.debitUpTo(
+                            userId,
+                            pujaAmount,
+                            "PUJA_BOOKING",
+                            "Puja booking (wallet part): " + puja.getName()
+                    );
+                }
+            }
+
+            final double remaining = Math.max(0.0, pujaAmount - walletUsed);
+            if (remaining > 0 && finalTransactionId.isEmpty()) {
+                throw new RuntimeException("Gateway transactionId is required for remaining amount.");
+            }
+            if (remaining <= 0) {
+                if (finalTransactionId.isEmpty()) {
+                    finalTransactionId = "WALLET-" + UUID.randomUUID();
+                }
+                finalPaymentMethod = "WALLET";
+            } else {
+                if (finalTransactionId.isEmpty()) {
+                    finalTransactionId = "GW-" + UUID.randomUUID();
+                }
+                finalPaymentMethod = walletUsed > 0 ? "WALLET+GATEWAY" : normalizedMethod;
+            }
         }
 
         // Update slot
@@ -78,6 +139,8 @@ public class PujaService {
                 .bookedAt(LocalDateTime.now())
                 .status(PujaBooking.BookingStatus.CONFIRMED)
                 .totalPrice(puja.getPrice())
+                .paymentMethod(finalPaymentMethod)
+                .transactionId(finalTransactionId)
                 .build();
 
         PujaBooking savedBooking = bookingRepo.save(booking);

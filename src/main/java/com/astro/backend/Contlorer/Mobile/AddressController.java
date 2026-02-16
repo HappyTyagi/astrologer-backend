@@ -98,7 +98,7 @@ public class AddressController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<AddressResponse> updateAddress(@PathVariable Long id, @RequestBody UpdateAddressRequest request) {
+    public ResponseEntity<AddressResponse> updateAddress(@PathVariable Long id, @Valid @RequestBody UpdateAddressRequest request) {
         try {
             Long addressId = Objects.requireNonNull(id, "id");
             Address address = addressRepository.findById(addressId)

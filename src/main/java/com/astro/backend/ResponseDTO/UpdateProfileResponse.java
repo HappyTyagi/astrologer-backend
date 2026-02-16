@@ -27,6 +27,8 @@ public class UpdateProfileResponse {
     private String birthTime;          // Birth time (HH:mm)
     private String birthAmPm;          // Birth time AM/PM
     private String address;            // Full address
+    private Boolean isMarried;         // Marital status
+    private String anniversaryDate;    // Format: YYYY-MM-DD
     private Boolean status;
     private String message;
 }

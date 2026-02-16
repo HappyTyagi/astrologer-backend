@@ -50,6 +50,8 @@ public class MobileUserProfile {
     private Double latitude;
     private Double longitude;
     private String address;            // Full address
+    private Boolean isMarried;         // Marital status
+    private String anniversaryDate;    // Format: YYYY-MM-DD
 
     // ===== Master Data Foreign Keys =====
     private Long genderMasterId;       // Foreign key to GenderMaster

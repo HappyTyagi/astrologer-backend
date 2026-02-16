@@ -4,6 +4,7 @@ import com.astro.backend.Entity.Address;
 import com.astro.backend.Entity.Remides;
 import com.astro.backend.Entity.RemidesCart;
 import com.astro.backend.Entity.RemidesPurchase;
+import com.astro.backend.Entity.Wallet;
 import com.astro.backend.Repositry.AddressRepository;
 import com.astro.backend.Repositry.RemidesCartRepository;
 import com.astro.backend.Repositry.RemidesPurchaseRepository;
@@ -41,6 +42,7 @@ public class RemidesPurchaseService {
     private final RemidesCartRepository remidesCartRepository;
     private final EmailService emailService;
     private final OrderHistoryService orderHistoryService;
+    private final WalletService walletService;
 
     @Transactional
     public Map<String, Object> purchaseCart(RemidesPurchaseRequest request) {
@@ -84,6 +86,78 @@ public class RemidesPurchaseService {
                     .build());
         }
 
+        final String normalizedMethod = request.getPaymentMethod() == null
+                ? "WALLET"
+                : request.getPaymentMethod().trim().toUpperCase();
+        final boolean wantsWallet = Boolean.TRUE.equals(request.getUseWallet());
+        final boolean isWalletPayment = "WALLET".equals(normalizedMethod);
+        final boolean isGatewayPayment = "GATEWAY".equals(normalizedMethod)
+                || "UPI".equals(normalizedMethod)
+                || "CARD".equals(normalizedMethod)
+                || "NETBANKING".equals(normalizedMethod);
+
+        if (!isWalletPayment && !isGatewayPayment) {
+            throw new RuntimeException("Invalid paymentMethod. Use WALLET or GATEWAY.");
+        }
+
+        String finalTransactionId = request.getTransactionId() == null ? "" : request.getTransactionId().trim();
+        String finalPaymentMethod = normalizedMethod;
+        double walletUsed = 0.0;
+        double gatewayPaid = 0.0;
+
+        if (isWalletPayment) {
+            boolean debited = walletService.debit(
+                    request.getUserId(),
+                    totalAmount,
+                    "REMEDY_PURCHASE",
+                    "Remedies order payment"
+            );
+            if (!debited) {
+                throw new RuntimeException("Insufficient wallet balance. Please add money to wallet or continue with gateway payment.");
+            }
+            walletUsed = totalAmount;
+            if (finalTransactionId.isEmpty()) {
+                finalTransactionId = "WALLET-" + UUID.randomUUID();
+            }
+            finalPaymentMethod = "WALLET";
+        } else {
+            if (wantsWallet) {
+                Wallet wallet = walletService.getWallet(request.getUserId());
+                double balance = wallet.getBalance();
+                if (balance > 0) {
+                    walletUsed = walletService.debitUpTo(
+                            request.getUserId(),
+                            totalAmount,
+                            "REMEDY_PURCHASE",
+                            "Remedies order payment (wallet part)"
+                    );
+                }
+            }
+
+            gatewayPaid = Math.max(0.0, totalAmount - walletUsed);
+            if (gatewayPaid > 0 && finalTransactionId.isEmpty()) {
+                throw new RuntimeException("Gateway transactionId is required for remaining amount.");
+            }
+            if (gatewayPaid <= 0) {
+                if (finalTransactionId.isEmpty()) {
+                    finalTransactionId = "WALLET-" + UUID.randomUUID();
+                }
+                finalPaymentMethod = "WALLET";
+            } else {
+                if (finalTransactionId.isEmpty()) {
+                    finalTransactionId = "GW-" + UUID.randomUUID();
+                }
+                finalPaymentMethod = walletUsed > 0 ? "WALLET+GATEWAY" : normalizedMethod;
+            }
+        }
+
+        for (RemidesPurchase p : purchases) {
+            p.setPaymentMethod(finalPaymentMethod);
+            p.setTransactionId(finalTransactionId);
+            p.setWalletUsed(walletUsed);
+            p.setGatewayPaid(gatewayPaid);
+        }
+
         List<RemidesPurchase> saved = remidesPurchaseRepository.saveAll(purchases);
         orderHistoryService.recordRemedyPurchases(saved);
         deactivateUserCart(request.getUserId());
@@ -96,6 +170,10 @@ public class RemidesPurchaseService {
         response.put("addressId", request.getAddressId());
         response.put("totalItems", totalQuantity);
         response.put("totalAmount", totalAmount);
+        response.put("paymentMethod", finalPaymentMethod);
+        response.put("transactionId", finalTransactionId);
+        response.put("walletUsed", walletUsed);
+        response.put("gatewayPaid", gatewayPaid);
         response.put("purchasedAt", purchaseTime);
         response.put("purchases", saved);
         return response;

@@ -8,6 +8,9 @@ import java.util.List;
 public class RemidesPurchaseRequest {
     private Long userId;
     private Long addressId;
+    private String paymentMethod; // WALLET / GATEWAY / UPI / CARD
+    private String transactionId; // optional for gateway
+    private Boolean useWallet;    // use wallet (full/partial) with gateway
     private List<PurchaseItem> items;
 
     @Data
