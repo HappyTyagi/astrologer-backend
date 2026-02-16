@@ -843,7 +843,6 @@ public class PujaService {
                           <tr><td style="padding:9px 0;color:#5e6679;">Google Meet Link</td><td style="padding:9px 0;text-align:right;"><a href="%s">Join Meeting</a></td></tr>
                         </table>
                         <div style="margin-top:12px;padding:12px;background:#f8fbff;border:1px solid #dfe7f5;border-radius:10px;">
-                          <p style="margin:0;color:#4b5874;font-size:13px;"><strong>Reminder Schedule:</strong> 3 days, 1 day, 6 hours, 2 hours, 30 minutes and 5 minutes before slot time via Email + Push Notification.</p>
                         </div>
                         <p style="margin:12px 0 0 0;color:#6d7486;font-size:12px;">This is a system-generated confirmation from Astrologer.</p>
                       </div>

@@ -14,17 +14,23 @@ import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
+import com.lowagie.text.Image;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfContentByte;
 import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfGState;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -221,83 +227,198 @@ public class WalletService {
     ) {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Document document = new Document(PageSize.A4, 28, 28, 24, 24);
-            PdfWriter.getInstance(document, out);
+            PdfWriter writer = PdfWriter.getInstance(document, out);
             document.open();
+            addLogoWatermark(writer, document);
 
             FontFactory.registerDirectories();
-            Font titleFont = invoiceFont(30, Font.BOLD, Color.BLACK);
-            Font subTitleFont = invoiceFont(15, Font.BOLD, Color.BLACK);
-            Font sectionFont = invoiceFont(12, Font.BOLD, Color.BLACK);
-            Font bodyFont = invoiceFont(11, Font.NORMAL, Color.BLACK);
-            Font boldFont = invoiceFont(11, Font.BOLD, Color.BLACK);
-            Font totalFont = invoiceFont(13, Font.BOLD, Color.BLACK);
+            Font heroTitle = invoiceFont(24, Font.BOLD, Color.WHITE);
+            Font heroSub = invoiceFont(11, Font.NORMAL, new Color(220, 231, 255));
+            Font labelFont = invoiceFont(10, Font.BOLD, new Color(64, 76, 98));
+            Font valueFont = invoiceFont(11, Font.NORMAL, new Color(22, 30, 48));
+            Font sectionTitle = invoiceFont(11, Font.BOLD, new Color(20, 36, 90));
+            Font tableHead = invoiceFont(10, Font.BOLD, Color.WHITE);
+            Font tableBody = invoiceFont(10.5f, Font.NORMAL, new Color(33, 41, 62));
+            Font totalFont = invoiceFont(12.5f, Font.BOLD, new Color(20, 36, 90));
 
-            Paragraph title = new Paragraph("Tax Invoice", titleFont);
-            title.setAlignment(Element.ALIGN_CENTER);
-            title.setSpacingAfter(2f);
-            document.add(title);
-            Paragraph subTitle = new Paragraph("ORIGINAL FOR RECIPIENT", subTitleFont);
-            subTitle.setAlignment(Element.ALIGN_CENTER);
-            subTitle.setSpacingAfter(14f);
-            document.add(subTitle);
+            Color heroBg = new Color(24, 42, 96);
+            Color panelBg = new Color(246, 249, 255);
+            Color panelBorder = new Color(222, 231, 246);
+            Color tableHeaderBg = new Color(45, 66, 137);
 
-            document.add(new Paragraph("ASTROLOGER SERVICES PRIVATE LIMITED", sectionFont));
-            document.add(new Paragraph("Address: Digital Astrology Services, India", bodyFont));
-            document.add(new Paragraph("GSTIN: 09ASTRO1234X1Z9    Email: support@astrologer.app", bodyFont));
-            document.add(new Paragraph("Invoice No: " + valueOrDash(transaction.getRefId()), boldFont));
-            document.add(new Paragraph("Invoice Date: " + formatDate(transaction.getCreatedAt()), boldFont));
-            document.add(Chunk.NEWLINE);
+            String referenceId = valueOrDash(transaction.getRefId());
+            String invoiceDate = formatDate(transaction.getCreatedAt());
+            String amount = formatMoney(transaction.getAmount(), "INR");
+            String userName = valueOrDash(profile == null ? null : profile.getName());
+            String userId = valueOrDash(profile == null ? null : String.valueOf(profile.getUserId()));
+            String mobile = valueOrDash(profile == null ? null : profile.getMobileNumber());
+            String email = valueOrDash(profile == null ? null : profile.getEmail());
+            String addressText = buildAddressText(address);
+            String balanceText = formatMoney(balanceAfter, "INR");
 
-            document.add(new Paragraph("User Details", sectionFont));
-            document.add(new Paragraph("Name: " + valueOrDash(profile == null ? null : profile.getName()), bodyFont));
-            document.add(new Paragraph("User ID: " + valueOrDash(profile == null ? null : String.valueOf(profile.getUserId())), bodyFont));
-            document.add(new Paragraph("Mobile: " + valueOrDash(profile == null ? null : profile.getMobileNumber()), bodyFont));
-            document.add(new Paragraph("Email: " + valueOrDash(profile == null ? null : profile.getEmail()), bodyFont));
-            document.add(new Paragraph("Address: " + buildAddressText(address), bodyFont));
-            document.add(Chunk.NEWLINE);
+            PdfPTable hero = new PdfPTable(1);
+            hero.setWidthPercentage(100);
+            PdfPCell heroCell = new PdfPCell();
+            heroCell.setBackgroundColor(heroBg);
+            heroCell.setBorderColor(heroBg);
+            heroCell.setPadding(16f);
+            Paragraph heroTitleP = new Paragraph("Tax Invoice", heroTitle);
+            heroTitleP.setSpacingAfter(5f);
+            heroCell.addElement(heroTitleP);
+            heroCell.addElement(new Paragraph("Wallet Top-up Receipt", invoiceFont(14, Font.BOLD, Color.WHITE)));
+            heroCell.addElement(new Paragraph("ORIGINAL FOR RECIPIENT", heroSub));
+            hero.addCell(heroCell);
+            hero.setSpacingAfter(10f);
+            document.add(hero);
 
-            document.add(new Paragraph("Service Details", sectionFont));
-            document.add(new Paragraph("Service Description: Wallet top-up / recharge", bodyFont));
-            document.add(new Paragraph("Work Description:", bodyFont));
-            document.add(Chunk.NEWLINE);
+            PdfPTable meta = new PdfPTable(new float[]{1f, 1f, 1f, 1f});
+            meta.setWidthPercentage(100);
+            meta.setSpacingAfter(10f);
+            meta.addCell(panelCell("Invoice No", referenceId, labelFont, valueFont, panelBg, panelBorder));
+            meta.addCell(panelCell("Invoice Date", invoiceDate, labelFont, valueFont, panelBg, panelBorder));
+            meta.addCell(panelCell("Payment Mode", "Gateway", labelFont, valueFont, panelBg, panelBorder));
+            meta.addCell(panelCell("Status", "Successful", labelFont, valueFont, panelBg, panelBorder));
+            document.add(meta);
 
-            PdfPTable table = new PdfPTable(new float[]{1.1f, 6.5f, 1.9f});
-            table.setWidthPercentage(100);
-            table.setSpacingAfter(8f);
-            table.addCell(headerCell("Sr. No"));
-            table.addCell(headerCell("Particulars"));
-            table.addCell(headerCell("Amount (Rs.)"));
+            PdfPTable details = new PdfPTable(new float[]{1f, 1f});
+            details.setWidthPercentage(100);
+            details.setSpacingAfter(10f);
+            details.addCell(detailBlock(
+                    "Billed To",
+                    new String[]{
+                            "Name: " + userName,
+                            "User ID: " + userId,
+                            "Mobile: " + mobile,
+                            "Email: " + email,
+                            "Address: " + addressText
+                    },
+                    sectionTitle,
+                    valueFont,
+                    panelBg,
+                    panelBorder
+            ));
+            details.addCell(detailBlock(
+                    "Company Details",
+                    new String[]{
+                            "ASTROLOGER SERVICES PRIVATE LIMITED",
+                            "GSTIN: 09ASTRO1234X1Z9",
+                            "Email: support@astrologer.app",
+                            "Service: Wallet top-up / recharge",
+                            "Region: India"
+                    },
+                    sectionTitle,
+                    valueFont,
+                    panelBg,
+                    panelBorder
+            ));
+            document.add(details);
 
-            table.addCell(bodyCell("", Element.ALIGN_LEFT, bodyFont, 1f));
-            table.addCell(bodyCell("Reference ID: " + valueOrDash(transaction.getRefId()), Element.ALIGN_LEFT, boldFont, 1f));
-            table.addCell(bodyCell("", Element.ALIGN_RIGHT, bodyFont, 1f));
-            table.addCell(bodyCell("", Element.ALIGN_LEFT, bodyFont, 1f));
-            table.addCell(bodyCell("Order Date: " + formatDate(transaction.getCreatedAt()), Element.ALIGN_LEFT, boldFont, 1f));
-            table.addCell(bodyCell("", Element.ALIGN_RIGHT, bodyFont, 1f));
+            PdfPTable amountTable = new PdfPTable(new float[]{1.1f, 5.8f, 2.1f});
+            amountTable.setWidthPercentage(100);
+            amountTable.setSpacingAfter(10f);
+            amountTable.addCell(tableHeaderCell("Sr. No", tableHead, tableHeaderBg));
+            amountTable.addCell(tableHeaderCell("Particulars", tableHead, tableHeaderBg));
+            amountTable.addCell(tableHeaderCell("Amount", tableHead, tableHeaderBg));
+            amountTable.addCell(tableTextCell("1", tableBody, Element.ALIGN_CENTER, Color.WHITE, panelBorder));
+            amountTable.addCell(tableTextCell("Wallet recharge credited to user wallet", tableBody, Element.ALIGN_LEFT, Color.WHITE, panelBorder));
+            amountTable.addCell(tableTextCell(amount, tableBody, Element.ALIGN_RIGHT, Color.WHITE, panelBorder));
+            amountTable.addCell(tableTextCell("", tableBody, Element.ALIGN_LEFT, panelBg, panelBorder));
+            amountTable.addCell(tableTextCell("Taxable Amount", tableBody, Element.ALIGN_RIGHT, panelBg, panelBorder));
+            amountTable.addCell(tableTextCell(amount, tableBody, Element.ALIGN_RIGHT, panelBg, panelBorder));
+            amountTable.addCell(tableTextCell("", tableBody, Element.ALIGN_LEFT, Color.WHITE, panelBorder));
+            amountTable.addCell(tableTextCell("IGST @ 0.00%", tableBody, Element.ALIGN_RIGHT, Color.WHITE, panelBorder));
+            amountTable.addCell(tableTextCell(formatMoney(0.0, "INR"), tableBody, Element.ALIGN_RIGHT, Color.WHITE, panelBorder));
+            amountTable.addCell(tableTextCell("", tableBody, Element.ALIGN_LEFT, new Color(232, 239, 255), panelBorder));
+            amountTable.addCell(tableTextCell("Total Amount", totalFont, Element.ALIGN_RIGHT, new Color(232, 239, 255), panelBorder));
+            amountTable.addCell(tableTextCell(amount, totalFont, Element.ALIGN_RIGHT, new Color(232, 239, 255), panelBorder));
+            document.add(amountTable);
 
-            table.addCell(bodyCell("1", Element.ALIGN_LEFT, bodyFont, 1f));
-            table.addCell(bodyCell("Wallet recharge credited to user wallet", Element.ALIGN_LEFT, bodyFont, 1f));
-            table.addCell(bodyCell(formatMoney(transaction.getAmount(), "INR"), Element.ALIGN_RIGHT, bodyFont, 1f));
+            PdfPTable summary = new PdfPTable(new float[]{2.7f, 1.3f});
+            summary.setWidthPercentage(100);
+            summary.setSpacingAfter(10f);
+            PdfPCell summaryLabel = new PdfPCell(new Phrase("Wallet Balance After Top-up", invoiceFont(11, Font.BOLD, new Color(19, 40, 95))));
+            summaryLabel.setPadding(10f);
+            summaryLabel.setBorderColor(new Color(186, 205, 242));
+            summaryLabel.setBackgroundColor(new Color(241, 246, 255));
+            summary.addCell(summaryLabel);
+            PdfPCell summaryValue = new PdfPCell(new Phrase(balanceText, invoiceFont(12, Font.BOLD, new Color(19, 40, 95))));
+            summaryValue.setPadding(10f);
+            summaryValue.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            summaryValue.setBorderColor(new Color(186, 205, 242));
+            summaryValue.setBackgroundColor(new Color(241, 246, 255));
+            summary.addCell(summaryValue);
+            document.add(summary);
 
-            table.addCell(bodyCell("", Element.ALIGN_LEFT, bodyFont, 1f));
-            table.addCell(bodyCell("Taxable Amount", Element.ALIGN_RIGHT, bodyFont, 1f));
-            table.addCell(bodyCell(formatMoney(transaction.getAmount(), "INR"), Element.ALIGN_RIGHT, bodyFont, 1f));
-            table.addCell(bodyCell("", Element.ALIGN_LEFT, bodyFont, 1f));
-            table.addCell(bodyCell("IGST @ 0.00%", Element.ALIGN_RIGHT, bodyFont, 1f));
-            table.addCell(bodyCell(formatMoney(0.0, "INR"), Element.ALIGN_RIGHT, bodyFont, 1f));
-            table.addCell(bodyCell("", Element.ALIGN_LEFT, bodyFont, 1f));
-            table.addCell(bodyCell("Total Amount", Element.ALIGN_RIGHT, totalFont, 1.3f));
-            table.addCell(bodyCell(formatMoney(transaction.getAmount(), "INR"), Element.ALIGN_RIGHT, totalFont, 1.3f));
-
-            document.add(table);
-            document.add(new Paragraph("Wallet Balance After Top-up: " + formatMoney(balanceAfter, "INR"), sectionFont));
-            document.add(Chunk.NEWLINE);
-            document.add(new Paragraph("This is a computer generated invoice and does not require signature.", bodyFont));
+            Paragraph note = new Paragraph("This is a computer generated invoice and does not require signature.", invoiceFont(9.5f, Font.NORMAL, new Color(84, 93, 112)));
+            note.setSpacingAfter(3f);
+            document.add(note);
+            document.add(new Paragraph("For support: support@astrologer.app", invoiceFont(9.5f, Font.NORMAL, new Color(84, 93, 112))));
             document.close();
             return out.toByteArray();
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate wallet top-up invoice PDF: " + e.getMessage(), e);
         }
+    }
+
+    private PdfPCell panelCell(
+            String label,
+            String value,
+            Font labelFont,
+            Font valueFont,
+            Color background,
+            Color border
+    ) {
+        PdfPCell cell = new PdfPCell();
+        cell.setPadding(10f);
+        cell.setBackgroundColor(background);
+        cell.setBorderColor(border);
+        Paragraph labelP = new Paragraph(valueOrDash(label), labelFont);
+        labelP.setSpacingAfter(3f);
+        cell.addElement(labelP);
+        cell.addElement(new Paragraph(valueOrDash(value), valueFont));
+        return cell;
+    }
+
+    private PdfPCell detailBlock(
+            String title,
+            String[] lines,
+            Font titleFont,
+            Font lineFont,
+            Color background,
+            Color border
+    ) {
+        PdfPCell cell = new PdfPCell();
+        cell.setPadding(10f);
+        cell.setBackgroundColor(background);
+        cell.setBorderColor(border);
+        Paragraph titleP = new Paragraph(valueOrDash(title), titleFont);
+        titleP.setSpacingAfter(6f);
+        cell.addElement(titleP);
+        for (String line : lines) {
+            Paragraph row = new Paragraph(valueOrDash(line), lineFont);
+            row.setSpacingAfter(2f);
+            cell.addElement(row);
+        }
+        return cell;
+    }
+
+    private PdfPCell tableHeaderCell(String value, Font font, Color background) {
+        PdfPCell cell = new PdfPCell(new Phrase(valueOrDash(value), font));
+        cell.setPadding(8f);
+        cell.setBorderColor(background);
+        cell.setBackgroundColor(background);
+        cell.setHorizontalAlignment("Amount".equalsIgnoreCase(value) ? Element.ALIGN_RIGHT : Element.ALIGN_LEFT);
+        return cell;
+    }
+
+    private PdfPCell tableTextCell(String value, Font font, int align, Color background, Color border) {
+        PdfPCell cell = new PdfPCell(new Phrase(valueOrDash(value), font));
+        cell.setPadding(8f);
+        cell.setHorizontalAlignment(align);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setBorderColor(border);
+        cell.setBackgroundColor(background);
+        return cell;
     }
 
     private PdfPCell headerCell(String value) {
@@ -325,6 +446,48 @@ public class WalletService {
             return new Font(Font.HELVETICA, size, style, color);
         }
         return font;
+    }
+
+    private void addLogoWatermark(PdfWriter writer, Document document) {
+        try {
+            byte[] logoBytes = loadLogoBytes();
+            if (logoBytes == null || logoBytes.length == 0) {
+                return;
+            }
+            Image watermark = Image.getInstance(logoBytes);
+            watermark.scaleToFit(230, 230);
+
+            Rectangle page = document.getPageSize();
+            float x = (page.getWidth() - watermark.getScaledWidth()) / 2f;
+            float y = (page.getHeight() - watermark.getScaledHeight()) / 2f;
+            watermark.setAbsolutePosition(x, y);
+
+            PdfContentByte under = writer.getDirectContentUnder();
+            PdfGState state = new PdfGState();
+            state.setFillOpacity(0.09f);
+            under.saveState();
+            under.setGState(state);
+            under.addImage(watermark);
+            under.restoreState();
+        } catch (Exception ignored) {
+            // Watermark is cosmetic; invoice generation should not fail because of this.
+        }
+    }
+
+    private byte[] loadLogoBytes() {
+        String[] candidates = new String[]{
+                "branding/app-logo.png",
+                "static/app-logo.png",
+                "app-logo.png"
+        };
+        for (String path : candidates) {
+            try (InputStream in = new ClassPathResource(path).getInputStream()) {
+                return in.readAllBytes();
+            } catch (Exception ignored) {
+                // try next
+            }
+        }
+        return null;
     }
 
     private String formatDateTime(LocalDateTime value) {

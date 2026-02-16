@@ -50,8 +50,8 @@ app:
     from: "deepak.kumar.rd2013@gmail.com"
 
 razorpay:
-  key-id: "YOUR_RAZORPAY_KEY"
-  key-secret: "YOUR_RAZORPAY_SECRET"
+  key-id: "rzp_live_SGnLtGTl5vgLLC"
+  key-secret: "snhHxD0UbGEx6fBhCZ9N9rHo"
 
 free-astrology:
   base-url: "https://json.freeastrologyapi.com"

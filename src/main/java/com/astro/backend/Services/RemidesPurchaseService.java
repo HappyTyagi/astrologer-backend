@@ -17,18 +17,24 @@ import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
+import com.lowagie.text.Image;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
 import com.lowagie.text.Phrase;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfContentByte;
 import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfGState;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -429,8 +435,9 @@ public class RemidesPurchaseService {
 
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             Document document = new Document(PageSize.A4, 28, 28, 24, 24);
-            PdfWriter.getInstance(document, out);
+            PdfWriter writer = PdfWriter.getInstance(document, out);
             document.open();
+            addLogoWatermark(writer, document);
 
             FontFactory.registerDirectories();
             Font title = invoiceFont(30, Font.BOLD, Color.BLACK);
@@ -557,6 +564,48 @@ public class RemidesPurchaseService {
             return new Font(Font.HELVETICA, size, style, color);
         }
         return font;
+    }
+
+    private void addLogoWatermark(PdfWriter writer, Document document) {
+        try {
+            byte[] logoBytes = loadLogoBytes();
+            if (logoBytes == null || logoBytes.length == 0) {
+                return;
+            }
+            Image watermark = Image.getInstance(logoBytes);
+            watermark.scaleToFit(230, 230);
+
+            Rectangle page = document.getPageSize();
+            float x = (page.getWidth() - watermark.getScaledWidth()) / 2f;
+            float y = (page.getHeight() - watermark.getScaledHeight()) / 2f;
+            watermark.setAbsolutePosition(x, y);
+
+            PdfContentByte under = writer.getDirectContentUnder();
+            PdfGState state = new PdfGState();
+            state.setFillOpacity(0.09f);
+            under.saveState();
+            under.setGState(state);
+            under.addImage(watermark);
+            under.restoreState();
+        } catch (Exception ignored) {
+            // Watermark is cosmetic; invoice generation should not fail because of this.
+        }
+    }
+
+    private byte[] loadLogoBytes() {
+        String[] candidates = new String[]{
+                "branding/app-logo.png",
+                "static/app-logo.png",
+                "app-logo.png"
+        };
+        for (String path : candidates) {
+            try (InputStream in = new ClassPathResource(path).getInputStream()) {
+                return in.readAllBytes();
+            } catch (Exception ignored) {
+                // try next
+            }
+        }
+        return null;
     }
 
     private String buildAddressText(Address address) {

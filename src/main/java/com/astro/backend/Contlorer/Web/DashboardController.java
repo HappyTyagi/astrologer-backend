@@ -15,7 +15,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.DayOfWeek;
+import java.time.temporal.TemporalAdjusters;
+import java.time.format.DateTimeParseException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/web/dashboard")
@@ -104,5 +111,98 @@ public class DashboardController {
                         (booking.getStatus() == PujaBooking.BookingStatus.PENDING ||
                          booking.getStatus() == PujaBooking.BookingStatus.CONFIRMED))
                 .count();
+    }
+
+    @GetMapping("/payments")
+    public ResponseEntity<Map<String, Object>> getPaymentsSummary(
+            @RequestParam(defaultValue = "today") String filter,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate
+    ) {
+        try {
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime start;
+            LocalDateTime end;
+            String normalized = filter == null ? "today" : filter.trim().toLowerCase();
+
+            switch (normalized) {
+                case "today" -> {
+                    start = LocalDate.now().atStartOfDay();
+                    end = LocalDate.now().atTime(LocalTime.MAX);
+                }
+                case "weekly" -> {
+                    LocalDate weekStart = LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+                    LocalDate weekEnd = weekStart.plusDays(6);
+                    start = weekStart.atStartOfDay();
+                    end = weekEnd.atTime(LocalTime.MAX);
+                }
+                case "range" -> {
+                    if (startDate == null || endDate == null) {
+                        throw new RuntimeException("startDate and endDate are required for range filter (YYYY-MM-DD)");
+                    }
+                    LocalDate s = LocalDate.parse(startDate.trim());
+                    LocalDate e = LocalDate.parse(endDate.trim());
+                    if (e.isBefore(s)) {
+                        throw new RuntimeException("endDate must be on or after startDate");
+                    }
+                    start = s.atStartOfDay();
+                    end = e.atTime(LocalTime.MAX);
+                }
+                default -> throw new RuntimeException("Invalid filter. Use today, weekly, or range");
+            }
+
+            List<WalletTransaction> rows =
+                    walletTransactionRepository.findByTypeIgnoreCaseAndStatusIgnoreCaseAndCreatedAtBetweenOrderByCreatedAtDesc(
+                            "CREDIT",
+                            "SUCCESS",
+                            start,
+                            end
+                    );
+
+            double totalAmount = rows.stream().mapToDouble(WalletTransaction::getAmount).sum();
+            long totalTransactions = rows.size();
+            double avgAmount = totalTransactions == 0 ? 0.0 : totalAmount / totalTransactions;
+
+            List<Map<String, Object>> items = rows.stream().limit(500).map(txn -> {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("id", txn.getId());
+                m.put("userId", txn.getUserId());
+                m.put("amount", txn.getAmount());
+                m.put("type", txn.getType());
+                m.put("status", txn.getStatus());
+                m.put("refId", txn.getRefId());
+                m.put("description", txn.getDescription());
+                m.put("createdAt", txn.getCreatedAt());
+                return m;
+            }).toList();
+
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("status", true);
+            body.put("message", "Payment summary fetched successfully");
+            body.put("filter", normalized);
+            body.put("start", start);
+            body.put("end", end);
+            body.put("generatedAt", now);
+            body.put("totalTransactions", totalTransactions);
+            body.put("totalAmount", totalAmount);
+            body.put("averageAmount", avgAmount);
+            body.put("items", items);
+            return ResponseEntity.ok(body);
+        } catch (DateTimeParseException e) {
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("status", false);
+            body.put("message", "Invalid date format. Use YYYY-MM-DD");
+            return ResponseEntity.badRequest().body(body);
+        } catch (RuntimeException e) {
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("status", false);
+            body.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(body);
+        } catch (Exception e) {
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("status", false);
+            body.put("message", "Error fetching payment summary: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+        }
     }
 }
