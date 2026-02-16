@@ -3,6 +3,7 @@ package com.astro.backend.Services;
 import com.astro.backend.Entity.MobileUserProfile;
 import com.astro.backend.Entity.User;
 import com.astro.backend.EnumFile.Role;
+import com.astro.backend.Repositry.DistrictMasterRepository;
 import com.astro.backend.Repositry.MobileUserProfileRepository;
 import com.astro.backend.Repositry.UserRepository;
 import com.astro.backend.RequestDTO.MobileUserRegistrationRequest;
@@ -20,6 +21,7 @@ public class MobileUserService {
 
     private final UserRepository userRepository;
     private final MobileUserProfileRepository mobileUserProfileRepository;
+    private final DistrictMasterRepository districtMasterRepository;
 
     /**
      * Register new mobile user with device details
@@ -59,6 +61,8 @@ public class MobileUserService {
             }
 
             // Create Mobile User Profile
+            Long resolvedStateMasterId = resolveStateMasterId(request.getDistrictMasterId(), request.getStateMasterId());
+
             MobileUserProfile mobileProfile = MobileUserProfile.builder()
                     .userId(savedUser.getId())
                     .deviceToken(request.getDeviceToken())
@@ -71,7 +75,7 @@ public class MobileUserService {
                     .latitude(request.getLatitude())
                     .longitude(request.getLongitude())
                     .genderMasterId(request.getGenderMasterId())
-                    .stateMasterId(request.getStateMasterId())
+                    .stateMasterId(resolvedStateMasterId)
                     .districtMasterId(request.getDistrictMasterId())
                     .referralCode(referralCode)
                     .referredByUserId(request.getReferredByUserId())
@@ -263,5 +267,14 @@ public class MobileUserService {
                 .createdAt(user.getCreatedAt())
                 .lastLoginAt(profile.getLastLoginAt())
                 .build();
+    }
+
+    private Long resolveStateMasterId(Long districtMasterId, Long requestedStateMasterId) {
+        if (districtMasterId == null) {
+            return requestedStateMasterId;
+        }
+        return districtMasterRepository.findById(districtMasterId)
+                .map(district -> district.getStateId())
+                .orElse(requestedStateMasterId);
     }
 }

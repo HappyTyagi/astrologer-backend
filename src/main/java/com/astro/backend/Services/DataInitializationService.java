@@ -12,7 +12,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Data initialization service
@@ -167,10 +171,6 @@ public class DataInitializationService implements CommandLineRunner {
     private void initializeDistrictMaster() {
         try {
             long count = districtMasterRepository.count();
-            if (count > 0) {
-                log.info("District Master data already exists. Skipping initialization.");
-                return;
-            }
             
             List<DistrictMaster> allDistricts = Arrays.asList(
                     // Andhra Pradesh (26 districts)
@@ -780,8 +780,55 @@ public class DataInitializationService implements CommandLineRunner {
                     createDistrict("Kashmir", "JK02", "Jammu and Kashmir", 37L)
             );
 
-            districtMasterRepository.saveAll(allDistricts);
-            log.info("District Master data initialized: {} districts inserted", allDistricts.size());
+            if (count == 0) {
+                districtMasterRepository.saveAll(allDistricts);
+                log.info("District Master data initialized: {} districts inserted", allDistricts.size());
+                return;
+            }
+
+            Map<String, DistrictMaster> existingByName = new HashMap<>();
+            for (DistrictMaster existing : districtMasterRepository.findAll()) {
+                if (existing.getName() != null && !existing.getName().isBlank()) {
+                    existingByName.put(existing.getName().trim().toLowerCase(Locale.ROOT), existing);
+                }
+            }
+
+            int inserted = 0;
+            int updated = 0;
+            for (DistrictMaster desired : allDistricts) {
+                String key = desired.getName() == null ? "" : desired.getName().trim().toLowerCase(Locale.ROOT);
+                DistrictMaster existing = existingByName.get(key);
+                if (existing == null) {
+                    districtMasterRepository.save(desired);
+                    inserted++;
+                    continue;
+                }
+
+                boolean changed = false;
+                if (!Objects.equals(existing.getStateId(), desired.getStateId())) {
+                    existing.setStateId(desired.getStateId());
+                    changed = true;
+                }
+                if (!Objects.equals(existing.getCode(), desired.getCode())) {
+                    existing.setCode(desired.getCode());
+                    changed = true;
+                }
+                if (!Objects.equals(existing.getDescription(), desired.getDescription())) {
+                    existing.setDescription(desired.getDescription());
+                    changed = true;
+                }
+                if (!Boolean.TRUE.equals(existing.getIsActive())) {
+                    existing.setIsActive(true);
+                    changed = true;
+                }
+
+                if (changed) {
+                    districtMasterRepository.save(existing);
+                    updated++;
+                }
+            }
+
+            log.info("District Master sync completed. inserted={}, updated={}, totalDesired={}", inserted, updated, allDistricts.size());
 
         } catch (Exception e) {
             log.error("Error initializing District Master data: {}", e.getMessage());
@@ -792,11 +839,14 @@ public class DataInitializationService implements CommandLineRunner {
      * Helper method to create district
      */
     private DistrictMaster createDistrict(String name, String code, String state, Long stateId) {
+        Long resolvedStateId = stateMasterRepository.findByNameIgnoreCase(state)
+                .map(StateMaster::getId)
+                .orElse(stateId);
         return DistrictMaster.builder()
                 .name(name)
                 .code(code)
                 .description(state)
-                .stateId(stateId)
+                .stateId(resolvedStateId)
                 .isActive(true)
                 .build();
     }

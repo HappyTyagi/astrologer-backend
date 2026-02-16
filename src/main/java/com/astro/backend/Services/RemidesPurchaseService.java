@@ -1,11 +1,13 @@
 package com.astro.backend.Services;
 
 import com.astro.backend.Entity.Address;
+import com.astro.backend.Entity.MobileUserProfile;
 import com.astro.backend.Entity.Remides;
 import com.astro.backend.Entity.RemidesCart;
 import com.astro.backend.Entity.RemidesPurchase;
 import com.astro.backend.Entity.Wallet;
 import com.astro.backend.Repositry.AddressRepository;
+import com.astro.backend.Repositry.MobileUserProfileRepository;
 import com.astro.backend.Repositry.RemidesCartRepository;
 import com.astro.backend.Repositry.RemidesPurchaseRepository;
 import com.astro.backend.Repositry.RemidesRepository;
@@ -17,6 +19,7 @@ import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
+import com.lowagie.text.Anchor;
 import com.lowagie.text.Image;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
@@ -47,6 +50,7 @@ public class RemidesPurchaseService {
     private final RemidesPurchaseRepository remidesPurchaseRepository;
     private final AddressRepository addressRepository;
     private final RemidesCartRepository remidesCartRepository;
+    private final MobileUserProfileRepository mobileUserProfileRepository;
     private final EmailService emailService;
     private final OrderHistoryService orderHistoryService;
     private final WalletService walletService;
@@ -168,6 +172,7 @@ public class RemidesPurchaseService {
         List<RemidesPurchase> saved = remidesPurchaseRepository.saveAll(purchases);
         orderHistoryService.recordRemedyPurchases(saved);
         deactivateUserCart(request.getUserId());
+        sendReceiptIfEmailAvailable(saved);
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", true);
@@ -184,6 +189,40 @@ public class RemidesPurchaseService {
         response.put("purchasedAt", purchaseTime);
         response.put("purchases", saved);
         return response;
+    }
+
+    private void sendReceiptIfEmailAvailable(List<RemidesPurchase> purchases) {
+        try {
+            if (purchases == null || purchases.isEmpty()) {
+                return;
+            }
+            RemidesPurchase first = purchases.get(0);
+            if (first.getUserId() == null || first.getUserId() <= 0) {
+                return;
+            }
+
+            MobileUserProfile profile = mobileUserProfileRepository.findByUserId(first.getUserId()).orElse(null);
+            String toEmail = profile == null || profile.getEmail() == null ? "" : profile.getEmail().trim();
+            if (toEmail.isEmpty()) {
+                return;
+            }
+
+            String subject = "Your Astrologer Remedy Receipt - " + shortOrderId(first.getOrderId());
+            String html = buildPremiumReceiptHtml(purchases);
+            byte[] pdf = buildReceiptPdf(purchases);
+            String fileName = "receipt-" + shortOrderId(first.getOrderId()).replace("#", "") + ".pdf";
+
+            emailService.sendEmailWithAttachmentAsync(
+                    toEmail,
+                    subject,
+                    html,
+                    fileName,
+                    pdf,
+                    "application/pdf"
+            );
+        } catch (Exception ignored) {
+            // Purchase flow should not fail if receipt email cannot be queued.
+        }
     }
 
     private void deactivateUserCart(Long userId) {
@@ -225,10 +264,7 @@ public class RemidesPurchaseService {
         if (request == null || request.getUserId() == null || request.getUserId() <= 0) {
             throw new RuntimeException("Valid userId is required");
         }
-        final String toEmail = request.getEmail() == null ? "" : request.getEmail().trim();
-        if (toEmail.isEmpty()) {
-            throw new RuntimeException("Valid email is required");
-        }
+        final String toEmail = getVerifiedProfileEmail(request.getUserId(), request.getEmail());
 
         final String resolvedOrderId = resolveOrderId(orderId);
         final List<RemidesPurchase> purchases = remidesPurchaseRepository.findByOrderIdOrderByIdAsc(resolvedOrderId);
@@ -263,6 +299,22 @@ public class RemidesPurchaseService {
         response.put("email", toEmail);
         response.put("requestedAt", LocalDateTime.now());
         return response;
+    }
+
+    private String getVerifiedProfileEmail(Long userId, String requestedEmail) {
+        MobileUserProfile profile = mobileUserProfileRepository.findByUserId(userId).orElse(null);
+        String profileEmail = profile == null || profile.getEmail() == null
+                ? ""
+                : profile.getEmail().trim();
+        if (profileEmail.isEmpty()) {
+            throw new RuntimeException("No email is linked with this account. Please update profile email first.");
+        }
+
+        String provided = requestedEmail == null ? "" : requestedEmail.trim();
+        if (!provided.isEmpty() && !profileEmail.equalsIgnoreCase(provided)) {
+            throw new RuntimeException("Email verification failed. Please use your registered profile email.");
+        }
+        return profileEmail;
     }
 
     private String resolveOrderId(String rawOrderId) {
@@ -440,57 +492,84 @@ public class RemidesPurchaseService {
             addLogoWatermark(writer, document);
 
             FontFactory.registerDirectories();
-            Font title = invoiceFont(30, Font.BOLD, Color.BLACK);
-            Font subTitle = invoiceFont(15, Font.BOLD, Color.BLACK);
-            Font section = invoiceFont(12, Font.BOLD, Color.BLACK);
-            Font body = invoiceFont(11, Font.NORMAL, Color.BLACK);
-            Font bold = invoiceFont(11, Font.BOLD, Color.BLACK);
-            Font amountBold = invoiceFont(13, Font.BOLD, Color.BLACK);
+            Font heroTitle = invoiceFont(24, Font.BOLD, Color.WHITE);
+            Font heroSub = invoiceFont(11, Font.NORMAL, new Color(220, 231, 255));
+            Font labelFont = invoiceFont(10, Font.BOLD, new Color(64, 76, 98));
+            Font valueFont = invoiceFont(11, Font.NORMAL, new Color(22, 30, 48));
+            Font sectionTitle = invoiceFont(11, Font.BOLD, new Color(20, 36, 90));
+            Font tableHead = invoiceFont(10, Font.BOLD, Color.WHITE);
+            Font tableBody = invoiceFont(10.5f, Font.NORMAL, new Color(33, 41, 62));
+            Font amountBold = invoiceFont(12.5f, Font.BOLD, new Color(20, 36, 90));
 
-            Paragraph pTitle = new Paragraph("Tax Invoice", title);
-            pTitle.setAlignment(Element.ALIGN_CENTER);
-            pTitle.setSpacingAfter(2f);
-            document.add(pTitle);
-            Paragraph pSub = new Paragraph("ORIGINAL FOR RECIPIENT", subTitle);
-            pSub.setAlignment(Element.ALIGN_CENTER);
-            pSub.setSpacingAfter(14f);
-            document.add(pSub);
+            Color heroBg = new Color(24, 42, 96);
+            Color panelBg = new Color(246, 249, 255);
+            Color panelBorder = new Color(222, 231, 246);
+            Color tableHeaderBg = new Color(45, 66, 137);
 
-            document.add(new Paragraph("ASTROLOGER SERVICES PRIVATE LIMITED", section));
-            document.add(new Paragraph("Address: Digital Astrology Services, India", body));
-            document.add(new Paragraph("GSTIN: 09ASTRO1234X1Z9    Email: support@astrologer.app", body));
-            document.add(new Paragraph("Invoice No: " + shortOrderId(first.getOrderId()), bold));
-            document.add(new Paragraph("Invoice Date: " + (first.getPurchasedAt() == null
-                    ? "-"
-                    : first.getPurchasedAt().toLocalDate()), bold));
-            document.add(Chunk.NEWLINE);
+            PdfPTable hero = new PdfPTable(1);
+            hero.setWidthPercentage(100);
+            PdfPCell heroCell = new PdfPCell();
+            heroCell.setBackgroundColor(heroBg);
+            heroCell.setBorderColor(heroBg);
+            heroCell.setPadding(16f);
+            Paragraph heroTitleP = new Paragraph("Tax Invoice", heroTitle);
+            heroTitleP.setSpacingAfter(5f);
+            heroCell.addElement(heroTitleP);
+            heroCell.addElement(new Paragraph("Remedies Purchase Receipt", invoiceFont(14, Font.BOLD, Color.WHITE)));
+            heroCell.addElement(new Paragraph("ORIGINAL FOR RECIPIENT", heroSub));
+            hero.addCell(heroCell);
+            hero.setSpacingAfter(10f);
+            document.add(hero);
 
-            document.add(new Paragraph("User Details", section));
-            document.add(new Paragraph("Name: " + valueOrDash(first.getAddress() == null ? null : first.getAddress().getName()), body));
-            document.add(new Paragraph("Address: " + buildAddressText(first.getAddress()), body));
-            document.add(new Paragraph("Mobile: " + valueOrDash(first.getAddress() == null ? null : first.getAddress().getUserMobileNumber()), body));
-            document.add(Chunk.NEWLINE);
+            String orderRef = shortOrderId(first.getOrderId());
+            String orderDate = first.getPurchasedAt() == null ? "-" : first.getPurchasedAt().toLocalDate().toString();
 
-            document.add(new Paragraph("Service Details", section));
-            document.add(new Paragraph("Service Description: Remedies Purchase", body));
-            document.add(new Paragraph("Work Description:", body));
-            document.add(Chunk.NEWLINE);
+            PdfPTable meta = new PdfPTable(new float[]{1f, 1f, 1f, 1f});
+            meta.setWidthPercentage(100);
+            meta.setSpacingAfter(10f);
+            meta.addCell(invoicePanelCell("Invoice No", orderRef, labelFont, valueFont, panelBg, panelBorder));
+            meta.addCell(invoicePanelCell("Invoice Date", orderDate, labelFont, valueFont, panelBg, panelBorder));
+            meta.addCell(invoicePanelCell("Payment Mode", valueOrDash(first.getPaymentMethod()), labelFont, valueFont, panelBg, panelBorder));
+            meta.addCell(invoicePanelCell("Status", valueOrDash(first.getStatus()), labelFont, valueFont, panelBg, panelBorder));
+            document.add(meta);
 
-            PdfPTable table = new PdfPTable(new float[]{1.1f, 6.5f, 1.9f});
+            PdfPTable details = new PdfPTable(new float[]{1f, 1f});
+            details.setWidthPercentage(100);
+            details.setSpacingAfter(10f);
+            details.addCell(invoiceDetailBlock(
+                    "Billed To",
+                    new String[]{
+                            "Name: " + valueOrDash(first.getAddress() == null ? null : first.getAddress().getName()),
+                            "Mobile: " + valueOrDash(first.getAddress() == null ? null : first.getAddress().getUserMobileNumber()),
+                            "Address: " + buildAddressText(first.getAddress())
+                    },
+                    sectionTitle,
+                    valueFont,
+                    panelBg,
+                    panelBorder
+            ));
+            details.addCell(invoiceDetailBlock(
+                    "Company Details",
+                    new String[]{
+                            "ASTROLOGER SERVICES PRIVATE LIMITED",
+                            "GSTIN: 09ASTRO1234X1Z9",
+                            "Email: support@astrologer.app",
+                            "Service: Remedies Purchase",
+                            "Region: India"
+                    },
+                    sectionTitle,
+                    valueFont,
+                    panelBg,
+                    panelBorder
+            ));
+            document.add(details);
+
+            PdfPTable table = new PdfPTable(new float[]{1.1f, 5.8f, 2.1f});
             table.setWidthPercentage(100);
-            table.setSpacingAfter(8f);
-            table.addCell(invoiceHeaderCell("Sr. No"));
-            table.addCell(invoiceHeaderCell("Particulars"));
-            table.addCell(invoiceHeaderCell("Amount (Rs.)"));
-
-            table.addCell(invoiceBodyCell("", Element.ALIGN_LEFT, body, 1f));
-            table.addCell(invoiceBodyCell("Order ID: " + shortOrderId(first.getOrderId()), Element.ALIGN_LEFT, bold, 1f));
-            table.addCell(invoiceBodyCell("", Element.ALIGN_RIGHT, body, 1f));
-            table.addCell(invoiceBodyCell("", Element.ALIGN_LEFT, body, 1f));
-            table.addCell(invoiceBodyCell("Order Date: " + (
-                    first.getPurchasedAt() == null ? "-" : first.getPurchasedAt().toLocalDate()
-            ), Element.ALIGN_LEFT, bold, 1f));
-            table.addCell(invoiceBodyCell("", Element.ALIGN_RIGHT, body, 1f));
+            table.setSpacingAfter(10f);
+            table.addCell(invoiceTableHeaderCell("Sr. No", tableHead, tableHeaderBg));
+            table.addCell(invoiceTableHeaderCell("Particulars", tableHead, tableHeaderBg));
+            table.addCell(invoiceTableHeaderCell("Amount", tableHead, tableHeaderBg));
 
             int sr = 1;
             for (RemidesPurchase item : purchases) {
@@ -501,36 +580,53 @@ public class RemidesPurchaseService {
                 originalTotal += unit * qty;
                 finalTotal += line;
 
-                table.addCell(invoiceBodyCell(String.valueOf(sr++), Element.ALIGN_LEFT, body, 1f));
-                table.addCell(invoiceBodyCell(
+                table.addCell(invoiceTableTextCell(String.valueOf(sr++), tableBody, Element.ALIGN_CENTER, Color.WHITE, panelBorder));
+                table.addCell(invoiceTableTextCell(
                         valueOrDash(item.getTitle()) + " (Qty: " + qty + ", Unit: " + formatMoney(unit, currency) + ")",
+                        tableBody,
                         Element.ALIGN_LEFT,
-                        body,
-                        1f
+                        Color.WHITE,
+                        panelBorder
                 ));
-                table.addCell(invoiceBodyCell(formatMoney(line, currency), Element.ALIGN_RIGHT, body, 1f));
+                table.addCell(invoiceTableTextCell(formatMoney(line, currency), tableBody, Element.ALIGN_RIGHT, Color.WHITE, panelBorder));
             }
 
             double discount = Math.max(0.0, originalTotal - finalTotal);
 
-            table.addCell(invoiceBodyCell("", Element.ALIGN_LEFT, body, 1f));
-            table.addCell(invoiceBodyCell("Taxable Amount", Element.ALIGN_RIGHT, body, 1f));
-            table.addCell(invoiceBodyCell(formatMoney(originalTotal, currency), Element.ALIGN_RIGHT, body, 1f));
-            table.addCell(invoiceBodyCell("", Element.ALIGN_LEFT, body, 1f));
-            table.addCell(invoiceBodyCell("Discount", Element.ALIGN_RIGHT, body, 1f));
-            table.addCell(invoiceBodyCell("-" + formatMoney(discount, currency), Element.ALIGN_RIGHT, body, 1f));
-            table.addCell(invoiceBodyCell("", Element.ALIGN_LEFT, body, 1f));
-            table.addCell(invoiceBodyCell("IGST @ 0.00%", Element.ALIGN_RIGHT, body, 1f));
-            table.addCell(invoiceBodyCell(formatMoney(0.0, currency), Element.ALIGN_RIGHT, body, 1f));
-            table.addCell(invoiceBodyCell("", Element.ALIGN_LEFT, body, 1f));
-            table.addCell(invoiceBodyCell("Total Amount", Element.ALIGN_RIGHT, amountBold, 1.3f));
-            table.addCell(invoiceBodyCell(formatMoney(finalTotal, currency), Element.ALIGN_RIGHT, amountBold, 1.3f));
+            table.addCell(invoiceTableTextCell("", tableBody, Element.ALIGN_LEFT, panelBg, panelBorder));
+            table.addCell(invoiceTableTextCell("Taxable Amount", tableBody, Element.ALIGN_RIGHT, panelBg, panelBorder));
+            table.addCell(invoiceTableTextCell(formatMoney(originalTotal, currency), tableBody, Element.ALIGN_RIGHT, panelBg, panelBorder));
+            table.addCell(invoiceTableTextCell("", tableBody, Element.ALIGN_LEFT, Color.WHITE, panelBorder));
+            table.addCell(invoiceTableTextCell("Discount", tableBody, Element.ALIGN_RIGHT, Color.WHITE, panelBorder));
+            table.addCell(invoiceTableTextCell("-" + formatMoney(discount, currency), tableBody, Element.ALIGN_RIGHT, Color.WHITE, panelBorder));
+            table.addCell(invoiceTableTextCell("", tableBody, Element.ALIGN_LEFT, panelBg, panelBorder));
+            table.addCell(invoiceTableTextCell("IGST @ 0.00%", tableBody, Element.ALIGN_RIGHT, panelBg, panelBorder));
+            table.addCell(invoiceTableTextCell(formatMoney(0.0, currency), tableBody, Element.ALIGN_RIGHT, panelBg, panelBorder));
+            table.addCell(invoiceTableTextCell("", tableBody, Element.ALIGN_LEFT, new Color(232, 239, 255), panelBorder));
+            table.addCell(invoiceTableTextCell("Total Amount", amountBold, Element.ALIGN_RIGHT, new Color(232, 239, 255), panelBorder));
+            table.addCell(invoiceTableTextCell(formatMoney(finalTotal, currency), amountBold, Element.ALIGN_RIGHT, new Color(232, 239, 255), panelBorder));
 
             document.add(table);
-            document.add(new Paragraph("Total Amount: " + formatMoney(finalTotal, currency) + " only", section));
-            document.add(Chunk.NEWLINE);
-            document.add(new Paragraph("This is a computer generated invoice and does not require signature.", body));
-            document.add(new Paragraph("Need help? support@astrologer.app", body));
+
+            Paragraph orderLinkPara = new Paragraph();
+            orderLinkPara.setSpacingAfter(4f);
+            orderLinkPara.add(new Chunk("Order Link: ", invoiceFont(10.5f, Font.BOLD, new Color(25, 47, 122))));
+            String orderLink = "https://astrologer.app/orders/" + orderRef.replace("#", "");
+            Anchor orderAnchor = new Anchor(orderLink, invoiceFont(10.5f, Font.UNDERLINE, new Color(25, 47, 122)));
+            orderAnchor.setReference(orderLink);
+            orderLinkPara.add(orderAnchor);
+            document.add(orderLinkPara);
+
+            Paragraph appPara = new Paragraph();
+            appPara.setSpacingAfter(10f);
+            appPara.add(new Chunk("App Link: ", invoiceFont(10.5f, Font.BOLD, new Color(25, 47, 122))));
+            Anchor appAnchor = new Anchor("https://astrologer.app", invoiceFont(10.5f, Font.UNDERLINE, new Color(25, 47, 122)));
+            appAnchor.setReference("https://astrologer.app");
+            appPara.add(appAnchor);
+            document.add(appPara);
+
+            document.add(new Paragraph("This is a computer generated invoice and does not require signature.", invoiceFont(9.5f, Font.NORMAL, new Color(84, 93, 112))));
+            document.add(new Paragraph("Need help? support@astrologer.app", invoiceFont(9.5f, Font.NORMAL, new Color(84, 93, 112))));
             document.close();
             return out.toByteArray();
         } catch (Exception e) {
@@ -564,6 +660,67 @@ public class RemidesPurchaseService {
             return new Font(Font.HELVETICA, size, style, color);
         }
         return font;
+    }
+
+    private PdfPCell invoicePanelCell(
+            String label,
+            String value,
+            Font labelFont,
+            Font valueFont,
+            Color background,
+            Color border
+    ) {
+        PdfPCell cell = new PdfPCell();
+        cell.setPadding(10f);
+        cell.setBackgroundColor(background);
+        cell.setBorderColor(border);
+        Paragraph labelP = new Paragraph(valueOrDash(label), labelFont);
+        labelP.setSpacingAfter(3f);
+        cell.addElement(labelP);
+        cell.addElement(new Paragraph(valueOrDash(value), valueFont));
+        return cell;
+    }
+
+    private PdfPCell invoiceDetailBlock(
+            String title,
+            String[] lines,
+            Font titleFont,
+            Font lineFont,
+            Color background,
+            Color border
+    ) {
+        PdfPCell cell = new PdfPCell();
+        cell.setPadding(10f);
+        cell.setBackgroundColor(background);
+        cell.setBorderColor(border);
+        Paragraph titleP = new Paragraph(valueOrDash(title), titleFont);
+        titleP.setSpacingAfter(6f);
+        cell.addElement(titleP);
+        for (String line : lines) {
+            Paragraph row = new Paragraph(valueOrDash(line), lineFont);
+            row.setSpacingAfter(2f);
+            cell.addElement(row);
+        }
+        return cell;
+    }
+
+    private PdfPCell invoiceTableHeaderCell(String value, Font font, Color background) {
+        PdfPCell cell = new PdfPCell(new Phrase(valueOrDash(value), font));
+        cell.setPadding(8f);
+        cell.setBorderColor(background);
+        cell.setBackgroundColor(background);
+        cell.setHorizontalAlignment("Amount".equalsIgnoreCase(value) ? Element.ALIGN_RIGHT : Element.ALIGN_LEFT);
+        return cell;
+    }
+
+    private PdfPCell invoiceTableTextCell(String value, Font font, int align, Color background, Color border) {
+        PdfPCell cell = new PdfPCell(new Phrase(valueOrDash(value), font));
+        cell.setPadding(8f);
+        cell.setHorizontalAlignment(align);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setBorderColor(border);
+        cell.setBackgroundColor(background);
+        return cell;
     }
 
     private void addLogoWatermark(PdfWriter writer, Document document) {

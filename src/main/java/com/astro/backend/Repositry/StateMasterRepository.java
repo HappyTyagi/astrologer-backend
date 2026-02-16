@@ -9,6 +9,7 @@ import java.util.Optional;
 @Repository
 public interface StateMasterRepository extends JpaRepository<StateMaster, Long> {
     Optional<StateMaster> findByName(String name);
+    Optional<StateMaster> findByNameIgnoreCase(String name);
     Optional<StateMaster> findByCode(String code);
     List<StateMaster> findByIsActiveOrderByName(Boolean isActive);
 }

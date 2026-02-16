@@ -1,6 +1,7 @@
 package com.astro.backend.Services;
 
 import com.astro.backend.Entity.LinkedMobileProfile;
+import com.astro.backend.Repositry.DistrictMasterRepository;
 import com.astro.backend.Repositry.LinkedMobileProfileRepository;
 import com.astro.backend.RequestDTO.LinkedProfileCreateRequest;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,8 @@ import java.util.Map;
 public class LinkedMobileProfileService {
 
     private final LinkedMobileProfileRepository linkedMobileProfileRepository;
+    private final DistrictMasterRepository districtMasterRepository;
+    private final EmailOtpService emailOtpService;
 
     @Transactional(readOnly = true)
     public List<LinkedMobileProfile> listByMobile(String mobileNo) {
@@ -42,6 +45,10 @@ public class LinkedMobileProfileService {
         if (profileName.isEmpty()) {
             throw new RuntimeException("profileName is required");
         }
+        final String email = request.getEmail() == null ? "" : request.getEmail().trim();
+        if (!email.isEmpty()) {
+            emailOtpService.assertVerifiedAndConsume(email, request.getEmailOtpSessionId());
+        }
 
         final boolean hasAny = linkedMobileProfileRepository
                 .findFirstByMobileNoAndIsActiveTrueOrderByIsPrimaryDescUpdatedAtDesc(mobileNo)
@@ -55,17 +62,27 @@ public class LinkedMobileProfileService {
             linkedMobileProfileRepository.clearPrimaryByMobileNo(mobileNo);
         }
 
+        Long districtMasterId = request.getDistrictMasterId();
+        Long stateMasterId = request.getStateMasterId();
+        if (districtMasterId != null) {
+            stateMasterId = districtMasterRepository.findById(districtMasterId)
+                    .map(d -> d.getStateId())
+                    .orElse(stateMasterId);
+        }
+
         LinkedMobileProfile row = LinkedMobileProfile.builder()
                 .userId(request.getUserId())
                 .mobileNo(mobileNo)
                 .profileName(profileName)
-                .email(request.getEmail())
+                .email(email.isEmpty() ? null : email)
                 .dateOfBirth(request.getDateOfBirth())
                 .birthTime(request.getBirthTime())
                 .birthAmPm(request.getBirthAmPm())
                 .genderMasterId(request.getGenderMasterId())
-                .stateMasterId(request.getStateMasterId())
-                .districtMasterId(request.getDistrictMasterId())
+                .stateMasterId(stateMasterId)
+                .districtMasterId(districtMasterId)
+                .latitude(request.getLatitude())
+                .longitude(request.getLongitude())
                 .address(request.getAddress())
                 .isPrimary(makePrimary)
                 .isActive(true)
@@ -103,4 +120,3 @@ public class LinkedMobileProfileService {
         return response;
     }
 }
-

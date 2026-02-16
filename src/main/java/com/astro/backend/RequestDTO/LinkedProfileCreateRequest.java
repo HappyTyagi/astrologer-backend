@@ -19,12 +19,15 @@ public class LinkedProfileCreateRequest {
     private String profileName;
 
     private String email;
+    private String emailOtpSessionId;
     private String dateOfBirth;
     private String birthTime;
     private String birthAmPm;
     private Long genderMasterId;
     private Long stateMasterId;
     private Long districtMasterId;
+    private Double latitude;
+    private Double longitude;
     private String address;
     private Boolean makePrimary;
 }

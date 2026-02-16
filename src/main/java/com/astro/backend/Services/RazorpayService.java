@@ -16,11 +16,15 @@ public class RazorpayService {
     @Value("${razorpay.key-secret}")
     private String keySecret;
 
-    public String createOrder(int amount, String currency) throws Exception {
+    public String createOrder(double amount, String currency) throws Exception {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than zero");
+        }
         RazorpayClient client = new RazorpayClient(keyId, keySecret);
 
         JSONObject orderRequest = new JSONObject();
-        orderRequest.put("amount", amount * 100); // INR to paise
+        long amountPaise = Math.round(amount * 100.0);
+        orderRequest.put("amount", amountPaise); // INR to paise
         orderRequest.put("currency", currency);
         orderRequest.put("payment_capture", 1);
 

@@ -9,6 +9,7 @@ import java.util.Optional;
 @Repository
 public interface DistrictMasterRepository extends JpaRepository<DistrictMaster, Long> {
     Optional<DistrictMaster> findByName(String name);
+    Optional<DistrictMaster> findByNameIgnoreCase(String name);
     List<DistrictMaster> findByStateIdOrderByName(Long stateId);
     List<DistrictMaster> findByIsActiveOrderByName(Boolean isActive);
 }

@@ -10,6 +10,7 @@ public class UpdateBasicProfileRequest {
 
     private String name;
     private String email;
+    private String emailOtpSessionId;
     private String dateOfBirth; // Supports YYYY-MM-DD or DD/MM/YYYY
     private String birthTime;   // Optional - Format: HH:mm
     private String birthAmPm;   // Optional - AM or PM

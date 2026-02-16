@@ -49,6 +49,8 @@ public class MobileUserProfile {
     private Integer age;
     private Double latitude;
     private Double longitude;
+    private Double mobileLatitude;
+    private Double mobileLongitude;
     private String address;            // Full address
     private Boolean isMarried;         // Marital status
     private String anniversaryDate;    // Format: YYYY-MM-DD
@@ -85,6 +87,9 @@ public class MobileUserProfile {
     protected void onCreate() {
         if (isActive == null) {
             isActive = true;
+        }
+        if (isLanguage == null) {
+            isLanguage = 1; // Default English
         }
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();

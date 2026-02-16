@@ -41,6 +41,8 @@ public class LinkedMobileProfile {
     private Long genderMasterId;
     private Long stateMasterId;
     private Long districtMasterId;
+    private Double latitude;
+    private Double longitude;
 
     @Column(columnDefinition = "TEXT")
     private String address;
@@ -76,4 +78,3 @@ public class LinkedMobileProfile {
         updatedAt = LocalDateTime.now();
     }
 }
-

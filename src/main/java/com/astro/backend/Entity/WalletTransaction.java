@@ -47,7 +47,9 @@ public class WalletTransaction {
         }
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        status = "PENDING";
+        if (status == null || status.isBlank()) {
+            status = "PENDING";
+        }
     }
 
     @PreUpdate
@@ -55,4 +57,3 @@ public class WalletTransaction {
         updatedAt = LocalDateTime.now();
     }
 }
-

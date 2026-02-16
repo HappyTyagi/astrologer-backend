@@ -3,6 +3,7 @@ package com.astro.backend.Services;
 import com.astro.backend.Entity.GenderMaster;
 import com.astro.backend.Entity.MobileUserProfile;
 import com.astro.backend.Entity.User;
+import com.astro.backend.Repositry.DistrictMasterRepository;
 import com.astro.backend.Repositry.GenderMasterRepository;
 import com.astro.backend.Repositry.MobileUserProfileRepository;
 import com.astro.backend.Repositry.UserRepository;
@@ -31,6 +32,8 @@ public class ProfileService {
     private final UserRepository userRepository;
     private final MobileUserProfileRepository mobileUserProfileRepository;
     private final GenderMasterRepository genderMasterRepository;
+    private final DistrictMasterRepository districtMasterRepository;
+    private final EmailOtpService emailOtpService;
 
     private int getEmailChangeCount(User user) {
         return user.getEmailChangeCount() == null ? 0 : user.getEmailChangeCount();
@@ -69,6 +72,13 @@ public class ProfileService {
         }
     }
 
+    private void assertEmailOtpVerifiedIfNeeded(String emailInput, String emailOtpSessionId) {
+        if (emailInput == null || emailInput.isBlank()) {
+            return;
+        }
+        emailOtpService.assertVerifiedAndConsume(emailInput, emailOtpSessionId);
+    }
+
     @Transactional
     public UpdateProfileResponse updateBasicProfile(UpdateBasicProfileRequest request) {
         if (request == null || request.getUserId() == null || request.getUserId() <= 0) {
@@ -95,6 +105,12 @@ public class ProfileService {
         }
 
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
+            String requestedEmail = request.getEmail().trim();
+            String existingEmail = user.getEmail() == null ? "" : user.getEmail().trim();
+            boolean isEmailChanged = !requestedEmail.equalsIgnoreCase(existingEmail);
+            if (isEmailChanged) {
+                assertEmailOtpVerifiedIfNeeded(requestedEmail, request.getEmailOtpSessionId());
+            }
             updateEmailWithLimit(user, profile, request.getEmail());
         }
 
@@ -117,8 +133,9 @@ public class ProfileService {
         if (request.getGenderMasterId() != null) {
             profile.setGenderMasterId(request.getGenderMasterId());
         }
-        if (request.getStateMasterId() != null) {
-            profile.setStateMasterId(request.getStateMasterId());
+        Long resolvedStateMasterId = resolveStateMasterId(request.getDistrictMasterId(), request.getStateMasterId());
+        if (resolvedStateMasterId != null) {
+            profile.setStateMasterId(resolvedStateMasterId);
         }
         if (request.getDistrictMasterId() != null) {
             profile.setDistrictMasterId(request.getDistrictMasterId());
@@ -154,6 +171,10 @@ public class ProfileService {
                 .genderMasterId(savedProfile.getGenderMasterId())
                 .stateMasterId(savedProfile.getStateMasterId())
                 .districtMasterId(savedProfile.getDistrictMasterId())
+                .latitude(savedProfile.getLatitude())
+                .longitude(savedProfile.getLongitude())
+                .mobileLatitude(savedProfile.getMobileLatitude())
+                .mobileLongitude(savedProfile.getMobileLongitude())
                 .birthTime(savedProfile.getBirthTime())
                 .birthAmPm(savedProfile.getBirthAmPm())
                 .address(savedProfile.getAddress())
@@ -175,10 +196,14 @@ public class ProfileService {
         if (request.getEmail() == null || request.getEmail().isBlank()) {
             throw new RuntimeException("Valid email is required");
         }
+        if (request.getEmailOtpSessionId() == null || request.getEmailOtpSessionId().isBlank()) {
+            throw new RuntimeException("emailOtpSessionId is required");
+        }
 
         final User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found with ID: " + request.getUserId()));
         MobileUserProfile profile = mobileUserProfileRepository.findByUserId(user.getId()).orElse(null);
+        assertEmailOtpVerifiedIfNeeded(request.getEmail(), request.getEmailOtpSessionId());
         updateEmailWithLimit(user, profile, request.getEmail());
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
@@ -275,6 +300,8 @@ public class ProfileService {
                 .districtMasterId(profile.getDistrictMasterId())
                 .latitude(profile.getLatitude())
                 .longitude(profile.getLongitude())
+                .mobileLatitude(profile.getMobileLatitude())
+                .mobileLongitude(profile.getMobileLongitude())
                 .birthTime(profile.getBirthTime())
                 .birthAmPm(profile.getBirthAmPm())
                 .address(profile.getAddress())
@@ -332,6 +359,8 @@ public class ProfileService {
                 .districtMasterId(profile.getDistrictMasterId())
                 .latitude(profile.getLatitude())
                 .longitude(profile.getLongitude())
+                .mobileLatitude(profile.getMobileLatitude())
+                .mobileLongitude(profile.getMobileLongitude())
                 .birthTime(profile.getBirthTime())
                 .birthAmPm(profile.getBirthAmPm())
                 .address(profile.getAddress())
@@ -462,7 +491,8 @@ public class ProfileService {
             mobileProfile.setDateOfBirth(request.getDateOfBirth());
             mobileProfile.setAge(age);
             mobileProfile.setGenderMasterId(request.getGenderMasterId());
-            mobileProfile.setStateMasterId(request.getStateMasterId());
+            Long resolvedStateId = resolveStateMasterId(request.getDistrictMasterId(), request.getStateMasterId());
+            mobileProfile.setStateMasterId(resolvedStateId);
             mobileProfile.setDistrictMasterId(request.getDistrictMasterId());
             mobileProfile.setIsProfileComplete(true);
 
@@ -493,9 +523,17 @@ public class ProfileService {
             }
 
             // Save location if provided
-            if (request.getLatitude() != null && request.getLongitude() != null) {
+            if (request.getLatitude() != null) {
                 mobileProfile.setLatitude(request.getLatitude());
+            }
+            if (request.getLongitude() != null) {
                 mobileProfile.setLongitude(request.getLongitude());
+            }
+            if (request.getMobileLatitude() != null) {
+                mobileProfile.setMobileLatitude(request.getMobileLatitude());
+            }
+            if (request.getMobileLongitude() != null) {
+                mobileProfile.setMobileLongitude(request.getMobileLongitude());
             }
 
             // Save address if provided
@@ -534,6 +572,8 @@ public class ProfileService {
                     .districtMasterId(updatedProfile.getDistrictMasterId())
                     .latitude(updatedProfile.getLatitude())
                     .longitude(updatedProfile.getLongitude())
+                    .mobileLatitude(updatedProfile.getMobileLatitude())
+                    .mobileLongitude(updatedProfile.getMobileLongitude())
                     .birthTime(updatedProfile.getBirthTime())
                     .birthAmPm(updatedProfile.getBirthAmPm())
                     .address(updatedProfile.getAddress())
@@ -576,6 +616,15 @@ public class ProfileService {
         } catch (DateTimeParseException e) {
             throw new RuntimeException("Invalid " + fieldName + " format. Use YYYY-MM-DD");
         }
+    }
+
+    private Long resolveStateMasterId(Long districtMasterId, Long requestedStateMasterId) {
+        if (districtMasterId == null) {
+            return requestedStateMasterId;
+        }
+        return districtMasterRepository.findById(districtMasterId)
+                .map(district -> district.getStateId())
+                .orElse(requestedStateMasterId);
     }
 
     /**
@@ -637,10 +686,14 @@ public class ProfileService {
             mobileProfile.setBirthAmPm(request.getAmPm());
             mobileProfile.setAge(age);
             mobileProfile.setGenderMasterId(genderMasterId);
-            mobileProfile.setStateMasterId(request.getStateId());
+            Long resolvedStateId = resolveStateMasterId(request.getDistrictId(), request.getStateId());
+            mobileProfile.setStateMasterId(resolvedStateId);
             mobileProfile.setDistrictMasterId(request.getDistrictId());
             mobileProfile.setLatitude(request.getLatitude());
             mobileProfile.setLongitude(request.getLongitude());
+            mobileProfile.setMobileLatitude(request.getLatitude());
+            mobileProfile.setMobileLongitude(request.getLongitude());
+            mobileProfile.setAddress(request.getAddress());
             mobileProfile.setIsProfileComplete(true);
             mobileProfile.setUpdatedAt(LocalDateTime.now());
 
@@ -665,6 +718,8 @@ public class ProfileService {
                     .districtMasterId(savedProfile.getDistrictMasterId())
                     .latitude(savedProfile.getLatitude())
                     .longitude(savedProfile.getLongitude())
+                    .mobileLatitude(savedProfile.getMobileLatitude())
+                    .mobileLongitude(savedProfile.getMobileLongitude())
                     .birthTime(savedProfile.getBirthTime())
                     .birthAmPm(savedProfile.getBirthAmPm())
                     .address(savedProfile.getAddress())

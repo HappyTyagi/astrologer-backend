@@ -5,9 +5,12 @@ import com.astro.backend.Entity.OtpTransaction;
 import com.astro.backend.Auth.JwtService;
 import com.astro.backend.Helper.AstrologyHelper;
 import com.astro.backend.RequestDTO.SendOtpRequest;
+import com.astro.backend.RequestDTO.SendEmailOtpRequest;
 import com.astro.backend.RequestDTO.VerifyOtpRequest;
+import com.astro.backend.RequestDTO.VerifyEmailOtpRequest;
 import com.astro.backend.ResponseDTO.SendOtpResponse;
 import com.astro.backend.ResponseDTO.VerifyOtpResponse;
+import com.astro.backend.Services.EmailOtpService;
 import com.astro.backend.Services.OtpService;
 import com.astro.backend.Repositry.MobileUserProfileRepository;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,6 +21,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import java.util.Optional;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/otp")
@@ -26,6 +30,7 @@ import java.util.Optional;
 public class OtpController {
 
     private final OtpService otpService;
+    private final EmailOtpService emailOtpService;
     private final MobileUserProfileRepository mobileUserProfileRepository;
     private final JwtService jwtService;
 
@@ -194,5 +199,50 @@ public class OtpController {
                 profile.getGenderMasterId() != null &&
                 profile.getStateMasterId() != null &&
                 profile.getDistrictMasterId() != null;
+    }
+
+    @PostMapping("/email/send")
+    @Operation(summary = "Send email OTP", description = "Send OTP to email for email verification")
+    public ResponseEntity<?> sendEmailOtp(@Valid @RequestBody SendEmailOtpRequest request) {
+        try {
+            var txn = emailOtpService.generateAndSendOtp(request.getEmail());
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Email OTP sent successfully",
+                    "email", txn.getEmail(),
+                    "sessionId", txn.getRefNumber(),
+                    "expiresAt", txn.getExpiresAt()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "success", false,
+                    "message", "Failed to send email OTP: " + e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/email/verify")
+    @Operation(summary = "Verify email OTP", description = "Verify OTP sent to email")
+    public ResponseEntity<?> verifyEmailOtp(@Valid @RequestBody VerifyEmailOtpRequest request) {
+        try {
+            boolean ok = emailOtpService.verifyOtp(request.getEmail(), request.getOtp(), request.getSessionId());
+            if (!ok) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                        "success", false,
+                        "message", "Invalid or expired email OTP"
+                ));
+            }
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Email verified successfully",
+                    "email", request.getEmail(),
+                    "sessionId", request.getSessionId()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "success", false,
+                    "message", "Failed to verify email OTP: " + e.getMessage()
+            ));
+        }
     }
 }

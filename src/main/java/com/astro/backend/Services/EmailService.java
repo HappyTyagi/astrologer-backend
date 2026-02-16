@@ -27,8 +27,8 @@ public class EmailService {
     }
 
     public void sendOtpEmail(String email, String otp) {
-        String html = "<p>Your OTP is: <strong>" + otp + "</strong></p>";
-        sendEmailAsync(email, "Your OTP Code", html);
+        String html = buildEmailOtpTemplate(otp);
+        sendEmailAsync(email, "Your Astrologer Email Verification OTP", html);
     }
 
     public void sendEmail(String toEmail, String subject, String htmlContent) {
@@ -116,5 +116,49 @@ public class EmailService {
         }
 
         mailSender.send(message);
+    }
+
+    private String buildEmailOtpTemplate(String otp) {
+        String code = otp == null ? "------" : otp.trim();
+        return """
+                <!doctype html>
+                <html>
+                <head>
+                  <meta charset="UTF-8" />
+                  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                </head>
+                <body style="margin:0;padding:0;background:#f4f7fd;font-family:Calibri,Arial,sans-serif;color:#1f2431;">
+                  <div style="max-width:680px;margin:0 auto;padding:18px 12px;">
+                    <div style="background:#ffffff;border:1px solid #dfe7f5;border-radius:14px;overflow:hidden;">
+                      <div style="padding:18px 20px;background:linear-gradient(90deg,#1f2f73,#3247a9);color:#ffffff;">
+                        <h2 style="margin:0;font-size:22px;">Email Verification OTP</h2>
+                        <p style="margin:8px 0 0 0;font-size:13px;color:#dce3ff;">
+                          Use the OTP below to verify your email on Astrologer.
+                        </p>
+                      </div>
+                      <div style="padding:18px 20px;">
+                        <p style="margin:0 0 12px 0;font-size:14px;color:#4f5a72;">
+                          Your One-Time Password:
+                        </p>
+                        <div style="display:inline-block;padding:10px 18px;border-radius:10px;background:#f2f6ff;border:1px dashed #9db2e5;">
+                          <span style="letter-spacing:4px;font-size:28px;font-weight:700;color:#1f2f73;">%s</span>
+                        </div>
+                        <p style="margin:14px 0 0 0;font-size:13px;color:#4f5a72;">
+                          This OTP is valid for <strong>10 minutes</strong>.
+                        </p>
+                        <p style="margin:10px 0 0 0;font-size:12px;color:#7b849a;">
+                          For your security, do not share this OTP with anyone.
+                        </p>
+                      </div>
+                      <div style="padding:12px 20px;background:#f8faff;border-top:1px solid #e5ecfb;">
+                        <p style="margin:0;font-size:12px;color:#7b849a;">
+                          Astrologer Security Team
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </body>
+                </html>
+                """.formatted(code);
     }
 }

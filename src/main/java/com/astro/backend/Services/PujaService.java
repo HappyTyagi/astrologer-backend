@@ -20,6 +20,7 @@ import com.lowagie.text.Document;
 import com.lowagie.text.Element;
 import com.lowagie.text.Font;
 import com.lowagie.text.FontFactory;
+import com.lowagie.text.Anchor;
 import com.lowagie.text.Image;
 import com.lowagie.text.PageSize;
 import com.lowagie.text.Paragraph;
@@ -378,10 +379,7 @@ public class PujaService {
         if (request == null || request.getUserId() == null || request.getUserId() <= 0) {
             throw new RuntimeException("Valid userId is required");
         }
-        final String toEmail = request.getEmail() == null ? "" : request.getEmail().trim();
-        if (toEmail.isEmpty()) {
-            throw new RuntimeException("Valid email is required");
-        }
+        final String toEmail = getVerifiedProfileEmail(request.getUserId(), request.getEmail());
 
         final Long bookingId = parseBookingId(orderId);
         final PujaBooking booking = bookingRepo.findById(bookingId)
@@ -418,6 +416,22 @@ public class PujaService {
         response.put("email", toEmail);
         response.put("requestedAt", LocalDateTime.now());
         return response;
+    }
+
+    private String getVerifiedProfileEmail(Long userId, String requestedEmail) {
+        MobileUserProfile profile = mobileUserProfileRepository.findByUserId(userId).orElse(null);
+        String profileEmail = profile == null || profile.getEmail() == null
+                ? ""
+                : profile.getEmail().trim();
+        if (profileEmail.isEmpty()) {
+            throw new RuntimeException("No email is linked with this account. Please update profile email first.");
+        }
+
+        String provided = requestedEmail == null ? "" : requestedEmail.trim();
+        if (!provided.isEmpty() && !profileEmail.equalsIgnoreCase(provided)) {
+            throw new RuntimeException("Email verification failed. Please use your registered profile email.");
+        }
+        return profileEmail;
     }
 
     private Long parseBookingId(String orderId) {
@@ -543,80 +557,129 @@ public class PujaService {
             addLogoWatermark(writer, document);
 
             FontFactory.registerDirectories();
-            Font titleFont = calibriFont(30, Font.BOLD, Color.BLACK);
-            Font subTitleFont = calibriFont(15, Font.BOLD, Color.BLACK);
-            Font sectionFont = calibriFont(12, Font.BOLD, Color.BLACK);
-            Font bodyFont = calibriFont(11, Font.NORMAL, Color.BLACK);
-            Font boldFont = calibriFont(11, Font.BOLD, Color.BLACK);
-            Font totalFont = calibriFont(13, Font.BOLD, Color.BLACK);
+            Font heroTitle = calibriFont(24, Font.BOLD, Color.WHITE);
+            Font heroSub = calibriFont(11, Font.NORMAL, new Color(220, 231, 255));
+            Font labelFont = calibriFont(10, Font.BOLD, new Color(64, 76, 98));
+            Font valueFont = calibriFont(11, Font.NORMAL, new Color(22, 30, 48));
+            Font sectionTitle = calibriFont(11, Font.BOLD, new Color(20, 36, 90));
+            Font tableHead = calibriFont(10, Font.BOLD, Color.WHITE);
+            Font tableBody = calibriFont(10.5f, Font.NORMAL, new Color(33, 41, 62));
+            Font totalFont = calibriFont(12.5f, Font.BOLD, new Color(20, 36, 90));
 
-            Paragraph title = new Paragraph("Tax Invoice", titleFont);
-            title.setAlignment(Element.ALIGN_CENTER);
-            title.setSpacingAfter(2f);
-            document.add(title);
-            Paragraph subTitle = new Paragraph("ORIGINAL FOR RECIPIENT", subTitleFont);
-            subTitle.setAlignment(Element.ALIGN_CENTER);
-            subTitle.setSpacingAfter(14f);
-            document.add(subTitle);
+            Color heroBg = new Color(24, 42, 96);
+            Color panelBg = new Color(246, 249, 255);
+            Color panelBorder = new Color(222, 231, 246);
+            Color tableHeaderBg = new Color(45, 66, 137);
 
-            document.add(new Paragraph("ASTROLOGER SERVICES PRIVATE LIMITED", sectionFont));
-            document.add(new Paragraph("Address: Digital Astrology Services, India", bodyFont));
-            document.add(new Paragraph("GSTIN: 09ASTRO1234X1Z9    Email: support@astrologer.app", bodyFont));
-            document.add(new Paragraph("Invoice No: " + orderId, boldFont));
-            document.add(new Paragraph("Invoice Date: " + LocalDate.now(), boldFont));
-            document.add(Chunk.NEWLINE);
+            PdfPTable hero = new PdfPTable(1);
+            hero.setWidthPercentage(100);
+            PdfPCell heroCell = new PdfPCell();
+            heroCell.setBackgroundColor(heroBg);
+            heroCell.setBorderColor(heroBg);
+            heroCell.setPadding(16f);
+            Paragraph heroTitleP = new Paragraph("Tax Invoice", heroTitle);
+            heroTitleP.setSpacingAfter(5f);
+            heroCell.addElement(heroTitleP);
+            heroCell.addElement(new Paragraph("Puja Booking Receipt", calibriFont(14, Font.BOLD, Color.WHITE)));
+            heroCell.addElement(new Paragraph("ORIGINAL FOR RECIPIENT", heroSub));
+            hero.addCell(heroCell);
+            hero.setSpacingAfter(10f);
+            document.add(hero);
 
-            document.add(new Paragraph("User Details", sectionFont));
-            document.add(new Paragraph("Name: " + customerName, bodyFont));
-            document.add(new Paragraph("User ID: " + userId, bodyFont));
-            document.add(new Paragraph("Mobile: " + customerMobile, bodyFont));
-            document.add(new Paragraph("Address: " + addressText, bodyFont));
-            document.add(Chunk.NEWLINE);
+            PdfPTable meta = new PdfPTable(new float[]{1f, 1f, 1f, 1f});
+            meta.setWidthPercentage(100);
+            meta.setSpacingAfter(10f);
+            meta.addCell(pdfPanelCell("Invoice No", orderId, labelFont, valueFont, panelBg, panelBorder));
+            meta.addCell(pdfPanelCell("Invoice Date", LocalDate.now().toString(), labelFont, valueFont, panelBg, panelBorder));
+            meta.addCell(pdfPanelCell("Payment Mode", paymentMethod, labelFont, valueFont, panelBg, panelBorder));
+            meta.addCell(pdfPanelCell("Status", formatStatus(booking.getStatus() == null ? null : booking.getStatus().name()), labelFont, valueFont, panelBg, panelBorder));
+            document.add(meta);
 
-            document.add(new Paragraph("Service Details", sectionFont));
-            document.add(new Paragraph("HSN Code: 999799", bodyFont));
-            document.add(new Paragraph("Service Description: Puja booking services", bodyFont));
-            document.add(new Paragraph("Work Description:", bodyFont));
-            document.add(Chunk.NEWLINE);
+            PdfPTable details = new PdfPTable(new float[]{1f, 1f});
+            details.setWidthPercentage(100);
+            details.setSpacingAfter(10f);
+            details.addCell(pdfDetailBlock(
+                    "Billed To",
+                    new String[]{
+                            "Name: " + customerName,
+                            "User ID: " + userId,
+                            "Mobile: " + customerMobile,
+                            "Address: " + addressText
+                    },
+                    sectionTitle,
+                    valueFont,
+                    panelBg,
+                    panelBorder
+            ));
+            details.addCell(pdfDetailBlock(
+                    "Booking Details",
+                    new String[]{
+                            "Puja: " + pujaName,
+                            "Slot Time: " + slotTime,
+                            "Transaction ID: " + txnId,
+                            "Meeting: Google Meet"
+                    },
+                    sectionTitle,
+                    valueFont,
+                    panelBg,
+                    panelBorder
+            ));
+            document.add(details);
 
-            PdfPTable table = new PdfPTable(new float[]{1.1f, 6.5f, 1.9f});
+            PdfPTable table = new PdfPTable(new float[]{1.1f, 5.8f, 2.1f});
             table.setWidthPercentage(100);
-            table.setSpacingAfter(8f);
-            table.addCell(taxHeaderCell("Sr. No"));
-            table.addCell(taxHeaderCell("Particulars"));
-            table.addCell(taxHeaderCell("Amount (Rs.)"));
-
-            table.addCell(taxBodyCell("", Element.ALIGN_LEFT, bodyFont, 1f));
-            table.addCell(taxBodyCell("Order ID: " + orderId, Element.ALIGN_LEFT, boldFont, 1f));
-            table.addCell(taxBodyCell("", Element.ALIGN_RIGHT, bodyFont, 1f));
-            table.addCell(taxBodyCell("", Element.ALIGN_LEFT, bodyFont, 1f));
-            table.addCell(taxBodyCell("Order Date: " + bookedAt, Element.ALIGN_LEFT, boldFont, 1f));
-            table.addCell(taxBodyCell("", Element.ALIGN_RIGHT, bodyFont, 1f));
-
-            String particulars = pujaName
-                    + " | Slot: " + slotTime
-                    + " | Payment: " + paymentMethod
-                    + " | Txn: " + txnId
-                    + " | Meet: " + meetLink;
-            table.addCell(taxBodyCell("1", Element.ALIGN_LEFT, bodyFont, 1f));
-            table.addCell(taxBodyCell(particulars, Element.ALIGN_LEFT, bodyFont, 1f));
-            table.addCell(taxBodyCell(amountText, Element.ALIGN_RIGHT, bodyFont, 1f));
-
-            table.addCell(taxBodyCell("", Element.ALIGN_LEFT, bodyFont, 1f));
-            table.addCell(taxBodyCell("Taxable Amount", Element.ALIGN_RIGHT, bodyFont, 1f));
-            table.addCell(taxBodyCell(amountText, Element.ALIGN_RIGHT, bodyFont, 1f));
-            table.addCell(taxBodyCell("", Element.ALIGN_LEFT, bodyFont, 1f));
-            table.addCell(taxBodyCell("IGST @ 0.00%", Element.ALIGN_RIGHT, bodyFont, 1f));
-            table.addCell(taxBodyCell(formatMoney(0.0, "INR"), Element.ALIGN_RIGHT, bodyFont, 1f));
-            table.addCell(taxBodyCell("", Element.ALIGN_LEFT, bodyFont, 1f));
-            table.addCell(taxBodyCell("Total Amount", Element.ALIGN_RIGHT, totalFont, 1.3f));
-            table.addCell(taxBodyCell(amountText, Element.ALIGN_RIGHT, totalFont, 1.3f));
-
+            table.setSpacingAfter(10f);
+            table.addCell(pdfTableHeaderCell("Sr. No", tableHead, tableHeaderBg));
+            table.addCell(pdfTableHeaderCell("Particulars", tableHead, tableHeaderBg));
+            table.addCell(pdfTableHeaderCell("Amount", tableHead, tableHeaderBg));
+            table.addCell(pdfTableTextCell("1", tableBody, Element.ALIGN_CENTER, Color.WHITE, panelBorder));
+            table.addCell(pdfTableTextCell(pujaName + " | Slot: " + slotTime, tableBody, Element.ALIGN_LEFT, Color.WHITE, panelBorder));
+            table.addCell(pdfTableTextCell(amountText, tableBody, Element.ALIGN_RIGHT, Color.WHITE, panelBorder));
+            table.addCell(pdfTableTextCell("", tableBody, Element.ALIGN_LEFT, panelBg, panelBorder));
+            table.addCell(pdfTableTextCell("Taxable Amount", tableBody, Element.ALIGN_RIGHT, panelBg, panelBorder));
+            table.addCell(pdfTableTextCell(amountText, tableBody, Element.ALIGN_RIGHT, panelBg, panelBorder));
+            table.addCell(pdfTableTextCell("", tableBody, Element.ALIGN_LEFT, Color.WHITE, panelBorder));
+            table.addCell(pdfTableTextCell("IGST @ 0.00%", tableBody, Element.ALIGN_RIGHT, Color.WHITE, panelBorder));
+            table.addCell(pdfTableTextCell(formatMoney(0.0, "INR"), tableBody, Element.ALIGN_RIGHT, Color.WHITE, panelBorder));
+            table.addCell(pdfTableTextCell("", tableBody, Element.ALIGN_LEFT, new Color(232, 239, 255), panelBorder));
+            table.addCell(pdfTableTextCell("Total Amount", totalFont, Element.ALIGN_RIGHT, new Color(232, 239, 255), panelBorder));
+            table.addCell(pdfTableTextCell(amountText, totalFont, Element.ALIGN_RIGHT, new Color(232, 239, 255), panelBorder));
             document.add(table);
-            document.add(new Paragraph("Total Amount: " + amountText + " only", sectionFont));
-            document.add(Chunk.NEWLINE);
-            document.add(new Paragraph("This is a computer generated invoice and does not require signature.", bodyFont));
-            document.add(new Paragraph("For support: deepak.kumar.rd2013@gmail.com", bodyFont));
+
+            PdfPTable summary = new PdfPTable(new float[]{2.7f, 1.3f});
+            summary.setWidthPercentage(100);
+            summary.setSpacingAfter(10f);
+            PdfPCell summaryLabel = new PdfPCell(new Phrase("Booked At", calibriFont(11, Font.BOLD, new Color(19, 40, 95))));
+            summaryLabel.setPadding(10f);
+            summaryLabel.setBorderColor(new Color(186, 205, 242));
+            summaryLabel.setBackgroundColor(new Color(241, 246, 255));
+            summary.addCell(summaryLabel);
+            PdfPCell summaryValue = new PdfPCell(new Phrase(bookedAt, calibriFont(12, Font.BOLD, new Color(19, 40, 95))));
+            summaryValue.setPadding(10f);
+            summaryValue.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            summaryValue.setBorderColor(new Color(186, 205, 242));
+            summaryValue.setBackgroundColor(new Color(241, 246, 255));
+            summary.addCell(summaryValue);
+            document.add(summary);
+
+            Paragraph meetPara = new Paragraph();
+            meetPara.setSpacingAfter(4f);
+            meetPara.add(new Chunk("Google Meet Link: ", calibriFont(10.5f, Font.BOLD, new Color(25, 47, 122))));
+            Anchor meetAnchor = new Anchor(meetLink, calibriFont(10.5f, Font.UNDERLINE, new Color(25, 47, 122)));
+            meetAnchor.setReference(meetLink);
+            meetPara.add(meetAnchor);
+            document.add(meetPara);
+
+            Paragraph appPara = new Paragraph();
+            appPara.setSpacingAfter(10f);
+            appPara.add(new Chunk("App Link: ", calibriFont(10.5f, Font.BOLD, new Color(25, 47, 122))));
+            Anchor appAnchor = new Anchor("https://astrologer.app", calibriFont(10.5f, Font.UNDERLINE, new Color(25, 47, 122)));
+            appAnchor.setReference("https://astrologer.app");
+            appPara.add(appAnchor);
+            document.add(appPara);
+
+            document.add(new Paragraph("This is a computer generated invoice and does not require signature.", calibriFont(9.5f, Font.NORMAL, new Color(84, 93, 112))));
+            document.add(new Paragraph("For support: support@astrologer.app", calibriFont(9.5f, Font.NORMAL, new Color(84, 93, 112))));
             document.close();
             return out.toByteArray();
         } catch (Exception e) {
@@ -649,6 +712,67 @@ public class PujaService {
             return new Font(Font.HELVETICA, size, style, color);
         }
         return font;
+    }
+
+    private PdfPCell pdfPanelCell(
+            String label,
+            String value,
+            Font labelFont,
+            Font valueFont,
+            Color background,
+            Color border
+    ) {
+        PdfPCell cell = new PdfPCell();
+        cell.setPadding(10f);
+        cell.setBackgroundColor(background);
+        cell.setBorderColor(border);
+        Paragraph labelP = new Paragraph(label == null || label.isBlank() ? "-" : label, labelFont);
+        labelP.setSpacingAfter(3f);
+        cell.addElement(labelP);
+        cell.addElement(new Paragraph(value == null || value.isBlank() ? "-" : value, valueFont));
+        return cell;
+    }
+
+    private PdfPCell pdfDetailBlock(
+            String title,
+            String[] lines,
+            Font titleFont,
+            Font lineFont,
+            Color background,
+            Color border
+    ) {
+        PdfPCell cell = new PdfPCell();
+        cell.setPadding(10f);
+        cell.setBackgroundColor(background);
+        cell.setBorderColor(border);
+        Paragraph titleP = new Paragraph(title == null || title.isBlank() ? "-" : title, titleFont);
+        titleP.setSpacingAfter(6f);
+        cell.addElement(titleP);
+        for (String line : lines) {
+            Paragraph row = new Paragraph(line == null || line.isBlank() ? "-" : line, lineFont);
+            row.setSpacingAfter(2f);
+            cell.addElement(row);
+        }
+        return cell;
+    }
+
+    private PdfPCell pdfTableHeaderCell(String value, Font font, Color background) {
+        PdfPCell cell = new PdfPCell(new Phrase(value == null || value.isBlank() ? "-" : value, font));
+        cell.setPadding(8f);
+        cell.setBorderColor(background);
+        cell.setBackgroundColor(background);
+        cell.setHorizontalAlignment("Amount".equalsIgnoreCase(value) ? Element.ALIGN_RIGHT : Element.ALIGN_LEFT);
+        return cell;
+    }
+
+    private PdfPCell pdfTableTextCell(String value, Font font, int align, Color background, Color border) {
+        PdfPCell cell = new PdfPCell(new Phrase(value == null || value.isBlank() ? "-" : value, font));
+        cell.setPadding(8f);
+        cell.setHorizontalAlignment(align);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        cell.setBorderColor(border);
+        cell.setBackgroundColor(background);
+        return cell;
     }
 
     private PdfPCell pdfInfoLabelCell(String text, Font font) {
@@ -803,6 +927,18 @@ public class PujaService {
                     "invite.ics",
                     ics,
                     "text/calendar; charset=UTF-8"
+            );
+
+            String receiptSubject = "Your Astrologer Puja Receipt - #" + (booking.getId() == null ? 0L : booking.getId());
+            String receiptHtml = buildPujaReceiptHtml(booking, puja, slot);
+            byte[] receiptPdf = buildPujaReceiptPdf(booking, puja, slot);
+            emailService.sendEmailWithAttachmentAsync(
+                    toEmail,
+                    receiptSubject,
+                    receiptHtml,
+                    "invoice.pdf",
+                    receiptPdf,
+                    "application/pdf"
             );
         } catch (Exception ignored) {
             // Booking flow should not fail if invite mail cannot be generated/sent.

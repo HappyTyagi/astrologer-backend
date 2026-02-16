@@ -48,6 +48,8 @@ public class UpdateProfileRequest {
     
     private Double latitude;    // Optional
     private Double longitude;   // Optional
+    private Double mobileLatitude;    // Optional
+    private Double mobileLongitude;   // Optional
     
     private String address;  // Optional - full address
     private Boolean isMarried; // Optional - marital status

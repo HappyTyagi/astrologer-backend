@@ -19,7 +19,7 @@ public class Remedy {
 
     private String benefits;  // What it will help with
 
-    private Integer estimatedPrice;  // INR
+    private Double estimatedPrice;  // INR
 
     private String whereToSource;  // Where to buy
 

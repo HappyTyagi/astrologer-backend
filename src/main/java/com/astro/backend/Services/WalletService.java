@@ -94,6 +94,7 @@ public class WalletService {
                 .type("DEBIT")
                 .refId(ref)
                 .description(desc)
+                .status("SUCCESS")
                 .createdAt(LocalDateTime.now())
                 .build());
 
@@ -116,6 +117,7 @@ public class WalletService {
                 .type("DEBIT")
                 .refId(ref)
                 .description(desc)
+                .status("SUCCESS")
                 .createdAt(LocalDateTime.now())
                 .build());
 
@@ -124,6 +126,50 @@ public class WalletService {
 
     public List<WalletTransaction> getTransactions(Long userId) {
         return txnRepo.findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
+    public WalletTransaction logGatewayAttempt(
+            Long userId,
+            Double amount,
+            String refId,
+            String description,
+            String paymentGateway,
+            String status,
+            String failureReason
+    ) {
+        if (userId == null || userId <= 0) {
+            throw new RuntimeException("Valid userId is required");
+        }
+        double attemptAmount = amount == null ? 0.0 : Math.max(0.0, amount);
+        String normalizedStatus = status == null || status.isBlank()
+                ? "FAILED"
+                : status.trim().toUpperCase(Locale.ROOT);
+        if (!List.of("FAILED", "CANCELLED", "PENDING").contains(normalizedStatus)) {
+            normalizedStatus = "FAILED";
+        }
+
+        String safeRef = refId == null || refId.isBlank()
+                ? "RZP-" + System.currentTimeMillis()
+                : refId.trim();
+        String safeDesc = description == null || description.isBlank()
+                ? "Razorpay payment attempt"
+                : description.trim();
+        String safeGateway = paymentGateway == null || paymentGateway.isBlank()
+                ? "RAZORPAY"
+                : paymentGateway.trim().toUpperCase(Locale.ROOT);
+        String safeReason = failureReason == null ? "" : failureReason.trim();
+
+        return txnRepo.save(WalletTransaction.builder()
+                .userId(userId)
+                .amount(attemptAmount)
+                .type("ATTEMPT")
+                .refId(safeRef)
+                .description(safeDesc)
+                .paymentGateway(safeGateway)
+                .status(normalizedStatus)
+                .failureReason(safeReason.isEmpty() ? null : safeReason)
+                .createdAt(LocalDateTime.now())
+                .build());
     }
 
     private void sendWalletTopupReceiptAsync(Long userId, WalletTransaction transaction, double balanceAfter) {

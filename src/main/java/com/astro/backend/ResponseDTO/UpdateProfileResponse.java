@@ -24,6 +24,8 @@ public class UpdateProfileResponse {
     private Long districtMasterId;
     private Double latitude;
     private Double longitude;
+    private Double mobileLatitude;
+    private Double mobileLongitude;
     private String birthTime;          // Birth time (HH:mm)
     private String birthAmPm;          // Birth time AM/PM
     private String address;            // Full address
