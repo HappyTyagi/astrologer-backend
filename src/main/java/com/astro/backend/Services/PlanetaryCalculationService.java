@@ -53,20 +53,20 @@ public class PlanetaryCalculationService {
             String ayanamsha = request.getConfig() != null && request.getConfig().getAyanamsha() != null
                     ? request.getConfig().getAyanamsha()
                     : "lahiri";
-            
+
             if ("lahiri".equalsIgnoreCase(ayanamsha)) {
                 swissEph.swe_set_sid_mode(SweConst.SE_SIDM_LAHIRI, 0, 0);
             }
-            
+
             // Convert local time to UT (Universal Time) by subtracting timezone offset
             double localTime = request.getHours() + (request.getMinutes() / 60.0) + (request.getSeconds() / 3600.0);
             double utTime = localTime - request.getTimezone();
-            
+
             // Handle day overflow/underflow
             int utYear = request.getYear();
             int utMonth = request.getMonth();
             int utDate = request.getDate();
-            
+
             if (utTime < 0) {
                 // Previous day
                 utTime += 24;
@@ -94,7 +94,7 @@ public class PlanetaryCalculationService {
                     }
                 }
             }
-            
+
             // Convert to Julian Day using UT
             SweDate sd = new SweDate(utYear, utMonth, utDate, utTime);
             double julDay = sd.getJulDay();
@@ -104,7 +104,7 @@ public class PlanetaryCalculationService {
             // Calculate ascendant with sidereal mode
             double[] cusps = new double[13];
             double[] ascmc = new double[10];
-            swissEph.swe_houses(julDay, SweConst.SEFLG_SIDEREAL, 
+            swissEph.swe_houses(julDay, SweConst.SEFLG_SIDEREAL,
                     request.getLatitude(), request.getLongitude(), 'P', cusps, ascmc);
 
             double ascendantDegree = ascmc[0];
@@ -151,7 +151,7 @@ public class PlanetaryCalculationService {
                 // Handle Ketu separately (opposite of Rahu)
                 if (PLANET_NAMES[i].equals("Rahu")) {
                     // Add Rahu
-                    addPlanetData(indexedPlanets, namedPlanets, 
+                    addPlanetData(indexedPlanets, namedPlanets,
                             PLANET_NAMES[i], longitude, speed, ascendantDegree, i + 1);
 
                     // Calculate and add Ketu (180 degrees opposite)
@@ -172,7 +172,7 @@ public class PlanetaryCalculationService {
 
             // Add debug info
             Map<String, Object> debugInfo = new LinkedHashMap<>();
-            debugInfo.put("observation_point", 
+            debugInfo.put("observation_point",
                     request.getConfig() != null && request.getConfig().getObservationPoint() != null
                             ? request.getConfig().getObservationPoint()
                             : "topocentric");
@@ -182,44 +182,44 @@ public class PlanetaryCalculationService {
             // Create separate Navamsha data array
             Map<String, Object> navamshaIndexed = new LinkedHashMap<>();
             Map<String, Object> navamshaNames = new LinkedHashMap<>();
-            
+
             // Calculate Navamsha Ascendant
             int[] navamshaAscendantData = calculateNavamshaSign(ascendantDegree);
             int navamshaAscendantSign = navamshaAscendantData[0];
-            
+
             // Add Navamsha Ascendant
             Map<String, Object> navamshaAscData = new LinkedHashMap<>();
             navamshaAscData.put("name", "Ascendant");
             navamshaAscData.put("navamsha_sign", navamshaAscendantSign);
             navamshaAscData.put("navamsha_degree", navamshaAscendantData[1]);
             navamshaIndexed.put("0", navamshaAscData);
-            
+
             Map<String, Object> navamshaAscNamed = new LinkedHashMap<>();
             navamshaAscNamed.put("navamsha_sign", navamshaAscendantSign);
             navamshaAscNamed.put("navamsha_degree", navamshaAscendantData[1]);
             navamshaNames.put("Ascendant", navamshaAscNamed);
-            
+
             // Add Navamsha planets
             for (Map.Entry<String, Object> entry : namedPlanets.entrySet()) {
                 String planetName = entry.getKey();
                 @SuppressWarnings("unchecked")
                 Map<String, Object> planetData = (Map<String, Object>) entry.getValue();
-                
+
                 if (!planetName.equals("Ascendant")) {
                     // Create Navamsha entry with house calculation
                     Integer navamshaSign = (Integer) planetData.get("navamsha_sign");
                     Integer navamshaDegree = (Integer) planetData.get("navamsha_degree");
                     int navamshaHouse = calculateNavamshaHouseNumber(navamshaSign, navamshaAscendantSign);
-                    
+
                     Map<String, Object> navamshaPlanetData = new LinkedHashMap<>();
                     navamshaPlanetData.put("name", planetName);
                     navamshaPlanetData.put("navamsha_sign", navamshaSign);
                     navamshaPlanetData.put("navamsha_degree", navamshaDegree);
                     navamshaPlanetData.put("navamsha_house", navamshaHouse);
                     navamshaPlanetData.put("isRetro", planetData.get("isRetro"));
-                    
+
                     navamshaIndexed.put(planetName, navamshaPlanetData);
-                    
+
                     // Named map entry
                     Map<String, Object> navamshaPlanetNamed = new LinkedHashMap<>();
                     navamshaPlanetNamed.put("navamsha_sign", navamshaSign);
@@ -229,7 +229,7 @@ public class PlanetaryCalculationService {
                     navamshaNames.put(planetName, navamshaPlanetNamed);
                 }
             }
-            
+
             // Add ayanamsa to Navamsha output
             navamshaIndexed.put("13", ayanamsaData);
             navamshaIndexed.put("debug", debugInfo);
@@ -237,32 +237,32 @@ public class PlanetaryCalculationService {
             // Calculate Transit chart (Today from Lagna)
             Map<String, Object> transitIndexed = new LinkedHashMap<>();
             Map<String, Object> transitNames = new LinkedHashMap<>();
-            
+
             // Get current date/time for transit
             java.time.ZonedDateTime now = java.time.ZonedDateTime.now();
             double currentUtTime = now.getHour() + (now.getMinute() / 60.0) + (now.getSecond() / 3600.0);
             SweDate currentDate = new SweDate(now.getYear(), now.getMonthValue(), now.getDayOfMonth(), currentUtTime);
             double currentJulDay = currentDate.getJulDay();
-            
+
             // Calculate current planets using birth ascendant as reference
             for (int i = 0; i < PLANET_CONSTANTS.length; i++) {
                 double[] xx = new double[6];
                 StringBuffer serr = new StringBuffer();
-                
+
                 int flags = SweConst.SEFLG_SIDEREAL;
                 if (PLANET_CONSTANTS[i] == SweConst.SE_TRUE_NODE) {
                     swissEph.swe_calc(currentJulDay, SweConst.SE_MEAN_NODE, flags, xx, serr);
                 } else {
                     swissEph.swe_calc(currentJulDay, PLANET_CONSTANTS[i], flags, xx, serr);
                 }
-                
+
                 double transitLongitude = xx[0];
                 double transitSpeed = xx[3];
                 int transitSign = ((int) (transitLongitude / 30)) + 1;
                 double transitNormDegree = transitLongitude % 30;
                 boolean isRetro = transitSpeed < 0;
                 int transitHouse = calculateHouseNumber(transitLongitude, ascendantDegree);
-                
+
                 // Handle Ketu
                 if (PLANET_NAMES[i].equals("Rahu")) {
                     // Add Rahu
@@ -275,13 +275,13 @@ public class PlanetaryCalculationService {
                     rahuData.put("isRetro", String.valueOf(isRetro));
                     transitIndexed.put(PLANET_NAMES[i], rahuData);
                     transitNames.put("Rahu", rahuData);
-                    
+
                     // Calculate and add Ketu
                     double ketuLongitude = (transitLongitude + 180) % 360;
                     int ketuSign = ((int) (ketuLongitude / 30)) + 1;
                     double ketuNormDegree = ketuLongitude % 30;
                     int ketuHouse = calculateHouseNumber(ketuLongitude, ascendantDegree);
-                    
+
                     Map<String, Object> ketuData = new LinkedHashMap<>();
                     ketuData.put("name", "Ketu");
                     ketuData.put("current_sign", ketuSign);
@@ -303,7 +303,7 @@ public class PlanetaryCalculationService {
                     transitNames.put(PLANET_NAMES[i], planetTransitData);
                 }
             }
-            
+
             // Add birth Ascendant reference to transit
             Map<String, Object> transitAscData = new LinkedHashMap<>();
             transitAscData.put("name", "Ascendant");
@@ -312,7 +312,7 @@ public class PlanetaryCalculationService {
             transitAscData.put("transit_house", 1);
             transitIndexed.put("Ascendant", transitAscData);
             transitNames.put("Ascendant", transitAscData);
-            
+
             transitIndexed.put("13", ayanamsaData);
             transitIndexed.put("debug", debugInfo);
 
@@ -321,7 +321,7 @@ public class PlanetaryCalculationService {
             outputMap.put("kundli", Arrays.asList(indexedPlanets, namedPlanets));
             outputMap.put("navamsha", Arrays.asList(navamshaIndexed, navamshaNames));
             outputMap.put("transit", Arrays.asList(transitIndexed, transitNames));
-            
+
             outputList.add(outputMap);
 
             // Save to database
@@ -335,8 +335,8 @@ public class PlanetaryCalculationService {
                     .chartId(chartId)
                     .build();
             String htmlContent = generateKundliHtml(tempResponse);
-                Map<String, String> htmlSections = buildHtmlSections(tempResponse);
-            
+            Map<String, String> htmlSections = buildHtmlSections(tempResponse);
+
             // Build response with HTML
             return PlanetaryPositionResponse.builder()
                     .statusCode(200)
@@ -357,16 +357,16 @@ public class PlanetaryCalculationService {
      * Add planet data to both indexed and named maps (Kundli/Rasi chart)
      */
     private void addPlanetData(Map<String, Object> indexedMap, Map<String, Object> namedMap,
-                                String planetName, double longitude, double speed,
-                                double ascendantDegree, int index) {
-        
+                               String planetName, double longitude, double speed,
+                               double ascendantDegree, int index) {
+
         int sign = ((int) (longitude / 30)) + 1;
         double normDegree = longitude % 30;
         boolean isRetro = speed < 0;
 
         // Calculate house number
         int houseNumber = calculateHouseNumber(longitude, ascendantDegree);
-        
+
         // Calculate Navamsha data
         int[] navamshaData = calculateNavamshaSign(longitude);
         int navamshaSign = navamshaData[0];
@@ -423,14 +423,14 @@ public class PlanetaryCalculationService {
         double navamshaDivision = planetLongitude / 40.0;
         int navamshaIndex = (int) navamshaDivision;
         if (navamshaIndex >= 9) navamshaIndex = 8;
-        
+
         // Navamsha signs start from Aries (1) and repeat 9 times
         // Aries: 0-40°, Taurus: 40-80°, Gemini: 80-120°, etc.
         int navamshaSign = (navamshaIndex % 12) + 1;
-        
+
         // Degree within the Navamsha (0-40)
         double degreeInNavamsha = planetLongitude % 40.0;
-        
+
         return new int[]{navamshaSign, (int) degreeInNavamsha};
     }
 
@@ -448,9 +448,9 @@ public class PlanetaryCalculationService {
     /**
      * Save birth chart data to database
      */
-    private Long saveBirthChart(PlanetaryPositionRequest request, 
-                                 List<Map<String, Object>> outputData,
-                                 Long userId) {
+    private Long saveBirthChart(PlanetaryPositionRequest request,
+                                List<Map<String, Object>> outputData,
+                                Long userId) {
         try {
             LocalDate dob = LocalDate.of(request.getYear(), request.getMonth(), request.getDate());
             double birthTime = request.getHours() + (request.getMinutes() / 60.0);
@@ -458,19 +458,19 @@ public class PlanetaryCalculationService {
             // Extract key data from output - new structure with "kundli" and "navamsha" keys
             @SuppressWarnings("unchecked")
             Map<String, Object> outputMap = (Map<String, Object>) outputData.get(0);
-            
+
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> kundliData = (List<Map<String, Object>>) outputMap.get("kundli");
             Map<String, Object> namedPlanets = kundliData.get(1);
-            
+
             @SuppressWarnings("unchecked")
             Map<String, Object> ascendantData = (Map<String, Object>) namedPlanets.get("Ascendant");
             Integer ascendantSign = (Integer) ascendantData.get("current_sign");
-            
+
             @SuppressWarnings("unchecked")
             Map<String, Object> sunData = (Map<String, Object>) namedPlanets.get("Sun");
             Integer sunSign = (Integer) sunData.get("current_sign");
-            
+
             @SuppressWarnings("unchecked")
             Map<String, Object> moonData = (Map<String, Object>) namedPlanets.get("Moon");
             Integer moonSign = (Integer) moonData.get("current_sign");
@@ -513,11 +513,11 @@ public class PlanetaryCalculationService {
                 .longitude(request.getLongitude())
                 .timezone(request.getTimezone())
                 .config(PlanetaryPositionResponse.ConfigData.builder()
-                        .observationPoint(request.getConfig() != null 
+                        .observationPoint(request.getConfig() != null
                                 && request.getConfig().getObservationPoint() != null
                                 ? request.getConfig().getObservationPoint()
                                 : "topocentric")
-                        .ayanamsha(request.getConfig() != null 
+                        .ayanamsha(request.getConfig() != null
                                 && request.getConfig().getAyanamsha() != null
                                 ? request.getConfig().getAyanamsha()
                                 : "lahiri")
@@ -530,19 +530,19 @@ public class PlanetaryCalculationService {
      */
     @org.springframework.beans.factory.annotation.Value("${spring.web.resources.static-locations:classpath:/static/}")
     private String staticResourceLocation;
-    
+
     public String saveSvgToFile(PlanetaryPositionResponse response) {
         try {
             // Create directory if it doesn't exist using proper resource path
             String baseDir = "target/classes/static/kundli-charts";
             java.nio.file.Path dirPath = java.nio.file.Paths.get(baseDir);
-            
+
             // If target doesn't work (dev mode), try src/main/resources
             if (!baseDir.contains("target")) {
                 baseDir = "src/main/resources/static/kundli-charts";
                 dirPath = java.nio.file.Paths.get(baseDir);
             }
-            
+
             if (!java.nio.file.Files.exists(dirPath)) {
                 java.nio.file.Files.createDirectories(dirPath);
             }
@@ -552,25 +552,25 @@ public class PlanetaryCalculationService {
             int year = response.getInput().getYear();
             int month = response.getInput().getMonth();
             int date = response.getInput().getDate();
-            
+
             // Generate unique filename
             String timestamp = String.valueOf(System.currentTimeMillis());
             String userPrefix = chartId != null ? "chart" + chartId + "_" : "";
-            String filename = String.format("%skundli_%d%02d%02d_%s.html", 
+            String filename = String.format("%skundli_%d%02d%02d_%s.html",
                     userPrefix, year, month, date, timestamp);
-            
+
             // Generate HTML content from planetary positions
             String htmlData = generateKundliHtml(response);
-            
+
             // Save file
             java.nio.file.Path filePath = dirPath.resolve(filename);
             java.nio.file.Files.write(filePath, htmlData.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            
+
             log.info("Chart saved to: " + filePath.toAbsolutePath());
-            
+
             // Return URL path
             return "/kundli-charts/" + filename;
-            
+
         } catch (Exception e) {
             log.error("Error saving Kundli HTML file", e);
             return null;
@@ -583,11 +583,11 @@ public class PlanetaryCalculationService {
     private String generateKundliHtml(PlanetaryPositionResponse response) {
         StringBuilder html = new StringBuilder();
 
-        
+
         // Extract data from new output structure
         @SuppressWarnings("unchecked")
         Map<String, Object> outputMap = (Map<String, Object>) response.getOutput().get(0);
-        
+
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> kundliData = (List<Map<String, Object>>) outputMap.get("kundli");
         Map<String, Object> indexedPlanets = kundliData.get(0);
@@ -625,36 +625,29 @@ public class PlanetaryCalculationService {
                 Map.entry("Pluto", "Pl")
         );
 
-        Map<Integer, List<String>> planetsByHouse = new HashMap<>();
+        Map<Integer, List<String>> planetsBySign = new HashMap<>();
         for (Map.Entry<String, Object> entry : namedPlanets.entrySet()) {
             String planetName = entry.getKey();
-            if ("Ascendant".equals(planetName)) {
-                continue;
-            }
             @SuppressWarnings("unchecked")
             Map<String, Object> planetData = (Map<String, Object>) entry.getValue();
-            Integer houseNum = (Integer) planetData.get("house_number");
-            if (houseNum != null) {
-                planetsByHouse.computeIfAbsent(houseNum, k -> new ArrayList<>()).add(planetName);
+            Integer sign = (Integer) planetData.get("current_sign");
+            if (sign != null) {
+                planetsBySign.computeIfAbsent(sign, k -> new ArrayList<>()).add(planetName);
             }
         }
-        if (!planetsByHouse.getOrDefault(1, new ArrayList<>()).contains("Ascendant")) {
-            planetsByHouse.computeIfAbsent(1, k -> new ArrayList<>()).add(0, "Ascendant");
+        if (ascendantSign != null && !planetsBySign.getOrDefault(ascendantSign, new ArrayList<>()).contains("Ascendant")) {
+            planetsBySign.computeIfAbsent(ascendantSign, k -> new ArrayList<>()).add(0, "Ascendant");
         }
 
         // Extract Navamsha data
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> navamshaData = (List<Map<String, Object>>) outputMap.get("navamsha");
         Map<String, Object> navamshaNamedPlanets = navamshaData.get(1);
-        
-        // Resolve Navamsha Ascendant from computed output (fallback to calculated value)
+
+        // Calculate Navamsha Ascendant
         int[] navamshaAscendantData = calculateNavamshaSign(ascendantDegree);
         int navamshaAscendantSign = navamshaAscendantData[0];
-        if (navamshaNamedPlanets.get("Ascendant") instanceof Map<?, ?> navAscMap
-                && navAscMap.get("navamsha_sign") instanceof Integer navSign) {
-            navamshaAscendantSign = navSign;
-        }
-        
+
         // Build planetsByNavamshaHouse from Navamsha data
         Map<Integer, List<String>> planetsByNavamshaHouse = new HashMap<>();
         for (Map.Entry<String, Object> entry : navamshaNamedPlanets.entrySet()) {
@@ -669,7 +662,7 @@ public class PlanetaryCalculationService {
                 planetsByNavamshaHouse.computeIfAbsent(navamshaHouseNum, k -> new ArrayList<>()).add(planetName);
             }
         }
-        
+
         // Add Navamsha Ascendant to house 1
         int navamshaAscendantHouse = 1;
         if (!planetsByNavamshaHouse.getOrDefault(navamshaAscendantHouse, new ArrayList<>()).contains("Ascendant")) {
@@ -716,6 +709,37 @@ public class PlanetaryCalculationService {
         html.append("<body>\n");
         html.append("<div class=\"page\">\n");
 
+        // Charts section (Kundli, Navamsha, Transit)
+        html.append("<div class=\"charts\">\n");
+        html.append("<div>\n");
+        html.append("<div class=\"box\">\n");
+        html.append("<h3>Kundli Birth Chart</h3>\n");
+
+        html.append("<svg width=\"100%\" viewBox=\"0 0 400 400\" xmlns=\"http://www.w3.org/2000/svg\">\n");
+        html.append("  <rect x=\"0\" y=\"0\" width=\"400\" height=\"400\" fill=\"none\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"0\" y1=\"0\" x2=\"400\" y2=\"400\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"400\" y1=\"0\" x2=\"0\" y2=\"400\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"200\" y1=\"0\" x2=\"400\" y2=\"200\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"400\" y1=\"200\" x2=\"200\" y2=\"400\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"200\" y1=\"400\" x2=\"0\" y2=\"200\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"0\" y1=\"200\" x2=\"200\" y2=\"0\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <text x=\"200\" y=\"200\" font-size=\"180\" fill=\"#8a5a2b\" opacity=\"0.06\" text-anchor=\"middle\" dominant-baseline=\"middle\">ॐ</text>\n");
+        html.append("  <g fill=\"#3b2414\" font-size=\"12\" font-weight=\"bold\" text-anchor=\"middle\" dominant-baseline=\"middle\">\n");
+        html.append("    <text x=\"325\" y=\"100\">1</text>\n");
+        html.append("    <text x=\"300\" y=\"75\">2</text>\n");
+        html.append("    <text x=\"200\" y=\"175\">3</text>\n");
+        html.append("    <text x=\"100\" y=\"75\">4</text>\n");
+        html.append("    <text x=\"75\" y=\"100\">5</text>\n");
+        html.append("    <text x=\"175\" y=\"200\">6</text>\n");
+        html.append("    <text x=\"200\" y=\"225\">9</text>\n");
+        html.append("    <text x=\"75\" y=\"300\">7</text>\n");
+        html.append("    <text x=\"100\" y=\"325\">8</text>\n");
+        html.append("    <text x=\"300\" y=\"260\">9</text>\n");
+        html.append("    <text x=\"300\" y=\"320\">10</text>\n");
+        html.append("    <text x=\"325\" y=\"300\">11</text>\n");
+        html.append("    <text x=\"225\" y=\"200\">12</text>\n");
+        html.append("  </g>\n");
+
         // Planet labels per house (alignment coordinates)
         Map<Integer, int[]> houseCoords = new HashMap<>();
         houseCoords.put(1, new int[]{360, 85});
@@ -731,17 +755,99 @@ public class PlanetaryCalculationService {
         houseCoords.put(11, new int[]{360, 300});
         houseCoords.put(12, new int[]{265, 180});
 
-        // Charts section (Kundli, Navamsha, Transit) - use shared chart builder
-        html.append("<div class=\"charts\">\n");
-        html.append(buildChartHtml("Kundli Birth Chart", planetsByHouse, houseCoords, planetAbbr, ascendantSign));
-        html.append(buildChartHtml("Navamsha  Chart", planetsByNavamshaHouse, houseCoords, planetAbbr, navamshaAscendantSign));
+        html.append("  <g fill=\"#000\" font-size=\"10\" font-weight=\"bold\">\n");
+        for (int sign = 1; sign <= 12; sign++) {
+            int[] coord = houseCoords.get(sign);
+            if (coord == null) {
+                continue;
+            }
+            List<String> planets = planetsBySign.getOrDefault(sign, new ArrayList<>());
+            if (planets.size() > 1) {
+                // Multiple planets: use tspan for vertical stacking
+                html.append("    <text x=\"").append(coord[0]).append("\" y=\"").append(coord[1])
+                        .append("\" font-size=\"10\" font-weight=\"bold\" text-anchor=\"start\" dominant-baseline=\"middle\">\n");
+                for (int i = 0; i < planets.size(); i++) {
+                    String planetName = planets.get(i);
+                    String abbr = planetAbbr.getOrDefault(planetName, planetName.substring(0, Math.min(3, planetName.length())));
+                    html.append("      <tspan x=\"").append(coord[0]).append("\" dy=\"").append(i == 0 ? "0" : "10").append("\">").append(abbr).append("</tspan>\n");
+                }
+                html.append("    </text>\n");
+            } else if (planets.size() == 1) {
+                // Single planet: simple text
+                String planetName = planets.get(0);
+                String abbr = planetAbbr.getOrDefault(planetName, planetName.substring(0, Math.min(3, planetName.length())));
+                html.append("    <text x=\"").append(coord[0]).append("\" y=\"").append(coord[1]).append("\">").append(abbr).append("</text>\n");
+            }
+        }
+        html.append("  </g>\n");
+        html.append("</svg>\n");
         html.append("</div>\n");
+
+        html.append("<div class=\"box\">\n");
+        html.append("<h3>Navamsha  Chart</h3>\n");
+        html.append("<svg width=\"100%\" viewBox=\"0 0 400 400\" xmlns=\"http://www.w3.org/2000/svg\">\n");
+        html.append("  <rect x=\"0\" y=\"0\" width=\"400\" height=\"400\" fill=\"none\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"0\" y1=\"0\" x2=\"400\" y2=\"400\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"400\" y1=\"0\" x2=\"0\" y2=\"400\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"200\" y1=\"0\" x2=\"400\" y2=\"200\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"400\" y1=\"200\" x2=\"200\" y2=\"400\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"200\" y1=\"400\" x2=\"0\" y2=\"200\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"0\" y1=\"200\" x2=\"200\" y2=\"0\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <text x=\"200\" y=\"200\" font-size=\"180\" fill=\"#8a5a2b\" opacity=\"0.06\" text-anchor=\"middle\" dominant-baseline=\"middle\">ॐ</text>\n");
+        html.append("  <g fill=\"#3b2414\" font-size=\"12\" font-weight=\"bold\" text-anchor=\"middle\" dominant-baseline=\"middle\">\n");
+        html.append("    <text x=\"325\" y=\"100\">1</text>\n");
+        html.append("    <text x=\"300\" y=\"75\">2</text>\n");
+        html.append("    <text x=\"200\" y=\"175\">3</text>\n");
+        html.append("    <text x=\"100\" y=\"75\">4</text>\n");
+        html.append("    <text x=\"75\" y=\"100\">5</text>\n");
+        html.append("    <text x=\"175\" y=\"200\">6</text>\n");
+        html.append("    <text x=\"200\" y=\"225\">9</text>\n");
+        html.append("    <text x=\"75\" y=\"300\">7</text>\n");
+        html.append("    <text x=\"100\" y=\"325\">8</text>\n");
+        html.append("    <text x=\"300\" y=\"260\">9</text>\n");
+        html.append("    <text x=\"300\" y=\"320\">10</text>\n");
+        html.append("    <text x=\"325\" y=\"300\">11</text>\n");
+        html.append("    <text x=\"225\" y=\"200\">12</text>\n");
+        html.append("  </g>\n");
+        html.append("  <g fill=\"#000\" font-size=\"10\" font-weight=\"bold\">\n");
+        for (int house = 1; house <= 12; house++) {
+            int[] coord = houseCoords.get(house);
+            if (coord == null) {
+                continue;
+            }
+            List<String> planets = planetsByNavamshaHouse.getOrDefault(house, new ArrayList<>());
+            if (planets.size() > 1) {
+                // Multiple planets: use tspan for vertical stacking
+                html.append("    <text x=\"").append(coord[0]).append("\" y=\"").append(coord[1])
+                        .append("\" font-size=\"10\" font-weight=\"bold\" text-anchor=\"start\" dominant-baseline=\"middle\">\n");
+                for (int i = 0; i < planets.size(); i++) {
+                    String planetName = planets.get(i);
+                    String abbr = planetAbbr.getOrDefault(planetName, planetName.substring(0, Math.min(3, planetName.length())));
+                    html.append("      <tspan x=\"").append(coord[0]).append("\" dy=\"").append(i == 0 ? "0" : "10").append("\">").append(abbr).append("</tspan>\n");
+                }
+                html.append("    </text>\n");
+            } else if (planets.size() == 1) {
+                // Single planet: simple text
+                String planetName = planets.get(0);
+                String abbr = planetAbbr.getOrDefault(planetName, planetName.substring(0, Math.min(3, planetName.length())));
+                html.append("    <text x=\"").append(coord[0]).append("\" y=\"").append(coord[1]).append("\">").append(abbr).append("</text>\n");
+            }
+        }
+        html.append("  </g>\n");
+        html.append("</svg>\n");
+        html.append("</div>\n");
+        html.append("</div>\n");
+        html.append("</div>\n");  // Close charts section
+
+        // Second row of charts (Transit chart)
+        html.append("<div class=\"charts\">\n");
+        html.append("<div>\n");
 
         // Transit Chart (Today from Lagna)
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> transitData = (List<Map<String, Object>>) outputMap.get("transit");
         Map<String, Object> transitNamedPlanets = transitData.get(1);
-        
+
         // Build planetsByTransitHouse
         Map<Integer, List<String>> planetsByTransitHouse = new HashMap<>();
         for (Map.Entry<String, Object> entry : transitNamedPlanets.entrySet()) {
@@ -756,14 +862,67 @@ public class PlanetaryCalculationService {
                 planetsByTransitHouse.computeIfAbsent(transitHouse, k -> new ArrayList<>()).add(planetName);
             }
         }
-        
+
         // Add Ascendant to house 1
         if (!planetsByTransitHouse.getOrDefault(1, new ArrayList<>()).contains("Ascendant")) {
             planetsByTransitHouse.computeIfAbsent(1, k -> new ArrayList<>()).add(0, "Ascendant");
         }
-        html.append("<div class=\"charts\">\n");
-        html.append(buildChartHtml("Transit Chart (Today from Lagna)", planetsByTransitHouse, houseCoords, planetAbbr, ascendantSign));
+
+        html.append("<div class=\"box\">\n");
+        html.append("<h3>Transit Chart (Today from Lagna)</h3>\n");
+        html.append("<svg width=\"100%\" viewBox=\"0 0 400 400\" xmlns=\"http://www.w3.org/2000/svg\">\n");
+        html.append("  <rect x=\"0\" y=\"0\" width=\"400\" height=\"400\" fill=\"none\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"0\" y1=\"0\" x2=\"400\" y2=\"400\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"400\" y1=\"0\" x2=\"0\" y2=\"400\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"200\" y1=\"0\" x2=\"400\" y2=\"200\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"400\" y1=\"200\" x2=\"200\" y2=\"400\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"200\" y1=\"400\" x2=\"0\" y2=\"200\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <line x1=\"0\" y1=\"200\" x2=\"200\" y2=\"0\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
+        html.append("  <text x=\"200\" y=\"200\" font-size=\"180\" fill=\"#8a5a2b\" opacity=\"0.06\" text-anchor=\"middle\" dominant-baseline=\"middle\">ॐ</text>\n");
+        html.append("  <g fill=\"#3b2414\" font-size=\"12\" font-weight=\"bold\" text-anchor=\"middle\" dominant-baseline=\"middle\">\n");
+        html.append("    <text x=\"325\" y=\"100\">1</text>\n");
+        html.append("    <text x=\"300\" y=\"75\">2</text>\n");
+        html.append("    <text x=\"200\" y=\"175\">3</text>\n");
+        html.append("    <text x=\"100\" y=\"75\">4</text>\n");
+        html.append("    <text x=\"75\" y=\"100\">5</text>\n");
+        html.append("    <text x=\"175\" y=\"200\">6</text>\n");
+        html.append("    <text x=\"200\" y=\"225\">9</text>\n");
+        html.append("    <text x=\"75\" y=\"300\">7</text>\n");
+        html.append("    <text x=\"100\" y=\"325\">8</text>\n");
+        html.append("    <text x=\"300\" y=\"260\">9</text>\n");
+        html.append("    <text x=\"300\" y=\"320\">10</text>\n");
+        html.append("    <text x=\"325\" y=\"300\">11</text>\n");
+        html.append("    <text x=\"225\" y=\"200\">12</text>\n");
+        html.append("  </g>\n");
+        html.append("  <g fill=\"#000\" font-size=\"10\" font-weight=\"bold\">\n");
+        for (int house = 1; house <= 12; house++) {
+            int[] coord = houseCoords.get(house);
+            if (coord == null) {
+                continue;
+            }
+            List<String> planets = planetsByTransitHouse.getOrDefault(house, new ArrayList<>());
+            if (planets.size() > 1) {
+                // Multiple planets: use tspan for vertical stacking
+                html.append("    <text x=\"").append(coord[0]).append("\" y=\"").append(coord[1])
+                        .append("\" font-size=\"10\" font-weight=\"bold\" text-anchor=\"start\" dominant-baseline=\"middle\">\n");
+                for (int i = 0; i < planets.size(); i++) {
+                    String planetName = planets.get(i);
+                    String abbr = planetAbbr.getOrDefault(planetName, planetName.substring(0, Math.min(3, planetName.length())));
+                    html.append("      <tspan x=\"").append(coord[0]).append("\" dy=\"").append(i == 0 ? "0" : "10").append("\">").append(abbr).append("</tspan>\n");
+                }
+                html.append("    </text>\n");
+            } else if (planets.size() == 1) {
+                // Single planet: simple text
+                String planetName = planets.get(0);
+                String abbr = planetAbbr.getOrDefault(planetName, planetName.substring(0, Math.min(3, planetName.length())));
+                html.append("    <text x=\"").append(coord[0]).append("\" y=\"").append(coord[1]).append("\">").append(abbr).append("</text>\n");
+            }
+        }
+        html.append("  </g>\n");
+        html.append("</svg>\n");
         html.append("</div>\n");
+        html.append("</div>\n");
+        html.append("</div>\n");  // Close charts section
 
         // Data section (Planetary Positions and Astrological Data)
         html.append("<div class=\"data-section\">\n");
@@ -872,22 +1031,19 @@ public class PlanetaryCalculationService {
         houseCoords.put(11, new int[]{360, 300});
         houseCoords.put(12, new int[]{265, 180});
 
-        // Kundli planets by house
-        Map<Integer, List<String>> planetsByHouse = new HashMap<>();
+        // Kundli planets by sign
+        Map<Integer, List<String>> planetsBySign = new HashMap<>();
         for (Map.Entry<String, Object> entry : namedPlanets.entrySet()) {
             String planetName = entry.getKey();
-            if ("Ascendant".equals(planetName)) {
-                continue;
-            }
             @SuppressWarnings("unchecked")
             Map<String, Object> planetData = (Map<String, Object>) entry.getValue();
-            Integer houseNum = (Integer) planetData.get("house_number");
-            if (houseNum != null) {
-                planetsByHouse.computeIfAbsent(houseNum, k -> new ArrayList<>()).add(planetName);
+            Integer sign = (Integer) planetData.get("current_sign");
+            if (sign != null) {
+                planetsBySign.computeIfAbsent(sign, k -> new ArrayList<>()).add(planetName);
             }
         }
-        if (!planetsByHouse.getOrDefault(1, new ArrayList<>()).contains("Ascendant")) {
-            planetsByHouse.computeIfAbsent(1, k -> new ArrayList<>()).add(0, "Ascendant");
+        if (ascendantSign != null && !planetsBySign.getOrDefault(ascendantSign, new ArrayList<>()).contains("Ascendant")) {
+            planetsBySign.computeIfAbsent(ascendantSign, k -> new ArrayList<>()).add(0, "Ascendant");
         }
 
         // Navamsha planets by house
@@ -933,17 +1089,9 @@ public class PlanetaryCalculationService {
         }
 
         // Build sections with complete HTML
-        Integer navamshaAscendantSign = null;
-        if (navamshaNamedPlanets.get("Ascendant") instanceof Map<?, ?> navAscMap
-                && navAscMap.get("navamsha_sign") instanceof Integer navSign) {
-            navamshaAscendantSign = navSign;
-        }
-        if (navamshaAscendantSign == null && ascendantDegree != null) {
-            navamshaAscendantSign = calculateNavamshaSign(ascendantDegree)[0];
-        }
-        sections.put("kundliChart", wrapInCompleteHtml("Kundli Birth Chart", buildChartHtml("Kundli Birth Chart", planetsByHouse, houseCoords, planetAbbr, ascendantSign)));
-        sections.put("navamshaChart", wrapInCompleteHtml("Navamsha Chart", buildChartHtml("Navamsha Chart", planetsByNavamshaHouse, houseCoords, planetAbbr, navamshaAscendantSign)));
-        sections.put("transitChart", wrapInCompleteHtml("Transit Chart", buildChartHtml("Transit Chart (Today from Lagna)", planetsByTransitHouse, houseCoords, planetAbbr, ascendantSign)));
+        sections.put("kundliChart", wrapInCompleteHtml("Kundli Birth Chart", buildChartHtml("Kundli Birth Chart", planetsBySign, houseCoords, planetAbbr)));
+        sections.put("navamshaChart", wrapInCompleteHtml("Navamsha Chart", buildChartHtml("Navamsha Chart", planetsByNavamshaHouse, houseCoords, planetAbbr)));
+        sections.put("transitChart", wrapInCompleteHtml("Transit Chart", buildChartHtml("Transit Chart (Today from Lagna)", planetsByTransitHouse, houseCoords, planetAbbr)));
         sections.put("planetaryPositions", wrapInCompleteHtml("Planetary Positions", buildPlanetaryPositionsTable(namedPlanets)));
         sections.put("astrologicalData", wrapInCompleteHtml("Astrological Data", buildAstrologicalDataSection(ascendantSign, ascendantData, sunSign, moonSign, ayanamsaValue)));
 
@@ -951,8 +1099,7 @@ public class PlanetaryCalculationService {
     }
 
     private String buildChartHtml(String title, Map<Integer, List<String>> planetsByHouse,
-                                  Map<Integer, int[]> houseCoords, Map<String, String> planetAbbr,
-                                  Integer ascendantSign) {
+                                  Map<Integer, int[]> houseCoords, Map<String, String> planetAbbr) {
         StringBuilder html = new StringBuilder();
         html.append("<div class=\"box\">\n");
         html.append("<h3>").append(title).append("</h3>\n");
@@ -966,26 +1113,19 @@ public class PlanetaryCalculationService {
         html.append("  <line x1=\"0\" y1=\"200\" x2=\"200\" y2=\"0\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
         html.append("  <text x=\"200\" y=\"200\" font-size=\"180\" fill=\"#8a5a2b\" opacity=\"0.06\" text-anchor=\"middle\" dominant-baseline=\"middle\">ॐ</text>\n");
         html.append("  <g fill=\"#3b2414\" font-size=\"12\" font-weight=\"bold\" text-anchor=\"middle\" dominant-baseline=\"middle\">\n");
-        Map<Integer, int[]> houseNumberCoords = new LinkedHashMap<>();
-        houseNumberCoords.put(1, new int[]{325, 100});
-        houseNumberCoords.put(2, new int[]{300, 75});
-        houseNumberCoords.put(3, new int[]{200, 175});
-        houseNumberCoords.put(4, new int[]{100, 75});
-        houseNumberCoords.put(5, new int[]{75, 100});
-        houseNumberCoords.put(6, new int[]{175, 200});
-        houseNumberCoords.put(7, new int[]{75, 300});
-        houseNumberCoords.put(8, new int[]{100, 325});
-        houseNumberCoords.put(9, new int[]{200, 225});
-        houseNumberCoords.put(10, new int[]{300, 320});
-        houseNumberCoords.put(11, new int[]{325, 300});
-        houseNumberCoords.put(12, new int[]{225, 200});
-        for (int house = 1; house <= 12; house++) {
-            int[] point = houseNumberCoords.get(house);
-            if (point == null) continue;
-            int label = resolveSignForHouse(ascendantSign, house);
-            html.append("    <text x=\"").append(point[0]).append("\" y=\"")
-                    .append(point[1]).append("\">").append(label).append("</text>\n");
-        }
+        html.append("    <text x=\"325\" y=\"100\">1</text>\n");
+        html.append("    <text x=\"300\" y=\"75\">2</text>\n");
+        html.append("    <text x=\"200\" y=\"175\">3</text>\n");
+        html.append("    <text x=\"100\" y=\"75\">4</text>\n");
+        html.append("    <text x=\"75\" y=\"100\">5</text>\n");
+        html.append("    <text x=\"175\" y=\"200\">6</text>\n");
+        html.append("    <text x=\"200\" y=\"225\">9</text>\n");
+        html.append("    <text x=\"75\" y=\"300\">7</text>\n");
+        html.append("    <text x=\"100\" y=\"325\">8</text>\n");
+        html.append("    <text x=\"300\" y=\"260\">9</text>\n");
+        html.append("    <text x=\"300\" y=\"320\">10</text>\n");
+        html.append("    <text x=\"325\" y=\"300\">11</text>\n");
+        html.append("    <text x=\"225\" y=\"200\">12</text>\n");
         html.append("  </g>\n");
         html.append("  <g fill=\"#000\" font-size=\"10\" font-weight=\"bold\">\n");
         for (int house = 1; house <= 12; house++) {
@@ -1047,7 +1187,7 @@ public class PlanetaryCalculationService {
     }
 
     private String buildAstrologicalDataSection(Integer ascendantSign, Map<String, Object> ascendantData,
-                                                 Integer sunSign, Integer moonSign, Double ayanamsaValue) {
+                                                Integer sunSign, Integer moonSign, Double ayanamsaValue) {
         StringBuilder html = new StringBuilder();
         html.append("<div class=\"box\">\n");
         html.append("<h3>Astrological Data</h3>\n");
@@ -1061,14 +1201,6 @@ public class PlanetaryCalculationService {
                 .append("<br>\n");
         html.append("</div>\n");
         return html.toString();
-    }
-
-    private int resolveSignForHouse(Integer ascendantSign, int house) {
-        if (house < 1 || house > 12) return house;
-        if (ascendantSign == null || ascendantSign < 1 || ascendantSign > 12) {
-            return house;
-        }
-        return ((ascendantSign + house - 2) % 12) + 1;
     }
 
     private String wrapInCompleteHtml(String title, String content) {
