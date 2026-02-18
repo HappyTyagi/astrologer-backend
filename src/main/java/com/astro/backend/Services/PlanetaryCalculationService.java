@@ -415,23 +415,47 @@ public class PlanetaryCalculationService {
 
     /**
      * Calculate Navamsha position (D9 - 9th divisional chart)
-     * Navamsha divides 360 degrees into 9 equal parts of 40 degrees each
-     * Returns [navamshaSign, degree_in_navamsha]
+     * Standard rule:
+     * 1 sign = 30°, each Navamsha = 3°20' (30/9)
+     * - Movable signs: start from same sign
+     * - Fixed signs: start from 9th sign
+     * - Dual signs: start from 5th sign
+     * Returns [navamshaSign(1-12), degree_in_navamsha_sign(0-30)]
      */
     private int[] calculateNavamshaSign(double planetLongitude) {
-        // Each Navamsha division is 360/9 = 40 degrees
-        double navamshaDivision = planetLongitude / 40.0;
-        int navamshaIndex = (int) navamshaDivision;
-        if (navamshaIndex >= 9) navamshaIndex = 8;
+        final double normalizedLongitude = ((planetLongitude % 360.0) + 360.0) % 360.0;
 
-        // Navamsha signs start from Aries (1) and repeat 9 times
-        // Aries: 0-40°, Taurus: 40-80°, Gemini: 80-120°, etc.
-        int navamshaSign = (navamshaIndex % 12) + 1;
+        final int rasiIndex = (int) Math.floor(normalizedLongitude / 30.0); // 0..11
+        final double degreeInRasi = normalizedLongitude % 30.0; // 0..<30
 
-        // Degree within the Navamsha (0-40)
-        double degreeInNavamsha = planetLongitude % 40.0;
+        final double navamshaSpan = 30.0 / 9.0; // 3.333...
+        int navamshaPart = (int) Math.floor(degreeInRasi / navamshaSpan); // 0..8
+        if (navamshaPart > 8) navamshaPart = 8;
 
-        return new int[]{navamshaSign, (int) degreeInNavamsha};
+        final int rasiNumber = rasiIndex + 1; // 1..12
+
+        // Start sign index for Navamsha sequence inside this Rasi (0-based)
+        final int startIndex;
+        if (rasiNumber == 1 || rasiNumber == 4 || rasiNumber == 7 || rasiNumber == 10) {
+            // Movable: Aries, Cancer, Libra, Capricorn
+            startIndex = rasiIndex;
+        } else if (rasiNumber == 2 || rasiNumber == 5 || rasiNumber == 8 || rasiNumber == 11) {
+            // Fixed: Taurus, Leo, Scorpio, Aquarius => start from 9th sign
+            startIndex = (rasiIndex + 8) % 12;
+        } else {
+            // Dual: Gemini, Virgo, Sagittarius, Pisces => start from 5th sign
+            startIndex = (rasiIndex + 4) % 12;
+        }
+
+        final int navamshaSign = ((startIndex + navamshaPart) % 12) + 1; // 1..12
+
+        // Position inside current Navamsha part (map to 0..30)
+        final double fractionInsidePart = (degreeInRasi - (navamshaPart * navamshaSpan)) / navamshaSpan;
+        int degreeInNavamsha = (int) Math.floor(fractionInsidePart * 30.0);
+        if (degreeInNavamsha < 0) degreeInNavamsha = 0;
+        if (degreeInNavamsha > 29) degreeInNavamsha = 29;
+
+        return new int[]{navamshaSign, degreeInNavamsha};
     }
 
     /**
@@ -613,10 +637,10 @@ public class PlanetaryCalculationService {
                 Map.entry("Sun", "Sun"),
                 Map.entry("Moon", "Mo"),
                 Map.entry("Mars", "Mar"),
-                Map.entry("Mercury", "Mer"),
-                Map.entry("Jupiter", "Jup"),
+                Map.entry("Mercury", "Me"),
+                Map.entry("Jupiter", "Ju"),
                 Map.entry("Venus", "Ve"),
-                Map.entry("Saturn", "Sat"),
+                Map.entry("Saturn", "Sa"),
                 Map.entry("Rahu", "Ra"),
                 Map.entry("Ketu", "Ke"),
                 Map.entry("Ascendant", "As"),
@@ -648,8 +672,8 @@ public class PlanetaryCalculationService {
         int[] navamshaAscendantData = calculateNavamshaSign(ascendantDegree);
         int navamshaAscendantSign = navamshaAscendantData[0];
 
-        // Build planetsByNavamshaHouse from Navamsha data
-        Map<Integer, List<String>> planetsByNavamshaHouse = new HashMap<>();
+        // Build Navamsha map by SIGN (not house) to match North-Indian sign placement.
+        Map<Integer, List<String>> planetsByNavamshaSign = new HashMap<>();
         for (Map.Entry<String, Object> entry : navamshaNamedPlanets.entrySet()) {
             String planetName = entry.getKey();
             if ("Ascendant".equals(planetName)) {
@@ -657,16 +681,15 @@ public class PlanetaryCalculationService {
             }
             @SuppressWarnings("unchecked")
             Map<String, Object> planetData = (Map<String, Object>) entry.getValue();
-            Integer navamshaHouseNum = (Integer) planetData.get("navamsha_house");
-            if (navamshaHouseNum != null) {
-                planetsByNavamshaHouse.computeIfAbsent(navamshaHouseNum, k -> new ArrayList<>()).add(planetName);
+            Integer navamshaSign = (Integer) planetData.get("navamsha_sign");
+            if (navamshaSign != null) {
+                planetsByNavamshaSign.computeIfAbsent(navamshaSign, k -> new ArrayList<>()).add(planetName);
             }
         }
 
-        // Add Navamsha Ascendant to house 1
-        int navamshaAscendantHouse = 1;
-        if (!planetsByNavamshaHouse.getOrDefault(navamshaAscendantHouse, new ArrayList<>()).contains("Ascendant")) {
-            planetsByNavamshaHouse.computeIfAbsent(navamshaAscendantHouse, k -> new ArrayList<>()).add(0, "Ascendant");
+        // Add Navamsha Ascendant to its sign bucket.
+        if (!planetsByNavamshaSign.getOrDefault(navamshaAscendantSign, new ArrayList<>()).contains("Ascendant")) {
+            planetsByNavamshaSign.computeIfAbsent(navamshaAscendantSign, k -> new ArrayList<>()).add(0, "Ascendant");
         }
 
         String dateText = String.format("%04d-%02d-%02d", response.getInput().getYear(), response.getInput().getMonth(), response.getInput().getDate());
@@ -724,7 +747,7 @@ public class PlanetaryCalculationService {
         html.append("  <line x1=\"200\" y1=\"400\" x2=\"0\" y2=\"200\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
         html.append("  <line x1=\"0\" y1=\"200\" x2=\"200\" y2=\"0\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
         html.append("  <text x=\"200\" y=\"200\" font-size=\"180\" fill=\"#8a5a2b\" opacity=\"0.06\" text-anchor=\"middle\" dominant-baseline=\"middle\">ॐ</text>\n");
-        html.append("  <g fill=\"#3b2414\" font-size=\"12\" font-weight=\"bold\" text-anchor=\"middle\" dominant-baseline=\"middle\">\n");
+        html.append("  <g fill=\"#3b2414\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\" dominant-baseline=\"middle\">\n");
         html.append("    <text x=\"325\" y=\"100\">1</text>\n");
         html.append("    <text x=\"300\" y=\"75\">2</text>\n");
         html.append("    <text x=\"200\" y=\"175\">3</text>\n");
@@ -734,7 +757,6 @@ public class PlanetaryCalculationService {
         html.append("    <text x=\"200\" y=\"225\">9</text>\n");
         html.append("    <text x=\"75\" y=\"300\">7</text>\n");
         html.append("    <text x=\"100\" y=\"325\">8</text>\n");
-        html.append("    <text x=\"300\" y=\"260\">9</text>\n");
         html.append("    <text x=\"300\" y=\"320\">10</text>\n");
         html.append("    <text x=\"325\" y=\"300\">11</text>\n");
         html.append("    <text x=\"225\" y=\"200\">12</text>\n");
@@ -794,7 +816,7 @@ public class PlanetaryCalculationService {
         html.append("  <line x1=\"200\" y1=\"400\" x2=\"0\" y2=\"200\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
         html.append("  <line x1=\"0\" y1=\"200\" x2=\"200\" y2=\"0\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
         html.append("  <text x=\"200\" y=\"200\" font-size=\"180\" fill=\"#8a5a2b\" opacity=\"0.06\" text-anchor=\"middle\" dominant-baseline=\"middle\">ॐ</text>\n");
-        html.append("  <g fill=\"#3b2414\" font-size=\"12\" font-weight=\"bold\" text-anchor=\"middle\" dominant-baseline=\"middle\">\n");
+        html.append("  <g fill=\"#3b2414\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\" dominant-baseline=\"middle\">\n");
         html.append("    <text x=\"325\" y=\"100\">1</text>\n");
         html.append("    <text x=\"300\" y=\"75\">2</text>\n");
         html.append("    <text x=\"200\" y=\"175\">3</text>\n");
@@ -804,7 +826,6 @@ public class PlanetaryCalculationService {
         html.append("    <text x=\"200\" y=\"225\">9</text>\n");
         html.append("    <text x=\"75\" y=\"300\">7</text>\n");
         html.append("    <text x=\"100\" y=\"325\">8</text>\n");
-        html.append("    <text x=\"300\" y=\"260\">9</text>\n");
         html.append("    <text x=\"300\" y=\"320\">10</text>\n");
         html.append("    <text x=\"325\" y=\"300\">11</text>\n");
         html.append("    <text x=\"225\" y=\"200\">12</text>\n");
@@ -815,7 +836,7 @@ public class PlanetaryCalculationService {
             if (coord == null) {
                 continue;
             }
-            List<String> planets = planetsByNavamshaHouse.getOrDefault(house, new ArrayList<>());
+            List<String> planets = planetsByNavamshaSign.getOrDefault(house, new ArrayList<>());
             if (planets.size() > 1) {
                 // Multiple planets: use tspan for vertical stacking
                 html.append("    <text x=\"").append(coord[0]).append("\" y=\"").append(coord[1])
@@ -879,7 +900,7 @@ public class PlanetaryCalculationService {
         html.append("  <line x1=\"200\" y1=\"400\" x2=\"0\" y2=\"200\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
         html.append("  <line x1=\"0\" y1=\"200\" x2=\"200\" y2=\"0\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
         html.append("  <text x=\"200\" y=\"200\" font-size=\"180\" fill=\"#8a5a2b\" opacity=\"0.06\" text-anchor=\"middle\" dominant-baseline=\"middle\">ॐ</text>\n");
-        html.append("  <g fill=\"#3b2414\" font-size=\"12\" font-weight=\"bold\" text-anchor=\"middle\" dominant-baseline=\"middle\">\n");
+        html.append("  <g fill=\"#3b2414\" font-size=\"16\" font-weight=\"bold\" text-anchor=\"middle\" dominant-baseline=\"middle\">\n");
         html.append("    <text x=\"325\" y=\"100\">1</text>\n");
         html.append("    <text x=\"300\" y=\"75\">2</text>\n");
         html.append("    <text x=\"200\" y=\"175\">3</text>\n");
@@ -889,7 +910,6 @@ public class PlanetaryCalculationService {
         html.append("    <text x=\"200\" y=\"225\">9</text>\n");
         html.append("    <text x=\"75\" y=\"300\">7</text>\n");
         html.append("    <text x=\"100\" y=\"325\">8</text>\n");
-        html.append("    <text x=\"300\" y=\"260\">9</text>\n");
         html.append("    <text x=\"300\" y=\"320\">10</text>\n");
         html.append("    <text x=\"325\" y=\"300\">11</text>\n");
         html.append("    <text x=\"225\" y=\"200\">12</text>\n");
@@ -1005,15 +1025,15 @@ public class PlanetaryCalculationService {
                 Map.entry("Sun", "Sun"),
                 Map.entry("Moon", "Mo"),
                 Map.entry("Mars", "Mar"),
-                Map.entry("Mercury", "Mer"),
-                Map.entry("Jupiter", "Jup"),
+                Map.entry("Mercury", "Me"),
+                Map.entry("Jupiter", "Ju"),
                 Map.entry("Venus", "Ve"),
-                Map.entry("Saturn", "Sat"),
+                Map.entry("Saturn", "Sa"),
                 Map.entry("Rahu", "Ra"),
                 Map.entry("Ketu", "Ke"),
                 Map.entry("Ascendant", "As"),
                 Map.entry("Uranus", "Ur"),
-                Map.entry("Neptune", "Nep"),
+                Map.entry("Neptune", "Ne"),
                 Map.entry("Pluto", "Pl")
         );
 
@@ -1046,11 +1066,11 @@ public class PlanetaryCalculationService {
             planetsBySign.computeIfAbsent(ascendantSign, k -> new ArrayList<>()).add(0, "Ascendant");
         }
 
-        // Navamsha planets by house
+        // Navamsha planets by sign
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> navamshaData = (List<Map<String, Object>>) outputMap.get("navamsha");
         Map<String, Object> navamshaNamedPlanets = navamshaData.get(1);
-        Map<Integer, List<String>> planetsByNavamshaHouse = new HashMap<>();
+        Map<Integer, List<String>> planetsByNavamshaSign = new HashMap<>();
         for (Map.Entry<String, Object> entry : navamshaNamedPlanets.entrySet()) {
             String planetName = entry.getKey();
             if ("Ascendant".equals(planetName)) {
@@ -1058,13 +1078,19 @@ public class PlanetaryCalculationService {
             }
             @SuppressWarnings("unchecked")
             Map<String, Object> planetData = (Map<String, Object>) entry.getValue();
-            Integer navamshaHouseNum = (Integer) planetData.get("navamsha_house");
-            if (navamshaHouseNum != null) {
-                planetsByNavamshaHouse.computeIfAbsent(navamshaHouseNum, k -> new ArrayList<>()).add(planetName);
+            Integer navamshaSign = (Integer) planetData.get("navamsha_sign");
+            if (navamshaSign != null) {
+                planetsByNavamshaSign.computeIfAbsent(navamshaSign, k -> new ArrayList<>()).add(planetName);
             }
         }
-        if (!planetsByNavamshaHouse.getOrDefault(1, new ArrayList<>()).contains("Ascendant")) {
-            planetsByNavamshaHouse.computeIfAbsent(1, k -> new ArrayList<>()).add(0, "Ascendant");
+        Integer navamshaAscendantSign = ascendantSign;
+        @SuppressWarnings("unchecked")
+        Map<String, Object> navAscData = (Map<String, Object>) navamshaNamedPlanets.get("Ascendant");
+        if (navAscData != null && navAscData.get("navamsha_sign") instanceof Integer) {
+            navamshaAscendantSign = (Integer) navAscData.get("navamsha_sign");
+        }
+        if (!planetsByNavamshaSign.getOrDefault(navamshaAscendantSign, new ArrayList<>()).contains("Ascendant")) {
+            planetsByNavamshaSign.computeIfAbsent(navamshaAscendantSign, k -> new ArrayList<>()).add(0, "Ascendant");
         }
 
         // Transit planets by house
@@ -1087,68 +1113,105 @@ public class PlanetaryCalculationService {
         if (!planetsByTransitHouse.getOrDefault(1, new ArrayList<>()).contains("Ascendant")) {
             planetsByTransitHouse.computeIfAbsent(1, k -> new ArrayList<>()).add(0, "Ascendant");
         }
-
         // Build sections with complete HTML
-        sections.put("kundliChart", wrapInCompleteHtml("Kundli Birth Chart", buildChartHtml("Kundli Birth Chart", planetsBySign, houseCoords, planetAbbr)));
-        sections.put("navamshaChart", wrapInCompleteHtml("Navamsha Chart", buildChartHtml("Navamsha Chart", planetsByNavamshaHouse, houseCoords, planetAbbr)));
-        sections.put("transitChart", wrapInCompleteHtml("Transit Chart", buildChartHtml("Transit Chart (Today from Lagna)", planetsByTransitHouse, houseCoords, planetAbbr)));
+        sections.put("kundliChart", wrapInCompleteHtml("Kundli Birth Chart",
+                buildChartHtml("Kundli Birth Chart", planetsBySign, planetAbbr, ascendantSign, true)));
+        sections.put("navamshaChart", wrapInCompleteHtml("Navamsha Chart",
+                buildChartHtml("Navamsha Chart", planetsByNavamshaSign, planetAbbr, navamshaAscendantSign, true)));
+        sections.put("transitChart", wrapInCompleteHtml("Transit Chart",
+                buildChartHtml("Transit Chart (Today from Lagna)", planetsByTransitHouse, planetAbbr, ascendantSign, false)));
         sections.put("planetaryPositions", wrapInCompleteHtml("Planetary Positions", buildPlanetaryPositionsTable(namedPlanets)));
         sections.put("astrologicalData", wrapInCompleteHtml("Astrological Data", buildAstrologicalDataSection(ascendantSign, ascendantData, sunSign, moonSign, ayanamsaValue)));
 
         return sections;
     }
 
-    private String buildChartHtml(String title, Map<Integer, List<String>> planetsByHouse,
-                                  Map<Integer, int[]> houseCoords, Map<String, String> planetAbbr) {
+    private String buildChartHtml(String title, Map<Integer, List<String>> sourcePlanetsMap,
+                                  Map<String, String> planetAbbr, Integer ascendantSign,
+                                  boolean sourceMapIsSignBased) {
         StringBuilder html = new StringBuilder();
         html.append("<div class=\"box\">\n");
         html.append("<h3>").append(title).append("</h3>\n");
         html.append("<svg width=\"100%\" viewBox=\"0 0 400 400\" xmlns=\"http://www.w3.org/2000/svg\">\n");
-        html.append("  <rect x=\"0\" y=\"0\" width=\"400\" height=\"400\" fill=\"none\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
-        html.append("  <line x1=\"0\" y1=\"0\" x2=\"400\" y2=\"400\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
-        html.append("  <line x1=\"400\" y1=\"0\" x2=\"0\" y2=\"400\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
-        html.append("  <line x1=\"200\" y1=\"0\" x2=\"400\" y2=\"200\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
-        html.append("  <line x1=\"400\" y1=\"200\" x2=\"200\" y2=\"400\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
-        html.append("  <line x1=\"200\" y1=\"400\" x2=\"0\" y2=\"200\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
-        html.append("  <line x1=\"0\" y1=\"200\" x2=\"200\" y2=\"0\" stroke=\"#5b3a1c\" stroke-width=\"3\"/>\n");
-        html.append("  <text x=\"200\" y=\"200\" font-size=\"180\" fill=\"#8a5a2b\" opacity=\"0.06\" text-anchor=\"middle\" dominant-baseline=\"middle\">ॐ</text>\n");
-        html.append("  <g fill=\"#3b2414\" font-size=\"12\" font-weight=\"bold\" text-anchor=\"middle\" dominant-baseline=\"middle\">\n");
-        html.append("    <text x=\"325\" y=\"100\">1</text>\n");
-        html.append("    <text x=\"300\" y=\"75\">2</text>\n");
-        html.append("    <text x=\"200\" y=\"175\">3</text>\n");
-        html.append("    <text x=\"100\" y=\"75\">4</text>\n");
-        html.append("    <text x=\"75\" y=\"100\">5</text>\n");
-        html.append("    <text x=\"175\" y=\"200\">6</text>\n");
-        html.append("    <text x=\"200\" y=\"225\">9</text>\n");
-        html.append("    <text x=\"75\" y=\"300\">7</text>\n");
-        html.append("    <text x=\"100\" y=\"325\">8</text>\n");
-        html.append("    <text x=\"300\" y=\"260\">9</text>\n");
-        html.append("    <text x=\"300\" y=\"320\">10</text>\n");
-        html.append("    <text x=\"325\" y=\"300\">11</text>\n");
-        html.append("    <text x=\"225\" y=\"200\">12</text>\n");
-        html.append("  </g>\n");
-        html.append("  <g fill=\"#000\" font-size=\"10\" font-weight=\"bold\">\n");
+        html.append("  <rect x=\"0\" y=\"0\" width=\"400\" height=\"400\" fill=\"#ead5be\" stroke=\"#a9ab87\" stroke-width=\"1.2\"/>\n");
+        html.append("  <line x1=\"0\" y1=\"0\" x2=\"400\" y2=\"400\" stroke=\"#a9ab87\" stroke-width=\"1.1\"/>\n");
+        html.append("  <line x1=\"400\" y1=\"0\" x2=\"0\" y2=\"400\" stroke=\"#a9ab87\" stroke-width=\"1.1\"/>\n");
+        html.append("  <line x1=\"200\" y1=\"0\" x2=\"400\" y2=\"200\" stroke=\"#a9ab87\" stroke-width=\"1.1\"/>\n");
+        html.append("  <line x1=\"400\" y1=\"200\" x2=\"200\" y2=\"400\" stroke=\"#a9ab87\" stroke-width=\"1.1\"/>\n");
+        html.append("  <line x1=\"200\" y1=\"400\" x2=\"0\" y2=\"200\" stroke=\"#a9ab87\" stroke-width=\"1.1\"/>\n");
+        html.append("  <line x1=\"0\" y1=\"200\" x2=\"200\" y2=\"0\" stroke=\"#a9ab87\" stroke-width=\"1.1\"/>\n");
+        html.append("  <g fill=\"#b33a2b\" font-size=\"16\" font-weight=\"500\" text-anchor=\"middle\" dominant-baseline=\"middle\">\n");
+        Map<Integer, int[]> signCoords = new HashMap<>();
+        // North-Indian fixed number positions
+        signCoords.put(1, new int[]{325, 100});
+        signCoords.put(2, new int[]{300, 75});
+        signCoords.put(3, new int[]{200, 175});
+        signCoords.put(4, new int[]{100, 75});
+        signCoords.put(5, new int[]{75, 100});
+        signCoords.put(6, new int[]{175, 200});
+        signCoords.put(7, new int[]{75, 300});
+        signCoords.put(8, new int[]{100, 325});
+        signCoords.put(9, new int[]{200, 225});
+        signCoords.put(10, new int[]{300, 320});
+        signCoords.put(11, new int[]{325, 300});
+        signCoords.put(12, new int[]{225, 200});
+
+        int startSign = (ascendantSign != null && ascendantSign >= 1 && ascendantSign <= 12) ? ascendantSign : 1;
         for (int house = 1; house <= 12; house++) {
-            int[] coord = houseCoords.get(house);
+            int[] coord = signCoords.get(house);
+            if (coord == null) continue;
+            // Signs move anti-clockwise from Ascendant sign in North-Indian layout.
+            int sign = ((startSign - house + 12) % 12) + 1;
+            html.append("    <text x=\"").append(coord[0]).append("\" y=\"").append(coord[1]).append("\">")
+                    .append(sign).append("</text>\n");
+        }
+        html.append("  </g>\n");
+
+        Map<Integer, List<String>> planetsByHouse = new HashMap<>();
+        if (sourceMapIsSignBased) {
+            for (int house = 1; house <= 12; house++) {
+                int signForHouse = ((startSign - house + 12) % 12) + 1;
+                planetsByHouse.put(house, new ArrayList<>(
+                        sourcePlanetsMap.getOrDefault(signForHouse, new ArrayList<>())));
+            }
+        } else {
+            planetsByHouse.putAll(sourcePlanetsMap);
+        }
+
+        Map<Integer, int[]> planetCoords = new HashMap<>();
+        planetCoords.put(1, new int[]{200, 126});   // house1 top-center
+        planetCoords.put(2, new int[]{300, 72});    // house2 upper-right inner
+        planetCoords.put(3, new int[]{344, 106});   // house3 top-right corner (pulled inward)
+        planetCoords.put(4, new int[]{300, 158});   // house4 right-center
+        planetCoords.put(5, new int[]{344, 276});   // house5 bottom-right corner (pulled inward)
+        planetCoords.put(6, new int[]{288, 316});   // house6 lower-right inner
+        planetCoords.put(7, new int[]{200, 304});   // house7 bottom-center
+        planetCoords.put(8, new int[]{112, 344});   // house8 lower-left inner
+        planetCoords.put(9, new int[]{56, 352});    // house9 bottom-left corner (pulled inward)
+        planetCoords.put(10, new int[]{78, 200});   // house10 left-center
+        planetCoords.put(11, new int[]{56, 90});    // house11 top-left corner (pulled inward)
+        planetCoords.put(12, new int[]{108, 76});   // house12 upper-left inner
+
+        html.append("  <g fill=\"#b33a2b\" font-size=\"11.5\" font-weight=\"600\" text-anchor=\"middle\" dominant-baseline=\"middle\">\n");
+        for (int house = 1; house <= 12; house++) {
+            int[] coord = planetCoords.get(house);
             if (coord == null) {
                 continue;
             }
             List<String> planets = planetsByHouse.getOrDefault(house, new ArrayList<>());
-            if (planets.size() > 1) {
-                html.append("    <text x=\"").append(coord[0]).append("\" y=\"").append(coord[1])
-                        .append("\" font-size=\"10\" font-weight=\"bold\" text-anchor=\"start\" dominant-baseline=\"middle\">\n");
+            if (!planets.isEmpty()) {
+                final int lineHeight = 14;
+                int startY = coord[1] - ((planets.size() - 1) * lineHeight) / 2;
                 for (int i = 0; i < planets.size(); i++) {
                     String planetName = planets.get(i);
-                    String abbr = planetAbbr.getOrDefault(planetName, planetName.substring(0, Math.min(3, planetName.length())));
-                    html.append("      <tspan x=\"").append(coord[0]).append("\" dy=\"")
-                            .append(i == 0 ? "0" : "10").append("\">").append(abbr).append("</tspan>\n");
+                    String abbr = planetAbbr.getOrDefault(
+                            planetName,
+                            planetName.substring(0, Math.min(3, planetName.length()))
+                    );
+                    html.append("    <text x=\"").append(coord[0]).append("\" y=\"")
+                            .append(startY + (i * lineHeight)).append("\">")
+                            .append(abbr).append("</text>\n");
                 }
-                html.append("    </text>\n");
-            } else if (planets.size() == 1) {
-                String planetName = planets.get(0);
-                String abbr = planetAbbr.getOrDefault(planetName, planetName.substring(0, Math.min(3, planetName.length())));
-                html.append("    <text x=\"").append(coord[0]).append("\" y=\"").append(coord[1])
-                        .append("\">").append(abbr).append("</text>\n");
             }
         }
         html.append("  </g>\n");
@@ -1214,15 +1277,15 @@ public class PlanetaryCalculationService {
         html.append("<style>\n");
         html.append("*{box-sizing:border-box}\n");
         html.append("html,body{width:100%;height:100%;margin:0;padding:0;font-size:16px;}\n");
-        html.append("body{margin:0;background:#cdb68a;font-family: Calibre, Georgia, \"Times New Roman\", serif;}\n");
-        html.append(".page{max-width:1200px;margin:20px auto;background:radial-gradient(circle,#f6e6c6,#e1c18a);border:10px solid #8a5a2b;box-shadow:0 0 30px rgba(0,0,0,.45);padding:25px;width:100%;}\n");
-        html.append(".box{border:3px solid #8a5a2b;padding:15px;background:rgba(255,255,255,.18);width:100%;}\n");
-        html.append(".box h3{text-align:center;margin:0 0 10px;font-size:20px;}\n");
+        html.append("body{margin:0;background:#ead5be;font-family: Calibre, Calibri, Georgia, \"Times New Roman\", serif;}\n");
+        html.append(".page{max-width:920px;margin:0 auto;background:#ead5be;padding:0;width:100%;}\n");
+        html.append(".box{border:none;padding:0;background:#ead5be;width:100%;}\n");
+        html.append(".box h3{text-align:center;margin:6px 0 10px;font-size:18px;color:#9f3b2d;font-weight:600;}\n");
         html.append("svg{width:100%;height:auto;max-width:100%;}\n");
         html.append("table{width:100%;border-collapse:collapse;font-size:16px;}\n");
         html.append("th,td{border:1px solid #8a5a2b;padding:8px;font-size:16px;}\n");
-        html.append(".footer{margin-top:20px;text-align:center;font-size:16px;}\n");
-        html.append("@media screen and (max-width:768px){.page{padding:12px;margin:0;border-width:6px;}.box{padding:10px;}.box h3{font-size:18px;margin:0 0 8px;}table{font-size:16px;}th,td{padding:6px;font-size:16px;}}\n");
+        html.append(".footer{margin-top:8px;text-align:center;font-size:12px;color:#9f3b2d;opacity:.8;}\n");
+        html.append("@media screen and (max-width:768px){.page{padding:0;margin:0;}.box{padding:0;}.box h3{font-size:16px;margin:6px 0 8px;}table{font-size:15px;}th,td{padding:6px;font-size:15px;}}\n");
         html.append("</style>\n");
         html.append("</head>\n");
         html.append("<body>\n");
