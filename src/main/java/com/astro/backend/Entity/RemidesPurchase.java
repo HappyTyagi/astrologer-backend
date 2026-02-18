@@ -50,6 +50,10 @@ public class RemidesPurchase {
     @Column(nullable = false)
     private Double finalUnitPrice;
 
+    private Double tokenUnitAmount;
+
+    private Double fullLineTotal;
+
     @Column(nullable = false)
     private Double lineTotal;
 

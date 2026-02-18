@@ -82,6 +82,21 @@ public class WalletService {
     }
 
     public boolean debit(Long userId, double amount, String ref, String desc) {
+        String safeRef = ref == null ? "" : ref.trim();
+        if (!safeRef.isEmpty()) {
+            boolean alreadyDebited = txnRepo
+                    .findTopByUserIdAndRefIdAndTypeAndStatusOrderByCreatedAtDesc(
+                            userId,
+                            safeRef,
+                            "DEBIT",
+                            "SUCCESS"
+                    )
+                    .isPresent();
+            if (alreadyDebited) {
+                return true;
+            }
+        }
+
         Wallet wallet = getWallet(userId);
         if (wallet.getBalance() < amount) return false;
 
@@ -92,7 +107,7 @@ public class WalletService {
                 .userId(userId)
                 .amount(-amount)
                 .type("DEBIT")
-                .refId(ref)
+                .refId(safeRef.isEmpty() ? ref : safeRef)
                 .description(desc)
                 .status("SUCCESS")
                 .createdAt(LocalDateTime.now())

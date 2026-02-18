@@ -30,6 +30,7 @@ public class RemidesController {
                     .title(request.getTitle())
                     .description(request.getDescription())
                     .price(request.getPrice())
+                    .tokenAmount(request.getTokenAmount())
                     .discountPercentage(request.getDiscountPercentage())
                     .currency(request.getCurrency())
                     .imageBase64(request.getImageBase64())
@@ -91,6 +92,9 @@ public class RemidesController {
             if (request.getPrice() != null) {
                 remides.setPrice(request.getPrice());
             }
+            if (request.getTokenAmount() != null) {
+                remides.setTokenAmount(request.getTokenAmount());
+            }
             if (request.getDiscountPercentage() != null) {
                 remides.setDiscountPercentage(request.getDiscountPercentage());
             }
@@ -144,6 +148,7 @@ public class RemidesController {
                 .title(remides.getTitle())
                 .description(remides.getDescription())
                 .price(remides.getPrice())
+                .tokenAmount(remides.getTokenAmount())
                 .discountPercentage(remides.getDiscountPercentage())
                 .finalPrice(remides.getFinalPrice())
                 .currency(remides.getCurrency())

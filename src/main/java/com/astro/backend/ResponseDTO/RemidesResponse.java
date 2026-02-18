@@ -13,6 +13,7 @@ public class RemidesResponse {
     private String title;
     private String description;
     private Double price;
+    private Double tokenAmount;
     private Double discountPercentage;
     private Double finalPrice;
     private String currency;

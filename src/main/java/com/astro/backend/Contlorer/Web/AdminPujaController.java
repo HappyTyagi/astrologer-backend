@@ -2,13 +2,19 @@ package com.astro.backend.Contlorer.Web;
 
 import com.astro.backend.Entity.Puja;
 import com.astro.backend.Entity.PujaBooking;
+import com.astro.backend.Entity.PujaBookingSpiritualDetail;
 import com.astro.backend.Entity.PujaSlot;
 import com.astro.backend.Entity.User;
 import com.astro.backend.Repositry.PujaBookingRepository;
+import com.astro.backend.Repositry.PujaBookingSpiritualDetailRepository;
 import com.astro.backend.Repositry.PujaRepository;
 import com.astro.backend.Repositry.PujaSlotRepository;
 import com.astro.backend.Repositry.UserRepository;
+import com.astro.backend.RequestDTO.PujaBookingSpiritualUpdateRequest;
+import com.astro.backend.RequestDTO.AdminBookingSlotAssignRequest;
+import com.astro.backend.RequestDTO.PujaSlotMasterRequest;
 import com.astro.backend.RequestDTO.WebAdminPujaRequest;
+import com.astro.backend.Services.PujaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,6 +22,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 @RestController
@@ -25,8 +33,10 @@ public class AdminPujaController {
 
     private final PujaRepository pujaRepository;
     private final PujaBookingRepository pujaBookingRepository;
+    private final PujaBookingSpiritualDetailRepository pujaBookingSpiritualDetailRepository;
     private final PujaSlotRepository pujaSlotRepository;
     private final UserRepository userRepository;
+    private final PujaService pujaService;
 
     @GetMapping
     public ResponseEntity<?> listWithPastSegregation() {
@@ -90,6 +100,9 @@ public class AdminPujaController {
         for (PujaBooking booking : bookings) {
             Optional<User> userOpt = userRepository.findById(booking.getUserId());
             Optional<PujaSlot> slotOpt = pujaSlotRepository.findById(booking.getSlotId());
+            PujaBookingSpiritualDetail spiritual = pujaBookingSpiritualDetailRepository
+                    .findTopByBookingIdOrderByCreatedAtDesc(booking.getId())
+                    .orElse(null);
 
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("bookingId", booking.getId());
@@ -102,6 +115,12 @@ public class AdminPujaController {
             row.put("bookingStatus", booking.getStatus());
             row.put("bookedAt", booking.getBookedAt());
             row.put("addressId", booking.getAddressId());
+            row.put("gotraMasterId", spiritual == null ? null : spiritual.getGotraMasterId());
+            row.put("gotraName", spiritual == null ? null : spiritual.getGotraName());
+            row.put("rashiMasterId", spiritual == null ? null : spiritual.getRashiMasterId());
+            row.put("rashiName", spiritual == null ? null : spiritual.getRashiName());
+            row.put("nakshatraMasterId", spiritual == null ? null : spiritual.getNakshatraMasterId());
+            row.put("nakshatraName", spiritual == null ? null : spiritual.getNakshatraName());
             rows.add(row);
         }
 
@@ -111,6 +130,163 @@ public class AdminPujaController {
                 "totalRegistrations", rows.size(),
                 "registrations", rows
         ));
+    }
+
+    @GetMapping("/{pujaId}/slots")
+    public ResponseEntity<?> getPujaSlots(@PathVariable Long pujaId) {
+        List<PujaSlot> slots = pujaSlotRepository.findByPujaIdOrderBySlotTimeAsc(pujaId);
+        return ResponseEntity.ok(Map.of(
+                "status", true,
+                "pujaId", pujaId,
+                "count", slots.size(),
+                "slots", slots
+        ));
+    }
+
+    @PostMapping("/slot-master/generate")
+    public ResponseEntity<?> generateSlotsByAdmin(@RequestBody PujaSlotMasterRequest request) {
+        try {
+            return ResponseEntity.ok(pujaService.generateSlotsFromMaster(request));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "status", false,
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/{pujaId}/slots")
+    public ResponseEntity<?> createSlot(@PathVariable Long pujaId, @RequestBody Map<String, Object> payload) {
+        Puja puja = pujaRepository.findById(pujaId)
+                .orElseThrow(() -> new RuntimeException("Puja not found: " + pujaId));
+
+        String slotTimeRaw = payload.get("slotTime") == null ? "" : payload.get("slotTime").toString().trim();
+        if (slotTimeRaw.isEmpty()) {
+            throw new RuntimeException("slotTime is required in ISO format, e.g. 2026-02-20T14:00:00");
+        }
+        LocalDateTime slotTime;
+        try {
+            slotTime = LocalDateTime.parse(slotTimeRaw);
+        } catch (DateTimeParseException ex) {
+            throw new RuntimeException("Invalid slotTime format. Use ISO date-time, e.g. 2026-02-20T14:00:00");
+        }
+
+        if (pujaSlotRepository.existsByPujaIdAndSlotTime(pujaId, slotTime)) {
+            throw new RuntimeException("Slot already exists for this puja and time.");
+        }
+
+        Integer maxBookings = payload.get("maxBookings") instanceof Number
+                ? ((Number) payload.get("maxBookings")).intValue()
+                : 1;
+        Long astrologerId = payload.get("astrologerId") instanceof Number
+                ? ((Number) payload.get("astrologerId")).longValue()
+                : null;
+
+        PujaSlot slot = PujaSlot.builder()
+                .pujaId(pujaId)
+                .slotTime(slotTime)
+                .status(PujaSlot.SlotStatus.AVAILABLE)
+                .astrologerId(astrologerId)
+                .maxBookings(maxBookings <= 0 ? 1 : maxBookings)
+                .currentBookings(0)
+                .isRecurring(false)
+                .recurringPattern(null)
+                .isActive(true)
+                .build();
+
+        PujaSlot saved = pujaSlotRepository.save(slot);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+                "status", true,
+                "message", "Puja slot created by admin",
+                "pujaName", puja.getName(),
+                "slot", saved
+        ));
+    }
+
+    @PutMapping("/slots/{slotId}/status")
+    public ResponseEntity<?> updateSlotStatus(
+            @PathVariable Long slotId,
+            @RequestParam String status,
+            @RequestParam(required = false) Boolean isActive
+    ) {
+        PujaSlot slot = pujaSlotRepository.findById(slotId)
+                .orElseThrow(() -> new RuntimeException("Slot not found: " + slotId));
+
+        PujaSlot.SlotStatus resolvedStatus;
+        try {
+            resolvedStatus = PujaSlot.SlotStatus.valueOf(status.trim().toUpperCase(Locale.ROOT));
+        } catch (Exception ex) {
+            throw new RuntimeException("Invalid status. Allowed: AVAILABLE, BOOKED, EXPIRED, CANCELLED");
+        }
+
+        slot.setStatus(resolvedStatus);
+        if (isActive != null) {
+            slot.setIsActive(isActive);
+        } else if (resolvedStatus == PujaSlot.SlotStatus.CANCELLED) {
+            slot.setIsActive(false);
+        }
+        PujaSlot saved = pujaSlotRepository.save(slot);
+        return ResponseEntity.ok(Map.of(
+                "status", true,
+                "message", "Slot updated by admin",
+                "slot", saved
+        ));
+    }
+
+    @DeleteMapping("/slots/{slotId}")
+    public ResponseEntity<?> removeSlot(@PathVariable Long slotId) {
+        PujaSlot slot = pujaSlotRepository.findById(slotId)
+                .orElseThrow(() -> new RuntimeException("Slot not found: " + slotId));
+
+        slot.setStatus(PujaSlot.SlotStatus.CANCELLED);
+        slot.setIsActive(false);
+        pujaSlotRepository.save(slot);
+
+        return ResponseEntity.ok(Map.of(
+                "status", true,
+                "message", "Slot removed by admin",
+                "slotId", slotId
+        ));
+    }
+
+    @GetMapping("/bookings/today/segregated")
+    public ResponseEntity<?> getTodayBookingsSegregated() {
+        return ResponseEntity.ok(pujaService.getTodayBookingSegregationForAdmin());
+    }
+
+    @PutMapping("/bookings/{bookingId}/spiritual-details")
+    public ResponseEntity<?> updateBookingSpiritualDetails(
+            @PathVariable Long bookingId,
+            @RequestBody PujaBookingSpiritualUpdateRequest request
+    ) {
+        return ResponseEntity.ok(
+                pujaService.updateBookingSpiritualDetails(
+                        bookingId,
+                        request == null ? null : request.getGotraMasterId(),
+                        request == null ? null : request.getRashiMasterId(),
+                        request == null ? null : request.getNakshatraMasterId()
+                )
+        );
+    }
+
+    @PutMapping("/bookings/{bookingId}/slot")
+    public ResponseEntity<?> assignBookingSlotByAdmin(
+            @PathVariable Long bookingId,
+            @RequestBody AdminBookingSlotAssignRequest request
+    ) {
+        return ResponseEntity.ok(
+                pujaService.assignBookingSlotByAdmin(
+                        bookingId,
+                        request == null ? null : request.getSlotId()
+                )
+        );
+    }
+
+    @PostMapping("/bookings/{bookingId}/finalize")
+    public ResponseEntity<?> finalizeBookingByAdmin(@PathVariable Long bookingId) {
+        return ResponseEntity.ok(
+                pujaService.finalizeBookingByAdmin(bookingId)
+        );
     }
 
     private void syncPastPujas() {

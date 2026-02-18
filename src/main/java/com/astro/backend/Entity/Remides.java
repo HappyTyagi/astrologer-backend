@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.lang.Math;
 
 @Entity
 @Table(name = "remides")
@@ -34,6 +35,8 @@ public class Remides {
     private Double discountPercentage;
 
     private Double finalPrice;
+
+    private Double tokenAmount;
 
     @Column(nullable = false)
     private String currency;
@@ -76,12 +79,27 @@ public class Remides {
     private void calculateFinalPrice() {
         if (price == null) {
             finalPrice = null;
+            tokenAmount = null;
             return;
         }
         if (discountPercentage != null && discountPercentage > 0) {
             finalPrice = price - (price * discountPercentage / 100);
         } else {
             finalPrice = price;
+        }
+        double minimumToken = Math.max(500.0, finalPrice * 0.10);
+        minimumToken = Math.min(minimumToken, finalPrice);
+
+        if (tokenAmount == null || tokenAmount <= 0) {
+            tokenAmount = minimumToken;
+            return;
+        }
+
+        if (tokenAmount < minimumToken) {
+            tokenAmount = minimumToken;
+        }
+        if (tokenAmount > finalPrice) {
+            tokenAmount = finalPrice;
         }
     }
 }

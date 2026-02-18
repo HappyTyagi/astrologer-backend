@@ -250,11 +250,10 @@ public class AdvancedKundliService {
     /**
      * Generate full Kundli with all divisional charts and doshas
      */
-    public FullKundliResponse generateFullKundli(double lat, double lon, int dd, int mm, int yyyy, double time, String name, String originalTimeString) {
+    public FullKundliResponse generateFullKundli(double lat, double lon, int dd, int mm, int yyyy, double time, String name, String originalTimeString, double timezoneOffset) {
         try {
             // Convert local time to UT (Universal Time)
-            // India Standard Time is UTC+5:30
-            double[] dateTimeUT = convertToUT(yyyy, mm, dd, time, 5.5);
+            double[] dateTimeUT = convertToUT(yyyy, mm, dd, time, timezoneOffset);
             int yyyyUT = (int) dateTimeUT[0];
             int mmUT = (int) dateTimeUT[1];
             int ddUT = (int) dateTimeUT[2];

@@ -136,6 +136,8 @@ public class OrderHistoryService {
         Double walletUsed = null;
         Double gatewayPaid = null;
         LocalDateTime slotTime = null;
+        Double tokenUnitAmount = null;
+        Double fullAmount = e.getAmount();
 
         if ("REMEDY".equalsIgnoreCase(e.getOrderType()) && e.getSourceId() != null) {
             RemidesPurchase purchase = remidesPurchaseRepository.findById(e.getSourceId()).orElse(null);
@@ -144,6 +146,8 @@ public class OrderHistoryService {
                 transactionId = purchase.getTransactionId();
                 walletUsed = purchase.getWalletUsed();
                 gatewayPaid = purchase.getGatewayPaid();
+                tokenUnitAmount = purchase.getTokenUnitAmount();
+                fullAmount = purchase.getFullLineTotal() == null ? e.getAmount() : purchase.getFullLineTotal();
             }
         }
 
@@ -176,6 +180,8 @@ public class OrderHistoryService {
                 .unitPrice(e.getUnitPrice())
                 .discountPercentage(e.getDiscountPercentage())
                 .finalUnitPrice(e.getFinalUnitPrice())
+                .tokenUnitAmount(tokenUnitAmount)
+                .fullAmount(fullAmount)
                 .amount(e.getAmount())
                 .currency(e.getCurrency())
                 .status(e.getStatus())

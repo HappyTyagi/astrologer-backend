@@ -14,6 +14,7 @@ public class RemidesCartItemResponse {
     private String subtitle;
     private String imageBase64;
     private Double price;
+    private Double tokenAmount;
     private Double discountPercentage;
     private Double finalPrice;
     private String currency;

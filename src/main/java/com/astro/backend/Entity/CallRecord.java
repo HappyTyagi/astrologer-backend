@@ -39,6 +39,26 @@ public class CallRecord {
     @Column(nullable = false)
     private Integer durationSeconds;
 
+    private Integer totalMinutes;
+
+    private Integer freeMinutesApplied;
+
+    private Integer billableMinutes;
+
+    private Double ratePerMinute;
+
+    private Integer billingUnitMinutes;
+
+    private Integer billedUnits;
+
+    private Double ratePerUnit;
+
+    private Double chargedAmount;
+
+    private Integer chargedUserId;
+
+    private Boolean walletDebited;
+
     private LocalDateTime startedAt;
 
     private LocalDateTime endedAt;
@@ -50,6 +70,33 @@ public class CallRecord {
         createdAt = LocalDateTime.now();
         if (durationSeconds == null) {
             durationSeconds = 0;
+        }
+        if (totalMinutes == null) {
+            totalMinutes = 0;
+        }
+        if (freeMinutesApplied == null) {
+            freeMinutesApplied = 0;
+        }
+        if (billableMinutes == null) {
+            billableMinutes = 0;
+        }
+        if (ratePerMinute == null) {
+            ratePerMinute = 0.0;
+        }
+        if (chargedAmount == null) {
+            chargedAmount = 0.0;
+        }
+        if (billingUnitMinutes == null) {
+            billingUnitMinutes = 30;
+        }
+        if (billedUnits == null) {
+            billedUnits = 0;
+        }
+        if (ratePerUnit == null) {
+            ratePerUnit = 0.0;
+        }
+        if (walletDebited == null) {
+            walletDebited = false;
         }
     }
 }

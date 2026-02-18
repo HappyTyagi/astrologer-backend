@@ -22,6 +22,8 @@ public class UpdateProfileResponse {
     private String city;
     private Long stateMasterId;
     private Long districtMasterId;
+    private Long gemstoneMasterId;
+    private Long yantraMasterId;
     private Double latitude;
     private Double longitude;
     private Double mobileLatitude;

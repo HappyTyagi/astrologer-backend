@@ -20,6 +20,10 @@ public class WebAdminRemidesRequest {
     @DecimalMin(value = "1.0", message = "price must be greater than 0")
     private Double price;
 
+    @NotNull(message = "tokenAmount is required")
+    @DecimalMin(value = "0.1", message = "tokenAmount must be greater than 0")
+    private Double tokenAmount;
+
     @DecimalMin(value = "0.0", message = "discountPercentage cannot be negative")
     private Double discountPercentage;
 

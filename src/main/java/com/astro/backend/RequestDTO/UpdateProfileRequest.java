@@ -45,6 +45,8 @@ public class UpdateProfileRequest {
     
     @NotNull(message = "District Master ID is required")
     private Long districtMasterId;  // Foreign key to DistrictMaster
+    private Long gemstoneMasterId;  // Optional - Foreign key to GemstoneMaster
+    private Long yantraMasterId;    // Optional - Foreign key to YantraMaster
     
     private Double latitude;    // Optional
     private Double longitude;   // Optional

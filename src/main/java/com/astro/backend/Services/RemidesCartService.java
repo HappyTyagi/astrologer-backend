@@ -151,6 +151,17 @@ public class RemidesCartService {
                     return unit * qty;
                 })
                 .sum();
+        final double totalTokenAmount = items.stream()
+                .mapToDouble(item -> {
+                    double tokenUnit = item.getTokenAmount() == null
+                            ? (item.getFinalPrice() == null
+                            ? (item.getPrice() == null ? 0.0 : item.getPrice())
+                            : item.getFinalPrice())
+                            : item.getTokenAmount();
+                    int qty = item.getQuantity() == null ? 0 : item.getQuantity();
+                    return tokenUnit * qty;
+                })
+                .sum();
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", true);
@@ -158,6 +169,8 @@ public class RemidesCartService {
         response.put("userId", userId);
         response.put("totalItems", totalItems);
         response.put("totalAmount", totalAmount);
+        response.put("totalTokenAmount", totalTokenAmount);
+        response.put("payableAmount", totalTokenAmount);
         response.put("items", items);
         response.put("serverTime", LocalDateTime.now());
         return response;
@@ -174,6 +187,7 @@ public class RemidesCartService {
                 .subtitle(remides != null ? remides.getDescription() : null)
                 .imageBase64(remides != null ? remides.getImageBase64() : null)
                 .price(remides != null ? remides.getPrice() : null)
+                .tokenAmount(remides != null ? remides.getTokenAmount() : null)
                 .discountPercentage(remides != null ? remides.getDiscountPercentage() : null)
                 .finalPrice(remides != null ? remides.getFinalPrice() : null)
                 .currency(remides != null ? remides.getCurrency() : "INR")

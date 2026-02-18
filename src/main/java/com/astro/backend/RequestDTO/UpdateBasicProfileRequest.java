@@ -17,6 +17,8 @@ public class UpdateBasicProfileRequest {
     private Long genderMasterId;
     private Long stateMasterId;
     private Long districtMasterId;
+    private Long gemstoneMasterId;
+    private Long yantraMasterId;
     private String address;
     private Boolean isMarried;
     private String anniversaryDate; // Format: YYYY-MM-DD

@@ -30,7 +30,12 @@ public class SecurityConfig {
                                 HttpMethod.GET,
                                 "/api/master/state/active",
                                 "/api/master/district/active",
-                                "/api/master/district/state/**"
+                                "/api/master/district/state/**",
+                                "/api/master/gotra/active",
+                                "/api/master/rashi/active",
+                                "/api/master/nakshatra/active",
+                                "/api/master/gemstone/active",
+                                "/api/master/yantra/active"
                         ).permitAll()
                         .requestMatchers(
                                 "/api/web/auth/**",

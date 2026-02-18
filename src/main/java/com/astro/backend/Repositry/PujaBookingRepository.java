@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Collection;
+import java.time.LocalDateTime;
 
 public interface PujaBookingRepository extends JpaRepository<PujaBooking, Long> {
     List<PujaBooking> findByUserIdOrderByBookedAtDesc(Long userId);
@@ -14,4 +15,5 @@ public interface PujaBookingRepository extends JpaRepository<PujaBooking, Long> 
     long countByStatusIn(java.util.Collection<PujaBooking.BookingStatus> statuses);
     List<PujaBooking> findByStatusIn(Collection<PujaBooking.BookingStatus> statuses);
     List<PujaBooking> findByStatusInAndReminderSentAtIsNull(Collection<PujaBooking.BookingStatus> statuses);
+    List<PujaBooking> findByBookedAtBetweenOrderByBookedAtDesc(LocalDateTime from, LocalDateTime to);
 }

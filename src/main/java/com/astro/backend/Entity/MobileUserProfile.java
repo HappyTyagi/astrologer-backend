@@ -59,6 +59,8 @@ public class MobileUserProfile {
     private Long genderMasterId;       // Foreign key to GenderMaster
     private Long stateMasterId;        // Foreign key to StateMaster
     private Long districtMasterId;     // Foreign key to DistrictMaster
+    private Long gemstoneMasterId;     // Foreign key to GemstoneMaster (optional)
+    private Long yantraMasterId;       // Foreign key to YantraMaster (optional)
 
     // ===== Profile Management =====
     private Boolean isProfileComplete; // Track profile completeness

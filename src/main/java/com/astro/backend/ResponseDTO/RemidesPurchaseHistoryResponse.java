@@ -22,6 +22,8 @@ public class RemidesPurchaseHistoryResponse {
     private Double unitPrice;
     private Double discountPercentage;
     private Double finalUnitPrice;
+    private Double tokenUnitAmount;
+    private Double fullAmount;
     private Double amount;
     private String currency;
     private String status;

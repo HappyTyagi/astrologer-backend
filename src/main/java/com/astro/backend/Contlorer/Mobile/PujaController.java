@@ -83,10 +83,10 @@ public class PujaController {
 
     @GetMapping("/slots/{pujaId}")
     public Object listSlots(@PathVariable Long pujaId) {
-        pujaService.ensureDefaultSlotsForPuja(pujaId);
         LocalDateTime now = LocalDateTime.now();
         return slotRepo.findByPujaIdOrderBySlotTimeAsc(pujaId)
                 .stream()
+                .filter(slot -> !Boolean.FALSE.equals(slot.getIsActive()))
                 .filter(slot -> slot.getStatus() != PujaSlot.SlotStatus.CANCELLED)
                 .filter(slot -> slot.getSlotTime() == null || slot.getSlotTime().isAfter(now))
                 .filter(slot -> {
@@ -97,6 +97,15 @@ public class PujaController {
                 .toList();
     }
 
+    @GetMapping("/samagri/{pujaId}")
+    public Object pujaSamagri(@PathVariable Long pujaId) {
+        return Map.of(
+                "status", true,
+                "pujaId", pujaId,
+                "items", pujaService.getPujaSamagriForMobile(pujaId)
+        );
+    }
+
     @PostMapping("/book")
     public PujaBooking book(@RequestBody PujaBookingRequest req) {
         return pujaService.bookPuja(
@@ -104,22 +113,29 @@ public class PujaController {
                 req.getPujaId(),
                 req.getSlotId(),
                 req.getAddressId(),
+                req.getGotraMasterId(),
                 req.getPaymentMethod(),
                 req.getTransactionId(),
                 req.getUseWallet()
         );
     }
 
+    @GetMapping("/booking-masters")
+    public Object bookingMasters() {
+        return pujaService.getBookingMasters();
+    }
+
+    @GetMapping("/booking-preferences/{userId}")
+    public Object bookingPreferences(@PathVariable Long userId) {
+        return pujaService.getUserBookingPreferences(userId);
+    }
+
     @PostMapping("/slot-master/generate")
     public Object generateSlotsByMaster(@RequestBody PujaSlotMasterRequest request) {
-        try {
-            return pujaService.generateSlotsFromMaster(request);
-        } catch (Exception e) {
-            return Map.of(
-                    "status", false,
-                    "message", e.getMessage()
-            );
-        }
+        return Map.of(
+                "status", false,
+                "message", "Slot generation is admin controlled. Please create slots from admin panel."
+        );
     }
 
     @GetMapping("/history/{userId}")

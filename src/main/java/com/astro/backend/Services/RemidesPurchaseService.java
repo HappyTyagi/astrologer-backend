@@ -66,6 +66,7 @@ public class RemidesPurchaseService {
 
         final List<RemidesPurchase> purchases = new ArrayList<>();
         double totalAmount = 0.0;
+        double totalTokenAmount = 0.0;
         int totalQuantity = 0;
 
         for (RemidesPurchaseRequest.PurchaseItem item : request.getItems()) {
@@ -75,9 +76,19 @@ public class RemidesPurchaseService {
             int quantity = item.getQuantity() == null || item.getQuantity() < 1 ? 1 : item.getQuantity();
             double unitPrice = remides.getPrice() == null ? 0.0 : remides.getPrice();
             double finalUnitPrice = remides.getFinalPrice() == null ? unitPrice : remides.getFinalPrice();
-            double lineTotal = finalUnitPrice * quantity;
+            double minimumToken = Math.max(500.0, finalUnitPrice * 0.10);
+            minimumToken = Math.min(minimumToken, finalUnitPrice);
+            double tokenUnitAmount = remides.getTokenAmount() == null ? minimumToken : remides.getTokenAmount();
+            if (tokenUnitAmount <= 0.0) {
+                tokenUnitAmount = minimumToken;
+            }
+            tokenUnitAmount = Math.max(tokenUnitAmount, minimumToken);
+            tokenUnitAmount = Math.min(tokenUnitAmount, finalUnitPrice);
+            double fullLineTotal = finalUnitPrice * quantity;
+            double lineTotal = tokenUnitAmount * quantity;
 
-            totalAmount += lineTotal;
+            totalAmount += fullLineTotal;
+            totalTokenAmount += lineTotal;
             totalQuantity += quantity;
 
             purchases.add(RemidesPurchase.builder()
@@ -90,6 +101,8 @@ public class RemidesPurchaseService {
                     .unitPrice(unitPrice)
                     .discountPercentage(remides.getDiscountPercentage())
                     .finalUnitPrice(finalUnitPrice)
+                    .tokenUnitAmount(tokenUnitAmount)
+                    .fullLineTotal(fullLineTotal)
                     .lineTotal(lineTotal)
                     .currency(remides.getCurrency())
                     .status("COMPLETED")
@@ -119,14 +132,14 @@ public class RemidesPurchaseService {
         if (isWalletPayment) {
             boolean debited = walletService.debit(
                     request.getUserId(),
-                    totalAmount,
+                    totalTokenAmount,
                     "REMEDY_PURCHASE",
-                    "Remedies order payment"
+                    "Remedies token payment"
             );
             if (!debited) {
                 throw new RuntimeException("Insufficient wallet balance. Please add money to wallet or continue with gateway payment.");
             }
-            walletUsed = totalAmount;
+            walletUsed = totalTokenAmount;
             if (finalTransactionId.isEmpty()) {
                 finalTransactionId = "WALLET-" + UUID.randomUUID();
             }
@@ -138,16 +151,16 @@ public class RemidesPurchaseService {
                 if (balance > 0) {
                     walletUsed = walletService.debitUpTo(
                             request.getUserId(),
-                            totalAmount,
+                            totalTokenAmount,
                             "REMEDY_PURCHASE",
-                            "Remedies order payment (wallet part)"
+                            "Remedies token payment (wallet part)"
                     );
                 }
             }
 
-            gatewayPaid = Math.max(0.0, totalAmount - walletUsed);
+            gatewayPaid = Math.max(0.0, totalTokenAmount - walletUsed);
             if (gatewayPaid > 0 && finalTransactionId.isEmpty()) {
-                throw new RuntimeException("Gateway transactionId is required for remaining amount.");
+                throw new RuntimeException("Gateway transactionId is required for remaining token amount.");
             }
             if (gatewayPaid <= 0) {
                 if (finalTransactionId.isEmpty()) {
@@ -181,7 +194,9 @@ public class RemidesPurchaseService {
         response.put("userId", request.getUserId());
         response.put("addressId", request.getAddressId());
         response.put("totalItems", totalQuantity);
-        response.put("totalAmount", totalAmount);
+        response.put("totalAmount", totalTokenAmount);
+        response.put("payableAmount", totalTokenAmount);
+        response.put("fullAmount", totalAmount);
         response.put("paymentMethod", finalPaymentMethod);
         response.put("transactionId", finalTransactionId);
         response.put("walletUsed", walletUsed);

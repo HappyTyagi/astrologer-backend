@@ -140,6 +140,12 @@ public class ProfileService {
         if (request.getDistrictMasterId() != null) {
             profile.setDistrictMasterId(request.getDistrictMasterId());
         }
+        if (request.getGemstoneMasterId() != null) {
+            profile.setGemstoneMasterId(request.getGemstoneMasterId() > 0 ? request.getGemstoneMasterId() : null);
+        }
+        if (request.getYantraMasterId() != null) {
+            profile.setYantraMasterId(request.getYantraMasterId() > 0 ? request.getYantraMasterId() : null);
+        }
         if (request.getIsMarried() != null) {
             profile.setIsMarried(request.getIsMarried());
         }
@@ -171,6 +177,8 @@ public class ProfileService {
                 .genderMasterId(savedProfile.getGenderMasterId())
                 .stateMasterId(savedProfile.getStateMasterId())
                 .districtMasterId(savedProfile.getDistrictMasterId())
+                .gemstoneMasterId(savedProfile.getGemstoneMasterId())
+                .yantraMasterId(savedProfile.getYantraMasterId())
                 .latitude(savedProfile.getLatitude())
                 .longitude(savedProfile.getLongitude())
                 .mobileLatitude(savedProfile.getMobileLatitude())
@@ -298,6 +306,8 @@ public class ProfileService {
                 .genderMasterId(profile.getGenderMasterId())
                 .stateMasterId(profile.getStateMasterId())
                 .districtMasterId(profile.getDistrictMasterId())
+                .gemstoneMasterId(profile.getGemstoneMasterId())
+                .yantraMasterId(profile.getYantraMasterId())
                 .latitude(profile.getLatitude())
                 .longitude(profile.getLongitude())
                 .mobileLatitude(profile.getMobileLatitude())
@@ -357,6 +367,8 @@ public class ProfileService {
                 .genderMasterId(profile.getGenderMasterId())
                 .stateMasterId(profile.getStateMasterId())
                 .districtMasterId(profile.getDistrictMasterId())
+                .gemstoneMasterId(profile.getGemstoneMasterId())
+                .yantraMasterId(profile.getYantraMasterId())
                 .latitude(profile.getLatitude())
                 .longitude(profile.getLongitude())
                 .mobileLatitude(profile.getMobileLatitude())
@@ -494,6 +506,12 @@ public class ProfileService {
             Long resolvedStateId = resolveStateMasterId(request.getDistrictMasterId(), request.getStateMasterId());
             mobileProfile.setStateMasterId(resolvedStateId);
             mobileProfile.setDistrictMasterId(request.getDistrictMasterId());
+            if (request.getGemstoneMasterId() != null) {
+                mobileProfile.setGemstoneMasterId(request.getGemstoneMasterId() > 0 ? request.getGemstoneMasterId() : null);
+            }
+            if (request.getYantraMasterId() != null) {
+                mobileProfile.setYantraMasterId(request.getYantraMasterId() > 0 ? request.getYantraMasterId() : null);
+            }
             mobileProfile.setIsProfileComplete(true);
 
             // Update device/app details if provided
@@ -570,6 +588,8 @@ public class ProfileService {
                     .genderMasterId(updatedProfile.getGenderMasterId())
                     .stateMasterId(updatedProfile.getStateMasterId())
                     .districtMasterId(updatedProfile.getDistrictMasterId())
+                    .gemstoneMasterId(updatedProfile.getGemstoneMasterId())
+                    .yantraMasterId(updatedProfile.getYantraMasterId())
                     .latitude(updatedProfile.getLatitude())
                     .longitude(updatedProfile.getLongitude())
                     .mobileLatitude(updatedProfile.getMobileLatitude())
@@ -716,6 +736,8 @@ public class ProfileService {
                     .genderMasterId(savedProfile.getGenderMasterId())
                     .stateMasterId(savedProfile.getStateMasterId())
                     .districtMasterId(savedProfile.getDistrictMasterId())
+                    .gemstoneMasterId(savedProfile.getGemstoneMasterId())
+                    .yantraMasterId(savedProfile.getYantraMasterId())
                     .latitude(savedProfile.getLatitude())
                     .longitude(savedProfile.getLongitude())
                     .mobileLatitude(savedProfile.getMobileLatitude())

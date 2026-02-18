@@ -1,6 +1,7 @@
 package com.astro.backend.RequestDTO;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -15,6 +16,9 @@ public class CreateRemidesRequest {
 
     @NotNull(message = "Price is required")
     private Double price;
+
+    @DecimalMin(value = "0.1", message = "Token amount must be greater than 0")
+    private Double tokenAmount;
 
     private Double discountPercentage;
 

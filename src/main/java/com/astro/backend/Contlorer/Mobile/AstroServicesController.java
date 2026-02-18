@@ -56,7 +56,8 @@ public class AstroServicesController {
                     dob[2],
                     birthTime,
                     "User",
-                    timeOfBirth
+                    timeOfBirth,
+                    tz
             );
 
             // Add Planetary Positions with HTML rendering
@@ -331,6 +332,8 @@ int[] groomDob = parseDate(groom.dateOfBirth());
 
             double groomTime = parseTimeToHours(groom.timeOfBirth());
             double brideTime = parseTimeToHours(bride.timeOfBirth());
+            double groomTz = groom.timezone() != null ? parseTimezone(groom.timezone()) : 5.5;
+            double brideTz = bride.timezone() != null ? parseTimezone(bride.timezone()) : 5.5;
 
             double groomLat = groom.latitude() != null ? groom.latitude() : 0.0;
             double groomLon = groom.longitude() != null ? groom.longitude() : 0.0;
@@ -345,7 +348,8 @@ int[] groomDob = parseDate(groom.dateOfBirth());
                     groomDob[2],
                     groomTime,
                     groom.name() != null && !groom.name().isBlank() ? groom.name() : "Groom",
-                    groom.timeOfBirth()  // Pass original time string
+                    groom.timeOfBirth(),  // Pass original time string
+                    groomTz
             );
 
             FullKundliResponse brideChart = advancedKundliService.generateFullKundli(
@@ -356,7 +360,8 @@ int[] groomDob = parseDate(groom.dateOfBirth());
                     brideDob[2],
                     brideTime,
                     bride.name() != null && !bride.name().isBlank() ? bride.name() : "Bride",
-                    bride.timeOfBirth()  // Pass original time string
+                    bride.timeOfBirth(),  // Pass original time string
+                    brideTz
                 );
 
                 Map<String, Integer> groomGunas = compatibilityService.buildGunasFromChart(

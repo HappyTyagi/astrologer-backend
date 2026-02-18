@@ -46,6 +46,7 @@ public class AdminRemidesController {
                 .title(request.getTitle().trim())
                 .description(request.getDescription().trim())
                 .price(request.getPrice())
+                .tokenAmount(request.getTokenAmount())
                 .discountPercentage(request.getDiscountPercentage())
                 .currency(request.getCurrency().trim())
                 .imageBase64(request.getImageBase64())
@@ -64,6 +65,7 @@ public class AdminRemidesController {
         existing.setTitle(request.getTitle().trim());
         existing.setDescription(request.getDescription().trim());
         existing.setPrice(request.getPrice());
+        existing.setTokenAmount(request.getTokenAmount());
         existing.setDiscountPercentage(request.getDiscountPercentage());
         existing.setCurrency(request.getCurrency().trim());
         existing.setImageBase64(request.getImageBase64());

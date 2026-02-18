@@ -7,8 +7,20 @@ import com.astro.backend.Entity.PujaBooking;
 import com.astro.backend.Entity.PujaSlot;
 import com.astro.backend.Entity.Wallet;
 import com.astro.backend.Entity.MobileUserProfile;
+import com.astro.backend.Entity.GotraMaster;
+import com.astro.backend.Entity.NakshatraMaster;
+import com.astro.backend.Entity.PujaBookingSpiritualDetail;
+import com.astro.backend.Entity.PujaSamagriItem;
+import com.astro.backend.Entity.PujaSamagriMaster;
+import com.astro.backend.Entity.RashiMaster;
 import com.astro.backend.Repositry.AddressRepository;
 import com.astro.backend.Repositry.MobileUserProfileRepository;
+import com.astro.backend.Repositry.GotraMasterRepository;
+import com.astro.backend.Repositry.NakshatraMasterRepository;
+import com.astro.backend.Repositry.PujaBookingSpiritualDetailRepository;
+import com.astro.backend.Repositry.PujaSamagriItemRepository;
+import com.astro.backend.Repositry.PujaSamagriMasterRepository;
+import com.astro.backend.Repositry.RashiMasterRepository;
 import com.astro.backend.RequestDTO.PujaSlotMasterRequest;
 import com.astro.backend.RequestDTO.ResendReceiptRequest;
 import com.astro.backend.Repositry.PujaBookingRepository;
@@ -34,6 +46,7 @@ import com.lowagie.text.pdf.PdfWriter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
@@ -65,6 +78,12 @@ public class PujaService {
     private final OrderHistoryService orderHistoryService;
     private final EmailService emailService;
     private final MobileUserProfileRepository mobileUserProfileRepository;
+    private final GotraMasterRepository gotraMasterRepository;
+    private final RashiMasterRepository rashiMasterRepository;
+    private final NakshatraMasterRepository nakshatraMasterRepository;
+    private final PujaBookingSpiritualDetailRepository pujaBookingSpiritualDetailRepository;
+    private final PujaSamagriMasterRepository pujaSamagriMasterRepository;
+    private final PujaSamagriItemRepository pujaSamagriItemRepository;
     private static final LocalTime DEFAULT_DAY_START = LocalTime.of(8, 0);
     private static final LocalTime DEFAULT_DAY_END = LocalTime.of(20, 0);
     private static final int DEFAULT_GAP_MINUTES = 30;
@@ -74,6 +93,7 @@ public class PujaService {
             Long pujaId,
             Long slotId,
             Long addressId,
+            Long gotraMasterId,
             String paymentMethod,
             String transactionId,
             Boolean useWallet
@@ -82,17 +102,37 @@ public class PujaService {
         if (addressId == null || addressId <= 0) {
             throw new RuntimeException("Valid addressId is required");
         }
+        if (gotraMasterId == null || gotraMasterId <= 0) {
+            throw new RuntimeException("Please select gotra.");
+        }
 
         Puja puja = pujaRepo.findById(pujaId)
                 .orElseThrow(() -> new RuntimeException("Invalid Puja"));
 
-        PujaSlot slot = slotRepo.findById(slotId)
-                .orElseThrow(() -> new RuntimeException("Invalid Slot"));
+        PujaSlot slot = null;
+        if (slotId != null && slotId > 0) {
+            slot = slotRepo.findById(slotId)
+                    .orElseThrow(() -> new RuntimeException("Invalid Slot"));
+        }
         Address address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new RuntimeException("Address not found: " + addressId));
+        GotraMaster gotraMaster = gotraMasterRepository.findById(gotraMasterId)
+                .filter(g -> Boolean.TRUE.equals(g.getIsActive()))
+                .orElseThrow(() -> new RuntimeException("Invalid gotra selected."));
 
-        if (slot.getStatus() != PujaSlot.SlotStatus.AVAILABLE) {
-            throw new RuntimeException("Slot not available");
+        if (slot != null) {
+            if (!Objects.equals(slot.getPujaId(), pujaId)) {
+                throw new RuntimeException("Selected slot does not belong to this puja.");
+            }
+            if (Boolean.FALSE.equals(slot.getIsActive())) {
+                throw new RuntimeException("Slot is not active. Please choose another slot.");
+            }
+            if (slot.getSlotTime() == null || !slot.getSlotTime().isAfter(LocalDateTime.now())) {
+                throw new RuntimeException("Selected slot is expired. Please choose another slot.");
+            }
+            if (slot.getStatus() != PujaSlot.SlotStatus.AVAILABLE) {
+                throw new RuntimeException("Slot not available");
+            }
         }
 
         final String normalizedMethod = paymentMethod == null ? "WALLET" : paymentMethod.trim().toUpperCase();
@@ -157,15 +197,17 @@ public class PujaService {
             }
         }
 
-        // Update slot
-        slot.setStatus(PujaSlot.SlotStatus.BOOKED);
-        slotRepo.save(slot);
+        // Update slot only when provided by mobile
+        if (slot != null) {
+            slot.setStatus(PujaSlot.SlotStatus.BOOKED);
+            slotRepo.save(slot);
+        }
 
         // Create booking
         PujaBooking booking = PujaBooking.builder()
                 .userId(userId)
                 .pujaId(pujaId)
-                .slotId(slotId)
+                .slotId(slot == null ? null : slot.getId())
                 .address(address)
                 .bookedAt(LocalDateTime.now())
                 .status(PujaBooking.BookingStatus.CONFIRMED)
@@ -178,9 +220,299 @@ public class PujaService {
                 .build();
 
         PujaBooking savedBooking = bookingRepo.save(booking);
+        pujaBookingSpiritualDetailRepository.save(
+                PujaBookingSpiritualDetail.builder()
+                        .booking(savedBooking)
+                        .userId(userId)
+                        .gotraMasterId(gotraMaster.getId())
+                        .rashiMasterId(null)
+                        .nakshatraMasterId(null)
+                        .gotraName(gotraMaster.getName())
+                        .rashiName(null)
+                        .nakshatraName(null)
+                        .build()
+        );
         orderHistoryService.recordPujaBooking(savedBooking, puja, slot);
-        sendCalendarInviteIfEmailAvailable(savedBooking, puja, slot);
+        if (isPaymentConfirmed(savedBooking)) {
+            sendCalendarInviteIfEmailAvailable(savedBooking);
+        }
         return savedBooking;
+    }
+
+    public Map<String, Object> getBookingMasters() {
+        return Map.of(
+                "status", true,
+                "gotra", gotraMasterRepository.findByIsActiveOrderByName(true)
+        );
+    }
+
+    public Map<String, Object> getUserBookingPreferences(Long userId) {
+        PujaBookingSpiritualDetail latest = pujaBookingSpiritualDetailRepository
+                .findTopByUserIdOrderByCreatedAtDesc(userId)
+                .orElse(null);
+        if (latest == null) {
+            return Map.of(
+                    "status", true,
+                    "message", "No previous spiritual details found",
+                    "preferences", Map.of()
+            );
+        }
+        return Map.of(
+                "status", true,
+                "preferences", Map.of(
+                        "gotraMasterId", latest.getGotraMasterId(),
+                        "gotraName", latest.getGotraName()
+                )
+        );
+    }
+
+    public Map<String, Object> updateBookingSpiritualDetails(
+            Long bookingId,
+            Long gotraMasterId,
+            Long rashiMasterId,
+            Long nakshatraMasterId
+    ) {
+        if (bookingId == null || bookingId <= 0) {
+            throw new RuntimeException("Valid bookingId is required");
+        }
+
+        PujaBooking booking = bookingRepo.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Puja booking not found: " + bookingId));
+
+        PujaBookingSpiritualDetail detail = pujaBookingSpiritualDetailRepository
+                .findTopByBookingIdOrderByCreatedAtDesc(bookingId)
+                .orElse(null);
+
+        Long resolvedGotraId = gotraMasterId != null && gotraMasterId > 0
+                ? gotraMasterId
+                : (detail == null ? null : detail.getGotraMasterId());
+        if (resolvedGotraId == null || resolvedGotraId <= 0) {
+            throw new RuntimeException("gotraMasterId is required");
+        }
+
+        GotraMaster gotraMaster = gotraMasterRepository.findById(resolvedGotraId)
+                .filter(g -> Boolean.TRUE.equals(g.getIsActive()))
+                .orElseThrow(() -> new RuntimeException("Invalid gotra selected"));
+
+        RashiMaster rashiMaster = null;
+        if (rashiMasterId != null && rashiMasterId > 0) {
+            rashiMaster = rashiMasterRepository.findById(rashiMasterId)
+                    .filter(r -> Boolean.TRUE.equals(r.getIsActive()))
+                    .orElseThrow(() -> new RuntimeException("Invalid rashi selected"));
+        }
+
+        NakshatraMaster nakshatraMaster = null;
+        if (nakshatraMasterId != null && nakshatraMasterId > 0) {
+            nakshatraMaster = nakshatraMasterRepository.findById(nakshatraMasterId)
+                    .filter(n -> Boolean.TRUE.equals(n.getIsActive()))
+                    .orElseThrow(() -> new RuntimeException("Invalid nakshatra selected"));
+        }
+
+        PujaBookingSpiritualDetail entity = detail == null
+                ? PujaBookingSpiritualDetail.builder()
+                .booking(booking)
+                .userId(booking.getUserId())
+                .isActive(true)
+                .build()
+                : detail;
+
+        entity.setGotraMasterId(gotraMaster.getId());
+        entity.setGotraName(gotraMaster.getName());
+        entity.setRashiMasterId(rashiMaster == null ? null : rashiMaster.getId());
+        entity.setRashiName(rashiMaster == null ? null : rashiMaster.getName());
+        entity.setNakshatraMasterId(nakshatraMaster == null ? null : nakshatraMaster.getId());
+        entity.setNakshatraName(nakshatraMaster == null ? null : nakshatraMaster.getName());
+        entity.setIsActive(true);
+
+        PujaBookingSpiritualDetail saved = pujaBookingSpiritualDetailRepository.save(entity);
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", true);
+        response.put("message", "Booking spiritual details updated");
+        response.put("bookingId", bookingId);
+        response.put("gotraMasterId", saved.getGotraMasterId());
+        response.put("rashiMasterId", saved.getRashiMasterId());
+        response.put("nakshatraMasterId", saved.getNakshatraMasterId());
+        response.put("inviteQueued", false);
+        return response;
+    }
+
+    public List<PujaSamagriMaster> getAllSamagriMasterForAdmin() {
+        return pujaSamagriMasterRepository.findAll()
+                .stream()
+                .sorted((a, b) -> {
+                    String an = a.getName() == null ? "" : a.getName();
+                    String bn = b.getName() == null ? "" : b.getName();
+                    return an.compareToIgnoreCase(bn);
+                })
+                .toList();
+    }
+
+    public PujaSamagriMaster createSamagriMaster(String name, String description, Boolean isActive) {
+        String cleanedName = name == null ? "" : name.trim();
+        if (cleanedName.isEmpty()) {
+            throw new RuntimeException("Samagri name is required");
+        }
+        PujaSamagriMaster entity = PujaSamagriMaster.builder()
+                .name(cleanedName)
+                .description(description == null ? null : description.trim())
+                .isActive(isActive == null ? true : isActive)
+                .build();
+        return pujaSamagriMasterRepository.save(entity);
+    }
+
+    public PujaSamagriMaster updateSamagriMaster(Long id, String name, String description, Boolean isActive) {
+        PujaSamagriMaster entity = pujaSamagriMasterRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Samagri master not found: " + id));
+        if (name != null && !name.trim().isEmpty()) {
+            entity.setName(name.trim());
+        }
+        if (description != null) {
+            entity.setDescription(description.trim());
+        }
+        if (isActive != null) {
+            entity.setIsActive(isActive);
+        }
+        return pujaSamagriMasterRepository.save(entity);
+    }
+
+    public void softDeleteSamagriMaster(Long id) {
+        PujaSamagriMaster entity = pujaSamagriMasterRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Samagri master not found: " + id));
+        entity.setIsActive(false);
+        pujaSamagriMasterRepository.save(entity);
+    }
+
+    public List<Map<String, Object>> getPujaSamagriForMobile(Long pujaId) {
+        List<PujaSamagriItem> items = pujaSamagriItemRepository
+                .findByPujaIdAndIsActiveOrderByDisplayOrderAscIdAsc(pujaId, true);
+        if (items.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, PujaSamagriMaster> masterById = pujaSamagriMasterRepository.findAllById(
+                items.stream().map(PujaSamagriItem::getSamagriMasterId).toList()
+        ).stream().collect(java.util.stream.Collectors.toMap(PujaSamagriMaster::getId, m -> m));
+
+        List<Map<String, Object>> response = new ArrayList<>();
+        for (PujaSamagriItem item : items) {
+            PujaSamagriMaster master = masterById.get(item.getSamagriMasterId());
+            if (master == null || Boolean.FALSE.equals(master.getIsActive())) {
+                continue;
+            }
+            response.add(Map.of(
+                    "itemId", item.getId(),
+                    "pujaId", item.getPujaId(),
+                    "samagriMasterId", master.getId(),
+                    "samagriName", master.getName(),
+                    "quantity", item.getQuantity() == null ? "" : item.getQuantity(),
+                    "displayOrder", item.getDisplayOrder() == null ? 0 : item.getDisplayOrder()
+            ));
+        }
+        return response;
+    }
+
+    public List<Map<String, Object>> getPujaSamagriForAdmin(Long pujaId) {
+        List<PujaSamagriItem> items = pujaSamagriItemRepository
+                .findByPujaIdAndIsActiveOrderByDisplayOrderAscIdAsc(pujaId, true);
+        if (items.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, PujaSamagriMaster> masterById = pujaSamagriMasterRepository.findAllById(
+                items.stream().map(PujaSamagriItem::getSamagriMasterId).toList()
+        ).stream().collect(java.util.stream.Collectors.toMap(PujaSamagriMaster::getId, m -> m));
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (PujaSamagriItem item : items) {
+            PujaSamagriMaster master = masterById.get(item.getSamagriMasterId());
+            rows.add(Map.of(
+                    "id", item.getId(),
+                    "pujaId", item.getPujaId(),
+                    "samagriMasterId", item.getSamagriMasterId(),
+                    "samagriName", master == null ? "" : master.getName(),
+                    "quantity", item.getQuantity() == null ? "" : item.getQuantity(),
+                    "displayOrder", item.getDisplayOrder() == null ? 0 : item.getDisplayOrder(),
+                    "isActive", item.getIsActive()
+            ));
+        }
+        return rows;
+    }
+
+    public Map<String, Object> addSamagriToPuja(
+            Long pujaId,
+            Long samagriMasterId,
+            String quantity,
+            String unit,
+            String notes,
+            Integer displayOrder
+    ) {
+        pujaRepo.findById(pujaId).orElseThrow(() -> new RuntimeException("Puja not found: " + pujaId));
+        PujaSamagriMaster master = pujaSamagriMasterRepository.findById(samagriMasterId)
+                .orElseThrow(() -> new RuntimeException("Samagri master not found: " + samagriMasterId));
+        if (Boolean.FALSE.equals(master.getIsActive())) {
+            throw new RuntimeException("Selected samagri is inactive");
+        }
+
+        PujaSamagriItem item = pujaSamagriItemRepository
+                .findByPujaIdAndSamagriMasterIdAndIsActive(pujaId, samagriMasterId, true)
+                .orElse(PujaSamagriItem.builder()
+                        .pujaId(pujaId)
+                        .samagriMasterId(samagriMasterId)
+                        .build());
+        item.setQuantity(quantity == null ? null : quantity.trim());
+        item.setUnit(unit == null ? null : unit.trim());
+        item.setNotes(notes == null ? null : notes.trim());
+        item.setDisplayOrder(displayOrder == null ? 0 : displayOrder);
+        item.setIsActive(true);
+        PujaSamagriItem saved = pujaSamagriItemRepository.save(item);
+        return Map.of(
+                "status", true,
+                "message", "Puja samagri saved",
+                "itemId", saved.getId(),
+                "pujaId", saved.getPujaId(),
+                "samagriMasterId", saved.getSamagriMasterId(),
+                "samagriMailQueued", 0
+        );
+    }
+
+    public Map<String, Object> updatePujaSamagriItem(
+            Long itemId,
+            String quantity,
+            String unit,
+            String notes,
+            Integer displayOrder,
+            Boolean isActive
+    ) {
+        PujaSamagriItem item = pujaSamagriItemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Puja samagri item not found: " + itemId));
+        if (quantity != null) {
+            item.setQuantity(quantity.trim());
+        }
+        if (unit != null) {
+            item.setUnit(unit.trim());
+        }
+        if (notes != null) {
+            item.setNotes(notes.trim());
+        }
+        if (displayOrder != null) {
+            item.setDisplayOrder(displayOrder);
+        }
+        if (isActive != null) {
+            item.setIsActive(isActive);
+        }
+        PujaSamagriItem saved = pujaSamagriItemRepository.save(item);
+        return Map.of(
+                "status", true,
+                "message", "Puja samagri item updated",
+                "itemId", saved.getId(),
+                "samagriMailQueued", 0
+        );
+    }
+
+    public void deletePujaSamagriItem(Long itemId) {
+        PujaSamagriItem item = pujaSamagriItemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Puja samagri item not found: " + itemId));
+        item.setIsActive(false);
+        pujaSamagriItemRepository.save(item);
     }
 
     public Map<String, Object> generateSlotsFromMaster(PujaSlotMasterRequest request) {
@@ -370,6 +702,187 @@ public class PujaService {
                             .build();
                 })
                 .toList();
+    }
+
+    public Map<String, Object> getTodayBookingSegregationForAdmin() {
+        LocalDate today = LocalDate.now();
+        List<PujaBooking> bookings = bookingRepo.findAll()
+                .stream()
+                .sorted((a, b) -> {
+                    LocalDateTime aa = a.getBookedAt();
+                    LocalDateTime bb = b.getBookedAt();
+                    if (aa == null && bb == null) return 0;
+                    if (aa == null) return 1;
+                    if (bb == null) return -1;
+                    return bb.compareTo(aa);
+                })
+                .toList();
+        if (bookings.isEmpty()) {
+            return Map.of(
+                    "status", true,
+                    "date", today.toString(),
+                    "scope", "ALL_BOOKINGS",
+                    "pending", List.of(),
+                    "completed", List.of(),
+                    "pendingCount", 0,
+                    "completedCount", 0
+            );
+        }
+
+        List<Map<String, Object>> pending = new ArrayList<>();
+        List<Map<String, Object>> completed = new ArrayList<>();
+
+        for (PujaBooking booking : bookings) {
+            Puja puja = booking.getPujaId() == null ? null : pujaRepo.findById(booking.getPujaId()).orElse(null);
+            PujaSlot slot = booking.getSlotId() == null ? null : slotRepo.findById(booking.getSlotId()).orElse(null);
+            MobileUserProfile profile = mobileUserProfileRepository.findByUserId(booking.getUserId()).orElse(null);
+            PujaBookingSpiritualDetail spiritual = pujaBookingSpiritualDetailRepository
+                    .findTopByBookingIdOrderByCreatedAtDesc(booking.getId() == null ? 0L : booking.getId())
+                    .orElse(null);
+
+            boolean hasPujaTime = slot != null && slot.getSlotTime() != null;
+            boolean hasRashi = spiritual != null && spiritual.getRashiMasterId() != null;
+            boolean hasNakshatra = spiritual != null && spiritual.getNakshatraMasterId() != null;
+            boolean hasSamagri = !getPujaSamagriForAdmin(booking.getPujaId() == null ? 0L : booking.getPujaId()).isEmpty();
+
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("bookingId", booking.getId());
+            row.put("orderId", "PUJA-" + (booking.getId() == null ? 0L : booking.getId()));
+            row.put("userId", booking.getUserId());
+            row.put("userName", profile == null || profile.getName() == null ? "Unknown" : profile.getName());
+            row.put("email", profile == null || profile.getEmail() == null ? "" : profile.getEmail());
+            row.put("pujaId", booking.getPujaId());
+            row.put("pujaName", puja == null || puja.getName() == null ? "Puja" : puja.getName());
+            row.put("slotId", booking.getSlotId());
+            row.put("slotTime", slot == null ? null : slot.getSlotTime());
+            row.put("bookedAt", booking.getBookedAt());
+            row.put("bookingStatus", booking.getStatus());
+            row.put("gotraMasterId", spiritual == null ? null : spiritual.getGotraMasterId());
+            row.put("gotraName", spiritual == null ? null : spiritual.getGotraName());
+            row.put("rashiMasterId", spiritual == null ? null : spiritual.getRashiMasterId());
+            row.put("rashiName", spiritual == null ? null : spiritual.getRashiName());
+            row.put("nakshatraMasterId", spiritual == null ? null : spiritual.getNakshatraMasterId());
+            row.put("nakshatraName", spiritual == null ? null : spiritual.getNakshatraName());
+            row.put("hasPujaTime", hasPujaTime);
+            row.put("hasRashi", hasRashi);
+            row.put("hasNakshatra", hasNakshatra);
+            row.put("hasSamagri", hasSamagri);
+            row.put("isCompleted", hasPujaTime && hasRashi && hasNakshatra && hasSamagri);
+
+            if (hasPujaTime && hasRashi && hasNakshatra && hasSamagri) {
+                completed.add(row);
+            } else {
+                List<String> missing = new ArrayList<>();
+                if (!hasPujaTime) missing.add("pujaTime");
+                if (!hasRashi) missing.add("rashi");
+                if (!hasNakshatra) missing.add("nakshatra");
+                if (!hasSamagri) missing.add("samagri");
+                row.put("missing", missing);
+                pending.add(row);
+            }
+        }
+
+        return Map.of(
+                "status", true,
+                "date", today.toString(),
+                "scope", "ALL_BOOKINGS",
+                "pending", pending,
+                "completed", completed,
+                "pendingCount", pending.size(),
+                "completedCount", completed.size()
+        );
+    }
+
+    public Map<String, Object> assignBookingSlotByAdmin(Long bookingId, Long slotId) {
+        if (bookingId == null || bookingId <= 0) {
+            throw new RuntimeException("Valid bookingId is required");
+        }
+        if (slotId == null || slotId <= 0) {
+            throw new RuntimeException("Valid slotId is required");
+        }
+
+        PujaBooking booking = bookingRepo.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Puja booking not found: " + bookingId));
+        PujaSlot newSlot = slotRepo.findById(slotId)
+                .orElseThrow(() -> new RuntimeException("Slot not found: " + slotId));
+
+        if (booking.getPujaId() == null || !Objects.equals(newSlot.getPujaId(), booking.getPujaId())) {
+            throw new RuntimeException("Selected slot does not belong to this puja booking.");
+        }
+        if (Boolean.FALSE.equals(newSlot.getIsActive())) {
+            throw new RuntimeException("Selected slot is not active.");
+        }
+        if (newSlot.getSlotTime() == null || !newSlot.getSlotTime().isAfter(LocalDateTime.now())) {
+            throw new RuntimeException("Selected slot is expired. Please choose another slot.");
+        }
+        if (!Objects.equals(booking.getSlotId(), newSlot.getId())
+                && newSlot.getStatus() != PujaSlot.SlotStatus.AVAILABLE) {
+            throw new RuntimeException("Selected slot is not available.");
+        }
+
+        if (booking.getSlotId() != null && !Objects.equals(booking.getSlotId(), newSlot.getId())) {
+            PujaSlot oldSlot = slotRepo.findById(booking.getSlotId()).orElse(null);
+            if (oldSlot != null && oldSlot.getStatus() == PujaSlot.SlotStatus.BOOKED) {
+                oldSlot.setStatus(PujaSlot.SlotStatus.AVAILABLE);
+                slotRepo.save(oldSlot);
+            }
+        }
+
+        newSlot.setStatus(PujaSlot.SlotStatus.BOOKED);
+        slotRepo.save(newSlot);
+
+        booking.setSlotId(newSlot.getId());
+        bookingRepo.save(booking);
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", true);
+        response.put("message", "Booking slot assigned by admin");
+        response.put("bookingId", booking.getId());
+        response.put("slotId", newSlot.getId());
+        response.put("slotTime", newSlot.getSlotTime());
+        return response;
+    }
+
+    @Transactional
+    public Map<String, Object> finalizeBookingByAdmin(Long bookingId) {
+        if (bookingId == null || bookingId <= 0) {
+            throw new RuntimeException("Valid bookingId is required");
+        }
+
+        PujaBooking booking = bookingRepo.findById(bookingId)
+                .orElseThrow(() -> new RuntimeException("Puja booking not found: " + bookingId));
+        PujaSlot slot = booking.getSlotId() == null ? null : slotRepo.findById(booking.getSlotId()).orElse(null);
+        PujaBookingSpiritualDetail spiritual = pujaBookingSpiritualDetailRepository
+                .findTopByBookingIdOrderByCreatedAtDesc(bookingId)
+                .orElse(null);
+        List<Map<String, Object>> samagri = getPujaSamagriForAdmin(booking.getPujaId() == null ? 0L : booking.getPujaId());
+
+        if (slot == null || slot.getSlotTime() == null) {
+            throw new RuntimeException("Please set valid puja slot time before confirmation.");
+        }
+        if (spiritual == null || spiritual.getGotraMasterId() == null || spiritual.getGotraMasterId() <= 0) {
+            throw new RuntimeException("Please update gotra before confirmation.");
+        }
+        if (spiritual.getRashiMasterId() == null || spiritual.getRashiMasterId() <= 0) {
+            throw new RuntimeException("Please update rashi before confirmation.");
+        }
+        if (spiritual.getNakshatraMasterId() == null || spiritual.getNakshatraMasterId() <= 0) {
+            throw new RuntimeException("Please update nakshatra before confirmation.");
+        }
+        if (samagri.isEmpty()) {
+            throw new RuntimeException("Please add at least one samagri item before confirmation.");
+        }
+
+        boolean inviteQueued = sendCalendarInviteIfEmailAvailable(booking);
+        boolean samagriQueued = sendSamagriMailForBooking(booking);
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", true);
+        response.put("message", "Booking finalized and emails queued");
+        response.put("bookingId", bookingId);
+        response.put("inviteQueued", inviteQueued);
+        response.put("samagriMailQueued", samagriQueued ? 1 : 0);
+        return response;
     }
 
     public Map<String, Object> resendReceiptEmail(String orderId, ResendReceiptRequest request) {
@@ -899,25 +1412,47 @@ public class PujaService {
         return "https://meet.google.com/new";
     }
 
-    private void sendCalendarInviteIfEmailAvailable(PujaBooking booking, Puja puja, PujaSlot slot) {
+    private boolean sendCalendarInviteIfEmailAvailable(PujaBooking booking) {
         try {
+            if (!isPaymentConfirmed(booking)) return false;
+
             MobileUserProfile profile = mobileUserProfileRepository.findByUserId(booking.getUserId()).orElse(null);
             String toEmail = profile == null || profile.getEmail() == null ? "" : profile.getEmail().trim();
-            if (toEmail.isEmpty()) {
-                return;
+            if (toEmail.isEmpty()) return false;
+
+            Long bookingId = booking.getId() == null ? 0L : booking.getId();
+            PujaBookingSpiritualDetail spiritual = pujaBookingSpiritualDetailRepository
+                    .findTopByBookingIdOrderByCreatedAtDesc(bookingId)
+                    .orElse(null);
+            if (spiritual == null || spiritual.getRashiMasterId() == null || spiritual.getNakshatraMasterId() == null) {
+                return false;
             }
+
+            Puja puja = booking.getPujaId() == null ? null : pujaRepo.findById(booking.getPujaId()).orElse(null);
+            PujaSlot slot = booking.getSlotId() == null ? null : slotRepo.findById(booking.getSlotId()).orElse(null);
+            if (slot == null || slot.getSlotTime() == null) return false;
 
             String pujaName = puja == null || puja.getName() == null || puja.getName().isBlank()
                     ? "Puja Booking"
                     : puja.getName();
-            String subject = "Puja Booking Confirmed - PUJA-" + (booking.getId() == null ? 0L : booking.getId());
+            String devoteeName = profile == null || profile.getName() == null || profile.getName().isBlank()
+                    ? "Devotee"
+                    : profile.getName().trim();
+            String subject = "Puja Invitation - PUJA-" + bookingId;
             String meetLink = booking.getMeetingLink() == null || booking.getMeetingLink().isBlank()
                     ? defaultGoogleMeetLink()
                     : booking.getMeetingLink();
-            String slotTimeText = slot == null || slot.getSlotTime() == null
-                    ? "-"
-                    : formatDateTime(slot.getSlotTime());
-            String html = buildPujaConfirmationMailHtml(booking, pujaName, slotTimeText, meetLink);
+            String slotTimeText = formatDateTime(slot.getSlotTime());
+            String html = buildPujaConfirmationMailHtml(
+                    booking,
+                    devoteeName,
+                    spiritual.getGotraName(),
+                    spiritual.getRashiName(),
+                    spiritual.getNakshatraName(),
+                    pujaName,
+                    slotTimeText,
+                    meetLink
+            );
 
             byte[] ics = buildCalendarInviteIcs(booking, pujaName, slot, meetLink);
             emailService.sendEmailWithAttachmentAsync(
@@ -928,71 +1463,201 @@ public class PujaService {
                     ics,
                     "text/calendar; charset=UTF-8"
             );
-
-            String receiptSubject = "Your Astrologer Puja Receipt - #" + (booking.getId() == null ? 0L : booking.getId());
-            String receiptHtml = buildPujaReceiptHtml(booking, puja, slot);
-            byte[] receiptPdf = buildPujaReceiptPdf(booking, puja, slot);
-            emailService.sendEmailWithAttachmentAsync(
-                    toEmail,
-                    receiptSubject,
-                    receiptHtml,
-                    "invoice.pdf",
-                    receiptPdf,
-                    "application/pdf"
-            );
+            return true;
         } catch (Exception ignored) {
             // Booking flow should not fail if invite mail cannot be generated/sent.
+            return false;
         }
     }
 
+    private int sendSamagriMailToBookedUsers(Long pujaId) {
+        if (pujaId == null || pujaId <= 0) return 0;
+        try {
+            Puja puja = pujaRepo.findById(pujaId).orElse(null);
+            List<PujaBooking> bookings = bookingRepo.findByPujaIdOrderByBookedAtDesc(pujaId);
+            int queued = 0;
+            for (PujaBooking booking : bookings) {
+                if (!isPaymentConfirmed(booking)) continue;
+
+                MobileUserProfile profile = mobileUserProfileRepository.findByUserId(booking.getUserId()).orElse(null);
+                String toEmail = profile == null || profile.getEmail() == null ? "" : profile.getEmail().trim();
+                if (toEmail.isEmpty()) continue;
+
+                PujaSlot slot = booking.getSlotId() == null ? null : slotRepo.findById(booking.getSlotId()).orElse(null);
+                String pujaName = puja == null || puja.getName() == null || puja.getName().isBlank()
+                        ? "Puja Booking"
+                        : puja.getName();
+                String meetLink = booking.getMeetingLink() == null || booking.getMeetingLink().isBlank()
+                        ? defaultGoogleMeetLink()
+                        : booking.getMeetingLink();
+                String slotTimeText = slot == null || slot.getSlotTime() == null ? "-" : formatDateTime(slot.getSlotTime());
+                String samagriSubject = "Puja Samagri List - PUJA-" + (booking.getId() == null ? 0L : booking.getId());
+                String samagriHtml = buildPujaSamagriMailHtml(booking, pujaName, slotTimeText, meetLink);
+                emailService.sendEmailAsync(toEmail, samagriSubject, samagriHtml);
+                queued++;
+            }
+            return queued;
+        } catch (Exception ignored) {
+            return 0;
+        }
+    }
+
+    private boolean sendSamagriMailForBooking(PujaBooking booking) {
+        if (booking == null || booking.getPujaId() == null || booking.getPujaId() <= 0) return false;
+        if (!isPaymentConfirmed(booking)) return false;
+        try {
+            MobileUserProfile profile = mobileUserProfileRepository.findByUserId(booking.getUserId()).orElse(null);
+            String toEmail = profile == null || profile.getEmail() == null ? "" : profile.getEmail().trim();
+            if (toEmail.isEmpty()) return false;
+
+            Puja puja = pujaRepo.findById(booking.getPujaId()).orElse(null);
+            PujaSlot slot = booking.getSlotId() == null ? null : slotRepo.findById(booking.getSlotId()).orElse(null);
+            String pujaName = puja == null || puja.getName() == null || puja.getName().isBlank()
+                    ? "Puja Booking"
+                    : puja.getName();
+            String meetLink = booking.getMeetingLink() == null || booking.getMeetingLink().isBlank()
+                    ? defaultGoogleMeetLink()
+                    : booking.getMeetingLink();
+            String slotTimeText = slot == null || slot.getSlotTime() == null ? "-" : formatDateTime(slot.getSlotTime());
+            String samagriSubject = "Puja Samagri List - PUJA-" + (booking.getId() == null ? 0L : booking.getId());
+            String samagriHtml = buildPujaSamagriMailHtml(booking, pujaName, slotTimeText, meetLink);
+            emailService.sendEmailAsync(toEmail, samagriSubject, samagriHtml);
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private boolean isPaymentConfirmed(PujaBooking booking) {
+        if (booking == null) return false;
+        if (booking.getStatus() != PujaBooking.BookingStatus.CONFIRMED) return false;
+        final String tx = booking.getTransactionId() == null ? "" : booking.getTransactionId().trim();
+        return !tx.isEmpty();
+    }
+
     private String buildPujaConfirmationMailHtml(
+            PujaBooking booking,
+            String devoteeName,
+            String gotraName,
+            String rashiName,
+            String nakshatraName,
+            String pujaName,
+            String slotTimeText,
+            String meetLink
+    ) {
+        String displayName = devoteeName == null || devoteeName.isBlank() ? "Devotee" : devoteeName.trim();
+        String displayGotra = gotraName == null || gotraName.isBlank() ? "-" : gotraName.trim();
+        String displayRashi = rashiName == null || rashiName.isBlank() ? "-" : rashiName.trim();
+        String displayNakshatra = nakshatraName == null || nakshatraName.isBlank() ? "-" : nakshatraName.trim();
+
+        return """
+                <html>
+                <body style="margin:0;padding:0;background:#efe4c9;font-family:Georgia,'Times New Roman',serif;color:#4a2f1a;">
+                  <div style="max-width:860px;margin:0 auto;padding:16px 10px;">
+                    <table role="presentation" style="width:100%%;border-collapse:separate;border-spacing:0;background:#f4e8cf;border:1px solid #c8ab73;border-radius:8px;overflow:hidden;">
+                      <tr>
+                        <td style="width:24px;background:linear-gradient(#d9b882,#b3844f);"></td>
+                        <td style="padding:22px 24px;background:radial-gradient(circle at top,#f9f0db 0%%,#f1e2c2 66%%,#ead7b4 100%%);">
+                          <div style="text-align:center;margin-bottom:12px;">
+                            <div style="font-size:36px;line-height:1;color:#9a6b2f;">ॐ</div>
+                            <div style="font-size:34px;font-weight:700;letter-spacing:.4px;">ASTRO ADHYAAY</div>
+                            <div style="font-size:28px;margin-top:8px;font-weight:700;">You are cordially invited...</div>
+                            <div style="font-size:42px;margin-top:8px;font-weight:700;">Mr./Ms. %s</div>
+                            <div style="font-size:24px;margin-top:4px;">(Gotra: %s | Rashi: %s | Nakshatra: %s)</div>
+                            <div style="font-size:24px;margin-top:6px;">Your gracious presence is deeply valued...</div>
+                          </div>
+                          <div style="margin-top:14px;font-size:29px;font-weight:700;">Ceremony Details:</div>
+                          <ul style="margin:8px 0 0 22px;padding:0;font-size:30px;line-height:1.45;">
+                            <li><strong>Puja:</strong> %s</li>
+                            <li><strong>Date & Time:</strong> %s</li>
+                          </ul>
+                          <div style="margin-top:12px;font-size:32px;font-weight:700;">Join the Ceremony:</div>
+                          <div style="margin-top:6px;font-size:28px;word-break:break-all;">
+                            <a href="%s" style="color:#1f5f9e;text-decoration:underline;">%s</a>
+                          </div>
+                          <div style="margin-top:18px;text-align:right;font-size:24px;line-height:1.45;">
+                            With Sincere Regards & Blessings,<br/>
+                            The Astro Adhyaay Pooja Team
+                          </div>
+                        </td>
+                        <td style="width:24px;background:linear-gradient(#d9b882,#b3844f);"></td>
+                      </tr>
+                    </table>
+                    <p style="text-align:center;color:#6b5234;font-size:13px;margin:10px 0 0 0;">
+                      Calendar invite is attached in this email.
+                    </p>
+                  </div>
+                </body>
+                </html>
+                """.formatted(
+                escapeHtml(displayName),
+                escapeHtml(displayGotra),
+                escapeHtml(displayRashi),
+                escapeHtml(displayNakshatra),
+                escapeHtml(pujaName),
+                escapeHtml(slotTimeText),
+                escapeHtml(meetLink),
+                escapeHtml(meetLink)
+        );
+    }
+
+    private String buildPujaSamagriMailHtml(
             PujaBooking booking,
             String pujaName,
             String slotTimeText,
             String meetLink
     ) {
-        String paymentMethod = booking.getPaymentMethod() == null || booking.getPaymentMethod().isBlank()
-                ? "-"
-                : booking.getPaymentMethod();
-        String txnId = booking.getTransactionId() == null || booking.getTransactionId().isBlank()
-                ? "-"
-                : booking.getTransactionId();
-        String amount = formatMoney(booking.getTotalPrice() == null ? 0.0 : booking.getTotalPrice(), "INR");
+        List<Map<String, Object>> samagri = getPujaSamagriForMobile(booking.getPujaId() == null ? 0L : booking.getPujaId());
+        StringBuilder listHtml = new StringBuilder();
+        if (samagri.isEmpty()) {
+            listHtml.append("<li>Please keep basic puja essentials ready.</li>");
+        } else {
+            for (Map<String, Object> item : samagri) {
+                String name = item.get("samagriName") == null ? "-" : item.get("samagriName").toString();
+                String qty = item.get("quantity") == null ? "" : item.get("quantity").toString().trim();
+                String suffix = qty.isEmpty() ? "" : (" - " + qty);
+                listHtml.append("<li>").append(escapeHtml(name + suffix)).append("</li>");
+            }
+        }
 
         return """
                 <html>
-                <body style="margin:0;padding:0;background:#f4f7fd;font-family:Arial,sans-serif;color:#222a3a;">
-                  <div style="max-width:700px;margin:0 auto;padding:20px 14px;">
-                    <div style="background:#ffffff;border:1px solid #e3e8f3;border-radius:14px;overflow:hidden;">
-                      <div style="padding:18px 20px;background:linear-gradient(90deg,#1f2f73,#3247a9);color:#ffffff;">
-                        <h2 style="margin:0;font-size:22px;">Puja Booking Confirmed</h2>
-                        <p style="margin:8px 0 0 0;font-size:13px;color:#dce3ff;">Your booking is successful and calendar invite is attached.</p>
-                      </div>
-                      <div style="padding:18px 20px;">
-                        <table style="width:100%%;border-collapse:collapse;">
-                          <tr><td style="padding:9px 0;color:#5e6679;">Order ID</td><td style="padding:9px 0;text-align:right;"><strong>PUJA-%d</strong></td></tr>
-                          <tr><td style="padding:9px 0;color:#5e6679;">Puja Name</td><td style="padding:9px 0;text-align:right;">%s</td></tr>
-                          <tr><td style="padding:9px 0;color:#5e6679;">Slot Time</td><td style="padding:9px 0;text-align:right;">%s</td></tr>
-                          <tr><td style="padding:9px 0;color:#5e6679;">Payment Method</td><td style="padding:9px 0;text-align:right;">%s</td></tr>
-                          <tr><td style="padding:9px 0;color:#5e6679;">Transaction ID</td><td style="padding:9px 0;text-align:right;">%s</td></tr>
-                          <tr><td style="padding:9px 0;color:#5e6679;">Amount</td><td style="padding:9px 0;text-align:right;"><strong>%s</strong></td></tr>
-                          <tr><td style="padding:9px 0;color:#5e6679;">Google Meet Link</td><td style="padding:9px 0;text-align:right;"><a href="%s">Join Meeting</a></td></tr>
-                        </table>
-                        <div style="margin-top:12px;padding:12px;background:#f8fbff;border:1px solid #dfe7f5;border-radius:10px;">
-                        </div>
-                        <p style="margin:12px 0 0 0;color:#6d7486;font-size:12px;">This is a system-generated confirmation from Astrologer.</p>
-                      </div>
-                    </div>
+                <body style="margin:0;padding:0;background:#efe4c9;font-family:Georgia,'Times New Roman',serif;color:#4a2f1a;">
+                  <div style="max-width:860px;margin:0 auto;padding:16px 10px;">
+                    <table role="presentation" style="width:100%%;border-collapse:separate;border-spacing:0;background:#f4e8cf;border:1px solid #c8ab73;border-radius:8px;overflow:hidden;">
+                      <tr>
+                        <td style="width:24px;background:linear-gradient(#d9b882,#b3844f);"></td>
+                        <td style="padding:22px 24px;background:radial-gradient(circle at top,#f9f0db 0%%,#f1e2c2 66%%,#ead7b4 100%%);">
+                          <div style="text-align:center;">
+                            <div style="font-size:36px;line-height:1;color:#9a6b2f;">ॐ</div>
+                            <div style="font-size:34px;font-weight:700;letter-spacing:.4px;">ASTRO ADHYAAY</div>
+                            <div style="font-size:48px;margin-top:10px;font-weight:700;">Authentic Puja Samagri List</div>
+                          </div>
+                          <ul style="margin:12px 0 0 22px;padding:0;font-size:30px;line-height:1.45;">
+                            %s
+                          </ul>
+                          <div style="margin-top:12px;border-top:1px solid #bfa172;padding-top:10px;font-size:26px;line-height:1.45;">
+                            <strong>Puja:</strong> %s<br/>
+                            <strong>Slot:</strong> %s<br/>
+                            <strong>Join:</strong> <a href="%s" style="color:#1f5f9e;text-decoration:underline;">Google Meet Link</a>
+                          </div>
+                          <div style="margin-top:14px;text-align:center;font-size:26px;font-weight:700;">
+                            WEAR INDIAN TRADITIONAL WEAR
+                          </div>
+                          <div style="text-align:center;margin-top:8px;font-size:22px;">
+                            Saree / Suit &nbsp; | &nbsp; Dhoti Kurta / Kurta Pajama
+                          </div>
+                        </td>
+                        <td style="width:24px;background:linear-gradient(#d9b882,#b3844f);"></td>
+                      </tr>
+                    </table>
                   </div>
                 </body>
                 </html>
                 """.formatted(
-                booking.getId() == null ? 0L : booking.getId(),
+                listHtml.toString(),
                 escapeHtml(pujaName),
                 escapeHtml(slotTimeText),
-                escapeHtml(paymentMethod),
-                escapeHtml(txnId),
-                escapeHtml(amount),
                 escapeHtml(meetLink)
         );
     }

@@ -8,6 +8,7 @@ public class UpdateRemidesRequest {
     private String title;
     private String description;
     private Double price;
+    private Double tokenAmount;
     private Double discountPercentage;
     private String currency;
     private String imageBase64;

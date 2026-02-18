@@ -3,9 +3,21 @@ package com.astro.backend.Services;
 import com.astro.backend.Entity.GenderMaster;
 import com.astro.backend.Entity.StateMaster;
 import com.astro.backend.Entity.DistrictMaster;
+import com.astro.backend.Entity.GotraMaster;
+import com.astro.backend.Entity.RashiMaster;
+import com.astro.backend.Entity.NakshatraMaster;
+import com.astro.backend.Entity.GemstoneMaster;
+import com.astro.backend.Entity.YantraMaster;
+import com.astro.backend.Entity.PujaSamagriMaster;
 import com.astro.backend.Repositry.GenderMasterRepository;
 import com.astro.backend.Repositry.StateMasterRepository;
 import com.astro.backend.Repositry.DistrictMasterRepository;
+import com.astro.backend.Repositry.GotraMasterRepository;
+import com.astro.backend.Repositry.RashiMasterRepository;
+import com.astro.backend.Repositry.NakshatraMasterRepository;
+import com.astro.backend.Repositry.GemstoneMasterRepository;
+import com.astro.backend.Repositry.YantraMasterRepository;
+import com.astro.backend.Repositry.PujaSamagriMasterRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -30,6 +42,12 @@ public class DataInitializationService implements CommandLineRunner {
     private final GenderMasterRepository genderMasterRepository;
     private final StateMasterRepository stateMasterRepository;
     private final DistrictMasterRepository districtMasterRepository;
+    private final GotraMasterRepository gotraMasterRepository;
+    private final RashiMasterRepository rashiMasterRepository;
+    private final NakshatraMasterRepository nakshatraMasterRepository;
+    private final GemstoneMasterRepository gemstoneMasterRepository;
+    private final YantraMasterRepository yantraMasterRepository;
+    private final PujaSamagriMasterRepository pujaSamagriMasterRepository;
 
     @Override
     public void run(String... args) {
@@ -38,6 +56,12 @@ public class DataInitializationService implements CommandLineRunner {
         initializeGenderMaster();
         initializeStateMaster();
         initializeDistrictMaster();
+        initializeGotraMaster();
+        initializeRashiMaster();
+        initializeNakshatraMaster();
+        initializePujaSamagriMaster();
+        initializeGemstoneMaster();
+        initializeYantraMaster();
         
         log.info("Data initialization completed.");
     }
@@ -833,6 +857,216 @@ public class DataInitializationService implements CommandLineRunner {
         } catch (Exception e) {
             log.error("Error initializing District Master data: {}", e.getMessage());
         }
+    }
+
+    private void initializeGotraMaster() {
+        try {
+            if (gotraMasterRepository.count() > 0) {
+                log.info("Gotra Master data already exists. Skipping initialization.");
+                return;
+            }
+            List<String> gotraNames = Arrays.asList(
+                    "Bharadwaj", "Kashyap", "Vashishtha", "Atri", "Gautam", "Jamadagni",
+                    "Vishwamitra", "Agastya", "Parashar", "Shandilya", "Kaushik", "Bhrigu",
+                    "Kanva", "Angiras", "Unknown"
+            );
+            List<GotraMaster> rows = gotraNames.stream()
+                    .map(name -> GotraMaster.builder()
+                            .name(name)
+                            .description(name + " gotra")
+                            .isActive(true)
+                            .build())
+                    .toList();
+            gotraMasterRepository.saveAll(rows);
+            log.info("Gotra Master data initialized: {} rows inserted", rows.size());
+        } catch (Exception e) {
+            log.error("Error initializing Gotra Master data: {}", e.getMessage());
+        }
+    }
+
+    private void initializeRashiMaster() {
+        try {
+            if (rashiMasterRepository.count() > 0) {
+                log.info("Rashi Master data already exists. Skipping initialization.");
+                return;
+            }
+            List<String> rashiNames = Arrays.asList(
+                    "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+                    "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+            );
+            List<RashiMaster> rows = rashiNames.stream()
+                    .map(name -> RashiMaster.builder()
+                            .name(name)
+                            .description(name + " rashi")
+                            .isActive(true)
+                            .build())
+                    .toList();
+            rashiMasterRepository.saveAll(rows);
+            log.info("Rashi Master data initialized: {} rows inserted", rows.size());
+        } catch (Exception e) {
+            log.error("Error initializing Rashi Master data: {}", e.getMessage());
+        }
+    }
+
+    private void initializeNakshatraMaster() {
+        try {
+            if (nakshatraMasterRepository.count() > 0) {
+                log.info("Nakshatra Master data already exists. Skipping initialization.");
+                return;
+            }
+            List<String> nakshatraNames = Arrays.asList(
+                    "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashirsha", "Ardra",
+                    "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni",
+                    "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha",
+                    "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha",
+                    "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
+            );
+            List<NakshatraMaster> rows = nakshatraNames.stream()
+                    .map(name -> NakshatraMaster.builder()
+                            .name(name)
+                            .description(name + " nakshatra")
+                            .isActive(true)
+                            .build())
+                    .toList();
+            nakshatraMasterRepository.saveAll(rows);
+            log.info("Nakshatra Master data initialized: {} rows inserted", rows.size());
+        } catch (Exception e) {
+            log.error("Error initializing Nakshatra Master data: {}", e.getMessage());
+        }
+    }
+
+    private void initializePujaSamagriMaster() {
+        try {
+            if (pujaSamagriMasterRepository.count() > 0) {
+                log.info("Puja Samagri Master data already exists. Skipping initialization.");
+                return;
+            }
+
+            List<PujaSamagriMaster> rows = Arrays.asList(
+                    createPujaSamagri("Haridra-yukt Akshat", "Haldi me range hue sabut chawal"),
+                    createPujaSamagri("Sugandhit Pushpa", "Taaze phool"),
+                    createPujaSamagri("Tamra Patra Set", "Taambe ki thali, lota aur chammach"),
+                    createPujaSamagri("Ghrit Deepak", "Shuddh desi ghee ka diya"),
+                    createPujaSamagri("Kumkum", "Tilak aur puja upyog"),
+                    createPujaSamagri("Roli", "Puja roli"),
+                    createPujaSamagri("Kalawa", "Mouli / sacred thread"),
+                    createPujaSamagri("Dhoop Batti", "Sugandhit dhoop"),
+                    createPujaSamagri("Kapur", "Aarti kapoor"),
+                    createPujaSamagri("Gangajal", "Pavitra jal"),
+                    createPujaSamagri("Nariyal", "Shraddha aur sankalp ke liye"),
+                    createPujaSamagri("Panchmeva", "Dry fruits offering")
+            );
+
+            pujaSamagriMasterRepository.saveAll(rows);
+            log.info("Puja Samagri Master data initialized: {} rows inserted", rows.size());
+        } catch (Exception e) {
+            log.error("Error initializing Puja Samagri Master data: {}", e.getMessage());
+        }
+    }
+
+    private PujaSamagriMaster createPujaSamagri(String name, String description) {
+        return PujaSamagriMaster.builder()
+                .name(name)
+                .description(description)
+                .isActive(true)
+                .build();
+    }
+
+    private void initializeGemstoneMaster() {
+        try {
+            if (gemstoneMasterRepository.count() > 0) {
+                log.info("Gemstone Master data already exists. Skipping initialization.");
+                return;
+            }
+
+            List<GemstoneMaster> rows = Arrays.asList(
+                    createGemstone("Ruby", "Sun", "For authority, vitality and confidence."),
+                    createGemstone("Pearl", "Moon", "For emotional balance, calmness and peace."),
+                    createGemstone("Red Coral", "Mars", "For courage, action and physical strength."),
+                    createGemstone("Emerald", "Mercury", "For communication, intellect and business growth."),
+                    createGemstone("Yellow Sapphire", "Jupiter", "For wisdom, prosperity and marriage harmony."),
+                    createGemstone("Diamond", "Venus", "For luxury, attraction and relationships."),
+                    createGemstone("Blue Sapphire", "Saturn", "For discipline, career stability and protection."),
+                    createGemstone("Hessonite (Gomed)", "Rahu", "For confusion relief and focus."),
+                    createGemstone("Cat's Eye (Lehsunia)", "Ketu", "For spiritual growth and protection."),
+                    createGemstone("White Sapphire", "Venus", "Alternative to diamond for Venus."),
+                    createGemstone("Opal", "Venus", "For creativity, romance and charm."),
+                    createGemstone("Amethyst", "Saturn", "Alternative Saturn stone for stability."),
+                    createGemstone("Turquoise", "Jupiter", "For luck, travel safety and wisdom."),
+                    createGemstone("Citrine", "Jupiter", "For abundance and confidence."),
+                    createGemstone("Peridot", "Mercury", "For clarity and communication."),
+                    createGemstone("Garnet", "Sun", "For vitality and motivation."),
+                    createGemstone("Moonstone", "Moon", "For emotional healing and intuition."),
+                    createGemstone("Lapis Lazuli", "Saturn", "For focus, truth and inner strength."),
+                    createGemstone("Aquamarine", "Moon", "For calm communication and serenity."),
+                    createGemstone("Alexandrite", "Mercury", "For adaptability and smart decisions."),
+                    createGemstone("Zircon", "Venus", "Affordable Venus gem for relationships."),
+                    createGemstone("Topaz", "Jupiter", "For wisdom and fortune support."),
+                    createGemstone("Onyx", "Saturn", "For endurance and grounding.")
+            );
+
+            gemstoneMasterRepository.saveAll(rows);
+            log.info("Gemstone Master data initialized: {} rows inserted", rows.size());
+        } catch (Exception e) {
+            log.error("Error initializing Gemstone Master data: {}", e.getMessage());
+        }
+    }
+
+    private void initializeYantraMaster() {
+        try {
+            if (yantraMasterRepository.count() > 0) {
+                log.info("Yantra Master data already exists. Skipping initialization.");
+                return;
+            }
+
+            List<YantraMaster> rows = Arrays.asList(
+                    createYantra("Shree Yantra", "Maha Lakshmi", "For abundance, prosperity and harmony."),
+                    createYantra("Kubera Yantra", "Lord Kubera", "For wealth attraction and financial growth."),
+                    createYantra("Mahalakshmi Yantra", "Maha Lakshmi", "For money flow and family well-being."),
+                    createYantra("Karya Siddhi Yantra", "Ganesha", "For success in pending work."),
+                    createYantra("Baglamukhi Yantra", "Baglamukhi Devi", "For victory over obstacles and enemies."),
+                    createYantra("Navagraha Yantra", "Navagraha", "For balancing all planetary energies."),
+                    createYantra("Vastu Dosh Nivaran Yantra", "Vastu Devta", "For home and workplace vastu balance."),
+                    createYantra("Saraswati Yantra", "Maa Saraswati", "For education, memory and creativity."),
+                    createYantra("Hanuman Yantra", "Lord Hanuman", "For courage, protection and fear removal."),
+                    createYantra("Mahamrityunjaya Yantra", "Lord Shiva", "For health, longevity and healing."),
+                    createYantra("Durga Bisa Yantra", "Maa Durga", "For protection and power."),
+                    createYantra("Kali Yantra", "Maa Kali", "For negativity removal and protection."),
+                    createYantra("Gayatri Yantra", "Maa Gayatri", "For wisdom and mental clarity."),
+                    createYantra("Rahu Yantra", "Rahu", "For Rahu affliction relief."),
+                    createYantra("Ketu Yantra", "Ketu", "For Ketu affliction relief."),
+                    createYantra("Shani Yantra", "Shani Dev", "For Saturn peace and discipline."),
+                    createYantra("Mangal Yantra", "Mangal", "For Mars strength and marriage issues."),
+                    createYantra("Brihaspati Yantra", "Jupiter", "For knowledge and blessings."),
+                    createYantra("Budh Yantra", "Mercury", "For communication and business."),
+                    createYantra("Shukra Yantra", "Venus", "For relationships and comforts."),
+                    createYantra("Surya Yantra", "Sun", "For leadership and confidence."),
+                    createYantra("Chandra Yantra", "Moon", "For emotional peace and stability.")
+            );
+
+            yantraMasterRepository.saveAll(rows);
+            log.info("Yantra Master data initialized: {} rows inserted", rows.size());
+        } catch (Exception e) {
+            log.error("Error initializing Yantra Master data: {}", e.getMessage());
+        }
+    }
+
+    private GemstoneMaster createGemstone(String name, String associatedPlanet, String description) {
+        return GemstoneMaster.builder()
+                .name(name)
+                .associatedPlanet(associatedPlanet)
+                .description(description)
+                .isActive(true)
+                .build();
+    }
+
+    private YantraMaster createYantra(String name, String associatedDeity, String description) {
+        return YantraMaster.builder()
+                .name(name)
+                .associatedDeity(associatedDeity)
+                .description(description)
+                .isActive(true)
+                .build();
     }
 
     /**
