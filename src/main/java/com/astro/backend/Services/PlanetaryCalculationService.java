@@ -634,9 +634,9 @@ public class PlanetaryCalculationService {
         Double ayanamsaValue = ayanamsaData != null ? (Double) ayanamsaData.get("value") : null;
 
         Map<String, String> planetAbbr = Map.ofEntries(
-                Map.entry("Sun", "Sun"),
+                Map.entry("Sun", "Su"),
                 Map.entry("Moon", "Mo"),
-                Map.entry("Mars", "Mar"),
+                Map.entry("Mars", "Ma"),
                 Map.entry("Mercury", "Me"),
                 Map.entry("Jupiter", "Ju"),
                 Map.entry("Venus", "Ve"),
@@ -1050,9 +1050,9 @@ public class PlanetaryCalculationService {
         Double ayanamsaValue = ayanamsaData != null ? (Double) ayanamsaData.get("value") : null;
 
         Map<String, String> planetAbbr = Map.ofEntries(
-                Map.entry("Sun", "Sun"),
+                Map.entry("Sun", "Su"),
                 Map.entry("Moon", "Mo"),
-                Map.entry("Mars", "Mar"),
+                Map.entry("Mars", "Ma"),
                 Map.entry("Mercury", "Me"),
                 Map.entry("Jupiter", "Ju"),
                 Map.entry("Venus", "Ve"),
