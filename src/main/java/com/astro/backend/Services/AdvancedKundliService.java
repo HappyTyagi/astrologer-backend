@@ -176,6 +176,7 @@ public class AdvancedKundliService {
             
             // Set sidereal mode with Lahiri Ayanamsa
             swissEph.swe_set_sid_mode(SweConst.SE_SIDM_LAHIRI, 0, 0);
+            double ayanamsaValue = swissEph.swe_get_ayanamsa(julDay);
             
             // Calculate planetary positions
             List<PlanetPosition> planets = calculatePlanetaryPositions(julDay);
@@ -191,6 +192,7 @@ public class AdvancedKundliService {
             // Calculate Nakshatra
             String nakshatra = getNakshatra(moonLong);
             int padaNumber = getPadaNumber(moonLong);
+            int nakshatraNumber = ((int) Math.floor(moonLong / (360.0 / 27.0))) + 1;
             
             // Calculate Yoga
             int yogaNumber = (int) Math.floor(((sunLong + moonLong) % 360.0) / (360.0 / 27.0)) + 1;
@@ -215,36 +217,97 @@ public class AdvancedKundliService {
             // Calculate Rashi (Sun sign)
             int sunRashi = (int) (sunLong / 30);
             String currentRashi = RASHI_MAP.get(sunRashi);
+            int moonRashi = (int) (moonLong / 30);
+            String moonRashiName = RASHI_MAP.get(moonRashi);
             
             // Day of week
             String dayOfWeek = now.getDayOfWeek().toString();
+            String weekdayLord = getWeekdayLord(now.getDayOfWeek());
+
+            // Derived phase/progress values
+            double tithiProgressPercent = ((diff % 12.0) / 12.0) * 100.0;
+            double nakshatraSegment = 360.0 / 27.0;
+            double nakshatraProgressPercent = ((moonLong % nakshatraSegment) / nakshatraSegment) * 100.0;
+            double moonPhaseAngle = diff;
+            double illuminationPercent = 0.5 * (1 - Math.cos(Math.toRadians(moonPhaseAngle))) * 100.0;
+            String moonPhaseName = tithiNumber <= 15 ? "Shukla Paksha (Waxing)" : "Krishna Paksha (Waning)";
             
             Map<String, Object> panchang = new LinkedHashMap<>();
             panchang.put("date", String.format("%02d-%02d-%04d", dd, mm, yyyy));
             panchang.put("dateTime", now.toString());
             panchang.put("dayOfWeek", dayOfWeek);
+            panchang.put("weekdayLord", weekdayLord);
             panchang.put("tithi", buildTithiDetails(tithiNumber));
+            panchang.put("tithiNumber", tithiNumber);
             panchang.put("nakshatra", buildNakshatraDetails(nakshatra, padaNumber));
+            panchang.put("nakshatraNumber", nakshatraNumber);
+            panchang.put("padaNumber", padaNumber);
             panchang.put("yoga", Map.of(
                 "number", yogaNumber,
                 "name", yogaName
             ));
+            panchang.put("yogaNumber", yogaNumber);
             panchang.put("karana", Map.of(
                 "number", karanaNumber,
                 "name", karanaName
             ));
+            panchang.put("karanaNumber", karanaNumber);
             panchang.put("rashi", currentRashi);
             panchang.put("sunLongitude", sunLong);
             panchang.put("moonLongitude", moonLong);
             panchang.put("julianDay", julDay);
             panchang.put("latitude", lat);
             panchang.put("longitude", lon);
+            panchang.put("phase", Map.of(
+                    "name", moonPhaseName,
+                    "angle", roundValue(moonPhaseAngle, 4),
+                    "illuminationPercent", roundValue(illuminationPercent, 2)
+            ));
+            panchang.put("progress", Map.of(
+                    "tithiPercent", roundValue(tithiProgressPercent, 2),
+                    "nakshatraPercent", roundValue(nakshatraProgressPercent, 2)
+            ));
+            panchang.put("sunPosition", Map.of(
+                    "rashi", currentRashi,
+                    "rashiNumber", sunRashi + 1,
+                    "degreeInRashi", roundValue(sunLong % 30.0, 4),
+                    "absoluteLongitude", roundValue(sunLong, 6)
+            ));
+            panchang.put("moonPosition", Map.of(
+                    "rashi", moonRashiName,
+                    "rashiNumber", moonRashi + 1,
+                    "degreeInRashi", roundValue(moonLong % 30.0, 4),
+                    "absoluteLongitude", roundValue(moonLong, 6)
+            ));
+            panchang.put("meta", Map.of(
+                    "timezone", "Asia/Kolkata",
+                    "utcOffsetHours", 5.5,
+                    "ayanamsa", roundValue(ayanamsaValue, 6),
+                    "calculationEngine", "Swiss Ephemeris (Lahiri)"
+            ));
             
             return panchang;
         } catch (Exception e) {
             log.error("Error calculating today's panchang", e);
             throw new RuntimeException("Failed to calculate today's Panchang: " + e.getMessage());
         }
+    }
+
+    private String getWeekdayLord(java.time.DayOfWeek dayOfWeek) {
+        return switch (dayOfWeek) {
+            case SUNDAY -> "Sun";
+            case MONDAY -> "Moon";
+            case TUESDAY -> "Mars";
+            case WEDNESDAY -> "Mercury";
+            case THURSDAY -> "Jupiter";
+            case FRIDAY -> "Venus";
+            case SATURDAY -> "Saturn";
+        };
+    }
+
+    private double roundValue(double value, int scale) {
+        double base = Math.pow(10, scale);
+        return Math.round(value * base) / base;
     }
 
     /**
