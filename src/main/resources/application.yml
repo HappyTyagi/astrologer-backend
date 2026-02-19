@@ -41,6 +41,12 @@ textlocal:
   api-key: "YOUR_TEXTLOCAL_API_KEY"
   sender: "TXTLCL"
 
+twofactor:
+  enabled: true
+  base-url: "https://2factor.in"
+  api-key: "210c5d7a-0d79-11ec-a13b-0200cd936042"
+  otp-template-name: "AstroAdhyaay"
+
 resend:
   api-key: "re_CCseECjB_Bv36rHa5RYTMWJwyjnQtd8j6"
   from-email: "onboarding@resend.dev"

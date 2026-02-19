@@ -11,6 +11,11 @@ import java.util.*;
 @RequiredArgsConstructor
 @Slf4j
 public class PredictionService {
+    private static final List<String> ZODIAC_SIGNS = List.of(
+            "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
+            "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+    );
+
 
     /**
      * Generate daily horoscope based on user's birth chart
@@ -78,9 +83,39 @@ public class PredictionService {
     public Map<String, Object> getTransitAnalysis(String birthChart, LocalDate date) {
         Map<String, Object> transitAnalysis = new LinkedHashMap<>();
 
+        String saturnSign = getApproxSaturnTransitSign(date);
+        String jupiterSign = getApproxJupiterTransitSign(date);
+        String rahuSign = getApproxRahuTransitSign(date);
+
+        List<Map<String, String>> currentTransits = new ArrayList<>();
+        currentTransits.add(buildTransit("Saturn", saturnSign, "High",
+                "Discipline, responsibility and karmic results are highlighted.",
+                "Current ~ next 2.5 years"));
+        currentTransits.add(buildTransit("Jupiter", jupiterSign, "Moderate",
+                "Growth in wisdom, guidance and opportunities.",
+                "Current ~ next 12 months"));
+        currentTransits.add(buildTransit("Rahu", rahuSign, "Moderate",
+                "Unconventional shifts and strong material focus.",
+                "Current ~ next 18 months"));
+
+        List<Map<String, String>> upcomingEvents = List.of(
+                buildUpcomingEvent("Lunar Cycle Shift", date.plusDays(7).toString(),
+                        "Review emotional priorities and avoid impulsive reactions."),
+                buildUpcomingEvent("Mercury Transit Window", date.plusDays(15).toString(),
+                        "Double-check communication and travel plans."),
+                buildUpcomingEvent("New Moon Intention Day", date.plusDays(28).toString(),
+                        "Good period to start focused personal goals.")
+        );
+
         transitAnalysis.put("date", date.toString());
         transitAnalysis.put("birthChart", birthChart);
-        transitAnalysis.put("majorTransits", getMajorTransits(date));
+        transitAnalysis.put("currentTransits", currentTransits);
+        transitAnalysis.put("upcoming", upcomingEvents);
+
+        // Keep legacy keys for backward compatibility.
+        transitAnalysis.put("majorTransits", currentTransits.stream()
+                .map(t -> t.get("planet") + " in " + t.get("sign") + " - " + t.get("description"))
+                .toList());
         transitAnalysis.put("affectedSigns", getAffectedSigns(date));
         transitAnalysis.put("durationAndImpact", getTransitDurationAndImpact(date));
         transitAnalysis.put("recommendations", getTransitRecommendations(date));
@@ -93,23 +128,63 @@ public class PredictionService {
      */
     public Map<String, Object> getSadeSatiAnalysis(String moonSign, LocalDate currentDate) {
         Map<String, Object> sadeSati = new LinkedHashMap<>();
+        String normalizedMoonSign = normalizeSign(moonSign);
+        String saturnSign = getApproxSaturnTransitSign(currentDate);
 
-        boolean isSadeSati = isCurrenltyInSadeSati(moonSign, currentDate);
-        
-        sadeSati.put("moonSign", moonSign);
-        sadeSati.put("inSadeSati", isSadeSati);
-        
-        if (isSadeSati) {
-            sadeSati.put("phase", getCurrentSadeSatiPhase(moonSign, currentDate));
-            sadeSati.put("expectedDuration", "7.5 years");
-            sadeSati.put("characteristics", getSadeSatiCharacteristics(moonSign));
-            sadeSati.put("remedies", getSadeSatiRemedies());
-            sadeSati.put("advice", "Remain patient, practice spirituality, and maintain discipline");
-        } else {
-            sadeSati.put("nextSadeSatiDate", getNextSadeSatiDate(moonSign, currentDate));
-            sadeSati.put("message", "You are not in Sade Sati period. Enjoy this peaceful phase.");
+        int moonIndex = getSignIndex(normalizedMoonSign);
+        int saturnIndex = getSignIndex(saturnSign);
+
+        int firstPhaseSign = Math.floorMod(moonIndex - 1, 12);
+        int secondPhaseSign = moonIndex;
+        int thirdPhaseSign = Math.floorMod(moonIndex + 1, 12);
+
+        boolean isSadeSati = saturnIndex == firstPhaseSign
+                || saturnIndex == secondPhaseSign
+                || saturnIndex == thirdPhaseSign;
+
+        String phase = "Not Active";
+        if (saturnIndex == firstPhaseSign) {
+            phase = "1st Phase (Rising)";
+        } else if (saturnIndex == secondPhaseSign) {
+            phase = "2nd Phase (Peak)";
+        } else if (saturnIndex == thirdPhaseSign) {
+            phase = "3rd Phase (Setting)";
         }
 
+        List<Map<String, Object>> phases = List.of(
+                buildPhase("1st Phase (Rising)", "Saturn in 12th from Moon", "Increased expenses, relocations, inner unease",
+                        List.of("Practice discipline in spending", "Saturday mantra and charity")),
+                buildPhase("2nd Phase (Peak)", "Saturn over Moon sign", "Emotional pressure, responsibility and karmic tests",
+                        List.of("Meditation and routine stability", "Serve elders and needy")),
+                buildPhase("3rd Phase (Setting)", "Saturn in 2nd from Moon", "Family/finance restructuring and maturity",
+                        List.of("Patient communication", "Long-term planning with consistency"))
+        );
+
+        String nextSadeSatiDate = getNextSadeSatiDate(normalizedMoonSign, currentDate);
+        String generalAdvice = "Stay patient, maintain routines, and focus on dharma-based actions for best results.";
+
+        sadeSati.put("moonSign", normalizedMoonSign);
+        sadeSati.put("saturnTransitSign", saturnSign);
+        sadeSati.put("inSadeSati", isSadeSati);
+        sadeSati.put("phase", phase);
+        sadeSati.put("expectedDuration", "7.5 years");
+        sadeSati.put("characteristics", getSadeSatiCharacteristics(normalizedMoonSign));
+        sadeSati.put("remedies", getSadeSatiRemedies());
+        sadeSati.put("advice", generalAdvice);
+        sadeSati.put("nextSadeSatiDate", nextSadeSatiDate);
+
+        // Keys aligned for mobile screens.
+        sadeSati.put("status", isSadeSati ? "Active - " + phase : "Not In Sade Sati");
+        sadeSati.put("description", isSadeSati
+                ? "Saturn is currently influencing your Moon cycle. Follow remedies and remain disciplined."
+                : "You are currently outside Sade Sati influence.");
+        sadeSati.put("nextSadeSati", nextSadeSatiDate);
+        sadeSati.put("duration", "7.5 years");
+        sadeSati.put("phases", phases);
+        sadeSati.put("generalAdvice", generalAdvice);
+        sadeSati.put("message", isSadeSati
+                ? "Sade Sati is active. Follow structured routines."
+                : "You are not in Sade Sati period. Enjoy this peaceful phase.");
         return sadeSati;
     }
 
@@ -118,22 +193,51 @@ public class PredictionService {
      */
     public Map<String, Object> getDhaiyaAnalysis(String moonSign, LocalDate currentDate) {
         Map<String, Object> dhaiya = new LinkedHashMap<>();
+        String normalizedMoonSign = normalizeSign(moonSign);
+        String saturnSign = getApproxSaturnTransitSign(currentDate);
 
-        boolean isDhaiya = isCurrentlyInDhaiya(moonSign, currentDate);
-        
-        dhaiya.put("moonSign", moonSign);
+        int moonIndex = getSignIndex(normalizedMoonSign);
+        int saturnIndex = getSignIndex(saturnSign);
+
+        int fourthFromMoon = Math.floorMod(moonIndex + 3, 12);
+        int eighthFromMoon = Math.floorMod(moonIndex + 7, 12);
+
+        boolean isDhaiya = saturnIndex == fourthFromMoon || saturnIndex == eighthFromMoon;
+        String phase = saturnIndex == fourthFromMoon ? "Kantaka Shani (4th from Moon)"
+                : (saturnIndex == eighthFromMoon ? "Ashtama Shani (8th from Moon)" : "Not Active");
+
+        String nextDhaiyaDate = getNextDhaiyaDate(normalizedMoonSign, currentDate);
+        List<Map<String, String>> characteristics = List.of(
+                Map.of("title", "Mental Pressure", "description",
+                        "Temporary stress may rise; emotional discipline is important."),
+                Map.of("title", "Workload Shift", "description",
+                        "Responsibilities can increase and require structured planning."),
+                Map.of("title", "Financial Caution", "description",
+                        "Avoid impulsive financial decisions during sensitive periods."),
+                Map.of("title", "Health Discipline", "description",
+                        "Maintain sleep, routine and steady physical activity.")
+        );
+        List<String> remedies = getDhaiyaRemedies();
+        String advice = "Stay consistent with routines and avoid reactive decisions.";
+
+        dhaiya.put("moonSign", normalizedMoonSign);
+        dhaiya.put("saturnTransitSign", saturnSign);
         dhaiya.put("inDhaiya", isDhaiya);
-        
-        if (isDhaiya) {
-            dhaiya.put("duration", "2.5 years");
-            dhaiya.put("characteristics", getDhaiyaCharacteristics(moonSign));
-            dhaiya.put("affectedLife", new String[]{"Career", "Relationships", "Finance", "Health"});
-            dhaiya.put("remedies", getDhaiyaRemedies());
-            dhaiya.put("advice", "Stay focused and positive. This too shall pass.");
-        } else {
-            dhaiya.put("nextDhaiyaDate", getNextDhaiyaDate(moonSign, currentDate));
-            dhaiya.put("message", "You are not in Dhaiya period.");
-        }
+        dhaiya.put("phase", phase);
+        dhaiya.put("duration", "2.5 years");
+        dhaiya.put("characteristics", characteristics);
+        dhaiya.put("affectedLife", new String[]{"Career", "Relationships", "Finance", "Health"});
+        dhaiya.put("remedies", remedies);
+        dhaiya.put("advice", advice);
+        dhaiya.put("nextDhaiyaDate", nextDhaiyaDate);
+
+        // Keys aligned for mobile screens.
+        dhaiya.put("status", isDhaiya ? "Active - " + phase : "Not In Dhaiya");
+        dhaiya.put("description", isDhaiya
+                ? "Saturn is in a Dhaiya-sensitive position from your Moon sign."
+                : "You are currently not under Dhaiya influence.");
+        dhaiya.put("nextDhaiya", nextDhaiyaDate);
+        dhaiya.put("message", isDhaiya ? "Dhaiya is active." : "You are not in Dhaiya period.");
 
         return dhaiya;
     }
@@ -246,37 +350,95 @@ public class PredictionService {
         return "Be proactive. The universe is supporting your endeavors. Take calculated risks.";
     }
 
-    private List<String> getMajorTransits(LocalDate date) {
-        return List.of(
-                "Mercury transiting through Gemini - Communication enhancement",
-                "Venus in Libra - Love and relationships favorable",
-                "Mars in Aries - Increased energy and motivation"
-        );
+    private Map<String, String> buildTransit(
+            String planet,
+            String sign,
+            String impact,
+            String description,
+            String duration) {
+        Map<String, String> transit = new LinkedHashMap<>();
+        transit.put("planet", planet);
+        transit.put("sign", sign);
+        transit.put("impact", impact);
+        transit.put("description", description);
+        transit.put("duration", duration);
+        return transit;
+    }
+
+    private Map<String, String> buildUpcomingEvent(String event, String date, String advice) {
+        Map<String, String> upcoming = new LinkedHashMap<>();
+        upcoming.put("event", event);
+        upcoming.put("date", date);
+        upcoming.put("advice", advice);
+        return upcoming;
+    }
+
+    private Map<String, Object> buildPhase(
+            String phase,
+            String duration,
+            String effect,
+            List<String> remedies) {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("phase", phase);
+        data.put("duration", duration);
+        data.put("effect", effect);
+        data.put("remedies", remedies);
+        return data;
     }
 
     private List<String> getAffectedSigns(LocalDate date) {
-        return List.of("Aries", "Leo", "Sagittarius", "Gemini", "Libra", "Aquarius");
+        String saturnSign = getApproxSaturnTransitSign(date);
+        int saturnIndex = getSignIndex(saturnSign);
+        return List.of(
+                ZODIAC_SIGNS.get(Math.floorMod(saturnIndex - 1, 12)),
+                saturnSign,
+                ZODIAC_SIGNS.get(Math.floorMod(saturnIndex + 1, 12)),
+                ZODIAC_SIGNS.get(Math.floorMod(saturnIndex + 4, 12))
+        );
     }
 
     private Map<String, String> getTransitDurationAndImpact(LocalDate date) {
         Map<String, String> impact = new LinkedHashMap<>();
-        impact.put("duration", "30 days");
-        impact.put("intensity", "Moderate");
-        impact.put("overallImpact", "Positive growth expected");
+        impact.put("duration", "Current quarter");
+        impact.put("intensity", "Moderate to High");
+        impact.put("overallImpact", "Focus on disciplined growth and mindful decisions.");
         return impact;
     }
 
     private String getTransitRecommendations(LocalDate date) {
-        return "Use this transit period to launch new projects. Favorable for career advancement.";
+        return "Prioritize consistency, avoid impulsive decisions, and review long-term plans.";
     }
 
-    private boolean isCurrenltyInSadeSati(String moonSign, LocalDate date) {
-        // Simplified logic - in real implementation, calculate based on Saturn position
-        return false;
+    private String getApproxSaturnTransitSign(LocalDate date) {
+        int yearsFromBase = date.getYear() - 2023; // 2023 reference near Aquarius transit
+        int signOffset = Math.floorDiv(yearsFromBase, 3);
+        return ZODIAC_SIGNS.get(Math.floorMod(10 + signOffset, 12)); // Aquarius index = 10
     }
 
-    private String getCurrentSadeSatiPhase(String moonSign, LocalDate date) {
-        return "First phase (Rising Saturn) - Challenges and changes";
+    private String getApproxJupiterTransitSign(LocalDate date) {
+        int yearsFromBase = date.getYear() - 2023; // 2023 reference near Aries transit
+        return ZODIAC_SIGNS.get(Math.floorMod(yearsFromBase, 12));
+    }
+
+    private String getApproxRahuTransitSign(LocalDate date) {
+        long monthsFromBase = java.time.temporal.ChronoUnit.MONTHS.between(LocalDate.of(2023, 1, 1), date);
+        int signOffset = (int) Math.floorDiv(monthsFromBase, 18); // ~18 months per sign (retrograde)
+        return ZODIAC_SIGNS.get(Math.floorMod(11 - signOffset, 12)); // Pisces index = 11 (reverse movement)
+    }
+
+    private String normalizeSign(String sign) {
+        if (sign == null || sign.isBlank()) {
+            return "Aries";
+        }
+        String s = sign.trim();
+        String normalized = Character.toUpperCase(s.charAt(0)) + s.substring(1).toLowerCase();
+        return ZODIAC_SIGNS.contains(normalized) ? normalized : "Aries";
+    }
+
+    private int getSignIndex(String sign) {
+        String normalized = normalizeSign(sign);
+        int index = ZODIAC_SIGNS.indexOf(normalized);
+        return index >= 0 ? index : 0;
     }
 
     private String getSadeSatiCharacteristics(String moonSign) {
@@ -294,12 +456,16 @@ public class PredictionService {
     }
 
     private String getNextSadeSatiDate(String moonSign, LocalDate currentDate) {
+        int moonIndex = getSignIndex(moonSign);
+        int targetSaturnSign = Math.floorMod(moonIndex - 1, 12); // start of Sade Sati
+        for (int yearOffset = 1; yearOffset <= 40; yearOffset++) {
+            LocalDate checkDate = currentDate.plusYears(yearOffset);
+            int saturnIndex = getSignIndex(getApproxSaturnTransitSign(checkDate));
+            if (saturnIndex == targetSaturnSign) {
+                return LocalDate.of(checkDate.getYear(), 1, 1).toString();
+            }
+        }
         return currentDate.plusYears(10).toString();
-    }
-
-    private boolean isCurrentlyInDhaiya(String moonSign, LocalDate currentDate) {
-        // Simplified logic
-        return false;
     }
 
     private String getDhaiyaCharacteristics(String moonSign) {
@@ -317,6 +483,16 @@ public class PredictionService {
     }
 
     private String getNextDhaiyaDate(String moonSign, LocalDate currentDate) {
+        int moonIndex = getSignIndex(moonSign);
+        int targetOne = Math.floorMod(moonIndex + 3, 12);
+        int targetTwo = Math.floorMod(moonIndex + 7, 12);
+        for (int yearOffset = 1; yearOffset <= 30; yearOffset++) {
+            LocalDate checkDate = currentDate.plusYears(yearOffset);
+            int saturnIndex = getSignIndex(getApproxSaturnTransitSign(checkDate));
+            if (saturnIndex == targetOne || saturnIndex == targetTwo) {
+                return LocalDate.of(checkDate.getYear(), 1, 1).toString();
+            }
+        }
         return currentDate.plusYears(5).toString();
     }
 

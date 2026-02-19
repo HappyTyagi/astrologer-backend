@@ -22,6 +22,10 @@ public class NakshatraMaster {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String image;
+
     private String description;
 
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")

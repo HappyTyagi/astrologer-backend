@@ -13,6 +13,7 @@ import com.astro.backend.ResponseDTO.VerifyOtpResponse;
 import com.astro.backend.Services.EmailOtpService;
 import com.astro.backend.Services.OtpService;
 import com.astro.backend.Repositry.MobileUserProfileRepository;
+import com.astro.backend.Repositry.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class OtpController {
     private final OtpService otpService;
     private final EmailOtpService emailOtpService;
     private final MobileUserProfileRepository mobileUserProfileRepository;
+    private final UserRepository userRepository;
     private final JwtService jwtService;
 
     /**
@@ -115,6 +117,9 @@ public class OtpController {
 
             // Verify OTP only (does not create user)
             boolean isOtpValid = otpService.verifyOtpOnly(mobileNumber, otp, sessionId);
+            String role = userRepository.findByMobileNumber(mobileNumber)
+                    .map(user -> user.getRole() == null ? null : user.getRole().name())
+                    .orElse("USER");
 
             if (!isOtpValid) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
@@ -147,6 +152,7 @@ public class OtpController {
                         .name(profile.getName())
                         .email(profile.getEmail())
                         .mobileNo(mobileNumber)
+                        .role(role)
                         .isNewUser(false)
                         .isProfileComplete(profileComplete)
                         // Include profile data for SharedPreferences
@@ -174,6 +180,7 @@ public class OtpController {
                         .token(accessToken)
                         .refreshToken(refreshToken)
                         .mobileNo(mobileNumber)
+                        .role(role)
                         .isNewUser(true)
                         .isProfileComplete(false)
                         .build();

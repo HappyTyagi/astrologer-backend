@@ -88,6 +88,12 @@ public class OtpService {
             return false;
         }
 
+        // Verify OTP using SMS provider (2Factor)
+        boolean providerVerified = smsService.verifyOtpSms(mobileNumber, otp);
+        if (!providerVerified) {
+            return false;
+        }
+
         // Mark OTP as verified
         txn.setIsVerified(true);
         txn.setVerifiedAt(LocalDateTime.now());
@@ -143,4 +149,3 @@ public class OtpService {
         otpTransactionRepo.deleteByExpiresAtBefore(LocalDateTime.now());
     }
 }
-

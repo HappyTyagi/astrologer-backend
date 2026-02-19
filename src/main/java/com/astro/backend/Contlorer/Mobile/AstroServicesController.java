@@ -1,5 +1,7 @@
 package com.astro.backend.Contlorer.Mobile;
 
+import com.astro.backend.Entity.MobileUserProfile;
+import com.astro.backend.Repositry.MobileUserProfileRepository;
 import com.astro.backend.RequestDTO.PlanetaryPositionRequest;
 import com.astro.backend.ResponseDTO.FullKundliResponse;
 import com.astro.backend.ResponseDTO.PlanetaryPositionResponse;
@@ -26,6 +28,7 @@ public class AstroServicesController {
     private final MuhuratService muhuratService;
     private final PredictionService predictionService;
     private final PlanetaryCalculationService planetaryCalculationService;
+    private final MobileUserProfileRepository mobileUserProfileRepository;
 
     /**
      * Generate complete birth chart (Kundli) with Planetary Positions and HTML rendering
@@ -36,16 +39,19 @@ public class AstroServicesController {
             Long userId = payload.get("userId") != null ? Long.valueOf(payload.get("userId").toString()) : null;
             String dateOfBirth = (String) payload.get("dateOfBirth");
             String timeOfBirth = (String) payload.get("timeOfBirth");
-            Double latitude = payload.get("latitude") != null ? Double.valueOf(payload.get("latitude").toString()) : 0.0;
-            Double longitude = payload.get("longitude") != null ? Double.valueOf(payload.get("longitude").toString()) : 0.0;
             String timezone = payload.get("timezone") != null ? payload.get("timezone").toString() : null;
+
+            if (userId == null || userId <= 0) {
+                throw new IllegalArgumentException("userId is required");
+            }
 
             log.info("Generating full kundli for user: {}", userId);
 
             int[] dob = parseDate(dateOfBirth);
             double birthTime = parseTimeToHours(timeOfBirth);
-            double lat = latitude != null ? latitude : 0.0;
-            double lon = longitude != null ? longitude : 0.0;
+            Coordinates coordinates = resolveCoordinatesFromProfile(userId);
+            double lat = coordinates.latitude();
+            double lon = coordinates.longitude();
             double tz = timezone != null ? parseTimezone(timezone) : 5.5;
 
             FullKundliResponse kundliData = advancedKundliService.generateFullKundli(
@@ -195,9 +201,11 @@ public class AstroServicesController {
      */
     @GetMapping("/lagna/today")
     public ResponseEntity<?> getTodayLagnaChart(
-            @RequestParam Double latitude,
-            @RequestParam Double longitude) {
+            @RequestParam Long userId) {
         try {
+            Coordinates coordinates = resolveCoordinatesFromProfile(userId);
+            double latitude = coordinates.latitude();
+            double longitude = coordinates.longitude();
             log.info("Calculating today's Lagna chart for lat: {}, lon: {}", latitude, longitude);
             
             var lagnaData = advancedKundliService.calculateTodayLagna(latitude, longitude);
@@ -218,9 +226,11 @@ public class AstroServicesController {
      */
     @GetMapping("/panchang/today")
     public ResponseEntity<?> getTodayPanchang(
-            @RequestParam(required = false, defaultValue = "0.0") Double latitude,
-            @RequestParam(required = false, defaultValue = "0.0") Double longitude) {
+            @RequestParam Long userId) {
         try {
+            Coordinates coordinates = resolveCoordinatesFromProfile(userId);
+            double latitude = coordinates.latitude();
+            double longitude = coordinates.longitude();
             log.info("Calculating today's Panchang for lat: {}, lon: {}", latitude, longitude);
             
             var panchangData = advancedKundliService.calculateTodayPanchang(latitude, longitude);
@@ -313,6 +323,25 @@ public class AstroServicesController {
         }
     }
 
+    /**
+     * Quick sign-based compatibility for light-weight matching screens.
+     */
+    @GetMapping("/compatibility/sign-match")
+    public ResponseEntity<?> checkSignCompatibility(
+            @RequestParam String yourSign,
+            @RequestParam String partnerSign) {
+        try {
+            var compatibility = compatibilityService.calculateSignCompatibility(yourSign, partnerSign);
+            return ResponseEntity.ok(Map.of(
+                    "status", "success",
+                    "data", compatibility
+            ));
+        } catch (Exception e) {
+            log.error("Error checking sign compatibility", e);
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
             /**
              * Calculate compatibility using bride/groom birth details
              */
@@ -335,10 +364,14 @@ int[] groomDob = parseDate(groom.dateOfBirth());
             double groomTz = groom.timezone() != null ? parseTimezone(groom.timezone()) : 5.5;
             double brideTz = bride.timezone() != null ? parseTimezone(bride.timezone()) : 5.5;
 
-            double groomLat = groom.latitude() != null ? groom.latitude() : 0.0;
-            double groomLon = groom.longitude() != null ? groom.longitude() : 0.0;
-            double brideLat = bride.latitude() != null ? bride.latitude() : 0.0;
-            double brideLon = bride.longitude() != null ? bride.longitude() : 0.0;
+            if (!isValidCoordinatePair(groom.latitude(), groom.longitude())
+                    || !isValidCoordinatePair(bride.latitude(), bride.longitude())) {
+                throw new IllegalArgumentException("Latitude and longitude are required and cannot be 0.0");
+            }
+            double groomLat = groom.latitude();
+            double groomLon = groom.longitude();
+            double brideLat = bride.latitude();
+            double brideLon = bride.longitude();
 
             FullKundliResponse groomChart = advancedKundliService.generateFullKundli(
                     groomLat,
@@ -483,11 +516,14 @@ int[] groomDob = parseDate(groom.dateOfBirth());
      */
     @GetMapping("/muhurat/monthly")
     public ResponseEntity<?> getMonthlyMuhurat(
-            @RequestParam String eventType,
-            @RequestParam(defaultValue = "1") int month,
-            @RequestParam(defaultValue = "2024") int year) {
+            @RequestParam(defaultValue = "Marriage") String eventType,
+            @RequestParam(required = false) Integer month,
+            @RequestParam(required = false) Integer year) {
         try {
-            LocalDate monthStart = LocalDate.of(year, month, 1);
+            LocalDate now = LocalDate.now();
+            int targetMonth = month != null ? month : now.getMonthValue();
+            int targetYear = year != null ? year : now.getYear();
+            LocalDate monthStart = LocalDate.of(targetYear, targetMonth, 1);
             var monthlyData = muhuratService.getMonthlyAuspiciousDates(monthStart, eventType);
             
             return ResponseEntity.ok(Map.of(
@@ -573,11 +609,16 @@ int[] groomDob = parseDate(groom.dateOfBirth());
      */
     @GetMapping("/prediction/transit-analysis")
     public ResponseEntity<?> getTransitAnalysis(
-            @RequestParam String birthChart) {
+            @RequestParam(required = false) String birthChart,
+            @RequestParam(required = false) String moonSign) {
         try {
-            log.info("Getting transit analysis for chart: {}", birthChart);
+            String chartReference = birthChart;
+            if (chartReference == null || chartReference.isBlank()) {
+                chartReference = (moonSign != null && !moonSign.isBlank()) ? moonSign : "General";
+            }
+            log.info("Getting transit analysis for chart: {}", chartReference);
             
-            var transit = predictionService.getTransitAnalysis(birthChart, LocalDate.now());
+            var transit = predictionService.getTransitAnalysis(chartReference, LocalDate.now());
             
             return ResponseEntity.ok(Map.of(
                     "status", "success",
@@ -648,5 +689,42 @@ int[] groomDob = parseDate(groom.dateOfBirth());
                         "Prediction Engine"
                 }
         ));
+    }
+
+    private Coordinates resolveCoordinatesFromProfile(Long userId) {
+        if (userId == null || userId <= 0) {
+            throw new IllegalArgumentException("userId is required");
+        }
+
+        MobileUserProfile profile = mobileUserProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Profile not found. Please complete your profile first."));
+
+        Double latitude = profile.getLatitude();
+        Double longitude = profile.getLongitude();
+
+        if (!isValidCoordinatePair(latitude, longitude)) {
+            throw new IllegalArgumentException(
+                    "Valid profile latitude/longitude not found. Please update your profile location.");
+        }
+
+        return new Coordinates(latitude, longitude);
+    }
+
+    private boolean isValidCoordinatePair(Double latitude, Double longitude) {
+        final double epsilon = 0.000001d;
+        if (latitude == null || longitude == null) {
+            return false;
+        }
+        if (!Double.isFinite(latitude) || !Double.isFinite(longitude)) {
+            return false;
+        }
+        if (Math.abs(latitude) <= epsilon || Math.abs(longitude) <= epsilon) {
+            return false;
+        }
+        return latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
+    }
+
+    private record Coordinates(double latitude, double longitude) {
     }
 }

@@ -207,7 +207,8 @@ public class CompatibilityMatchingService {
     }
 
     private int calculateNadiMatch(int groomNadi, int brideNadi) {
-        return groomNadi == brideNadi ? 8 : 0;
+        // Same nadi is considered Nadi Dosha, so points should be zero.
+        return groomNadi == brideNadi ? 0 : 8;
     }
 
     private boolean detectNadiDosha(Map<String, Integer> groomData, Map<String, Integer> brideData) {
@@ -249,6 +250,102 @@ public class CompatibilityMatchingService {
         if (mangalDosha) doshaInfo.append(", Mangal Dosha present");
 
         return base + doshaInfo;
+    }
+
+    /**
+     * Basic sign compatibility for quick matching view.
+     */
+    public Map<String, Object> calculateSignCompatibility(String yourSign, String partnerSign) {
+        String normalizedYourSign = normalizeSign(yourSign);
+        String normalizedPartnerSign = normalizeSign(partnerSign);
+
+        String yourElement = getElement(normalizedYourSign);
+        String partnerElement = getElement(normalizedPartnerSign);
+
+        int baseScore = 55;
+        if (yourElement.equals(partnerElement)) {
+            baseScore += 25;
+        } else if (isComplementaryElement(yourElement, partnerElement)) {
+            baseScore += 15;
+        } else {
+            baseScore -= 10;
+        }
+
+        int love = clamp(baseScore + 4);
+        int trust = clamp(baseScore + (yourElement.equals(partnerElement) ? 8 : 2));
+        int communication = clamp(baseScore + (isComplementaryElement(yourElement, partnerElement) ? 7 : 1));
+        int overall = clamp(Math.round((love + trust + communication) / 3.0f));
+
+        List<String> strengths = new ArrayList<>();
+        strengths.add("Natural attraction between " + normalizedYourSign + " and " + normalizedPartnerSign);
+        strengths.add("Shared energy in key life decisions");
+        strengths.add("Potential for long-term emotional growth");
+
+        List<String> challenges = new ArrayList<>();
+        if (!yourElement.equals(partnerElement)) {
+            challenges.add("Different emotional styles may cause misunderstandings");
+        }
+        challenges.add("Consistency and communication need conscious effort");
+        challenges.add("Mutual patience is required during disagreements");
+
+        String description = buildSignDescription(normalizedYourSign, normalizedPartnerSign, overall);
+        String advice = overall >= 80
+            ? "Strong match. Keep communication open and maintain balance."
+            : overall >= 65
+                ? "Good potential. Focus on trust-building and emotional clarity."
+                : "Needs effort. Respect differences and communicate with patience.";
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("signs", normalizedYourSign + " & " + normalizedPartnerSign);
+        result.put("overall", overall);
+        result.put("love", love);
+        result.put("trust", trust);
+        result.put("communication", communication);
+        result.put("compatibility", overall);
+        result.put("description", description);
+        result.put("strengths", strengths);
+        result.put("challenges", challenges);
+        result.put("advice", advice);
+        return result;
+    }
+
+    private String normalizeSign(String sign) {
+        if (sign == null || sign.isBlank()) {
+            return "Aries";
+        }
+        String trimmed = sign.trim();
+        return Character.toUpperCase(trimmed.charAt(0)) + trimmed.substring(1).toLowerCase();
+    }
+
+    private int clamp(int value) {
+        return Math.max(0, Math.min(100, value));
+    }
+
+    private String getElement(String sign) {
+        return switch (sign) {
+            case "Aries", "Leo", "Sagittarius" -> "Fire";
+            case "Taurus", "Virgo", "Capricorn" -> "Earth";
+            case "Gemini", "Libra", "Aquarius" -> "Air";
+            case "Cancer", "Scorpio", "Pisces" -> "Water";
+            default -> "Neutral";
+        };
+    }
+
+    private boolean isComplementaryElement(String first, String second) {
+        return (first.equals("Fire") && second.equals("Air"))
+            || (first.equals("Air") && second.equals("Fire"))
+            || (first.equals("Earth") && second.equals("Water"))
+            || (first.equals("Water") && second.equals("Earth"));
+    }
+
+    private String buildSignDescription(String yourSign, String partnerSign, int score) {
+        if (score >= 80) {
+            return yourSign + " and " + partnerSign + " show high astrological harmony with strong emotional and practical balance.";
+        }
+        if (score >= 65) {
+            return yourSign + " and " + partnerSign + " are a good match with growth potential through better communication.";
+        }
+        return yourSign + " and " + partnerSign + " may face compatibility challenges that require conscious effort and patience.";
     }
 
     private int getNakshatraIndex(String nakshatra) {

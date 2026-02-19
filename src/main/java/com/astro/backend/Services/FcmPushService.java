@@ -95,16 +95,27 @@ public class FcmPushService {
             Map<String, Object> message = new LinkedHashMap<>();
             message.put("token", fcmToken.trim());
 
-            Map<String, Object> notification = new LinkedHashMap<>();
-            notification.put("title", safe(title));
-            notification.put("body", safe(body));
-            if (isHttpImage(imageUrl)) notification.put("image", imageUrl.trim());
-            message.put("notification", notification);
+            boolean callPush = isCallPush(type, actionData);
+            if (!callPush) {
+                Map<String, Object> notification = new LinkedHashMap<>();
+                notification.put("title", safe(title));
+                notification.put("body", safe(body));
+                if (isHttpImage(imageUrl)) notification.put("image", imageUrl.trim());
+                message.put("notification", notification);
+            }
 
             Map<String, String> data = new LinkedHashMap<>();
             data.put("title", safe(title));
             data.put("message", safe(body));
             data.put("type", safe(type));
+            Map<String, Object> actionDataMap = parseActionDataMap(actionData);
+            putDataIfPresent(data, "source", actionDataMap.get("source"));
+            putDataIfPresent(data, "chatId", actionDataMap.get("chatId"));
+            putDataIfPresent(data, "callId", actionDataMap.get("callId"));
+            putDataIfPresent(data, "callType", actionDataMap.get("callType"));
+            putDataIfPresent(data, "targetRole", actionDataMap.get("targetRole"));
+            putDataIfPresent(data, "callerNumber", actionDataMap.get("callerNumber"));
+            putDataIfPresent(data, "callerMobile", actionDataMap.get("callerMobile"));
             if (!isBlank(actionUrl)) data.put("actionUrl", actionUrl.trim());
             if (!isBlank(actionData)) data.put("actionData", actionData.trim());
             if (!isBlank(imageUrl)) data.put("imageUrl", imageUrl.trim());
@@ -112,13 +123,23 @@ public class FcmPushService {
 
             Map<String, Object> android = new LinkedHashMap<>();
             android.put("priority", "HIGH");
-            android.put("notification", Map.of(
-                    "sound", "default"
-            ));
+            if (!callPush) {
+                android.put("notification", Map.of(
+                        "sound", "default"
+                ));
+            }
             message.put("android", android);
 
             Map<String, Object> apns = new LinkedHashMap<>();
-            apns.put("payload", Map.of("aps", Map.of("sound", "default")));
+            if (callPush) {
+                apns.put("headers", Map.of(
+                        "apns-priority", "5",
+                        "apns-push-type", "background"
+                ));
+                apns.put("payload", Map.of("aps", Map.of("content-available", 1)));
+            } else {
+                apns.put("payload", Map.of("aps", Map.of("sound", "default")));
+            }
             message.put("apns", apns);
 
             Map<String, Object> payload = Map.of("message", message);
@@ -234,6 +255,46 @@ public class FcmPushService {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private boolean isCallPush(String type, String actionData) {
+        if ("CALL".equalsIgnoreCase(safe(type).trim())) {
+            return true;
+        }
+        Map<String, Object> actionDataMap = parseActionDataMap(actionData);
+        Object source = actionDataMap.get("source");
+        if (source != null && "call".equalsIgnoreCase(source.toString().trim())) {
+            return true;
+        }
+        String normalized = safe(actionData).toLowerCase();
+        return normalized.contains("\"source\":\"call\"")
+                || normalized.contains("\"source\": \"call\"");
+    }
+
+    private Map<String, Object> parseActionDataMap(String actionData) {
+        if (isBlank(actionData)) {
+            return Map.of();
+        }
+        try {
+            Map<?, ?> raw = objectMapper.readValue(actionData, Map.class);
+            Map<String, Object> normalized = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> entry : raw.entrySet()) {
+                if (entry.getKey() != null) {
+                    normalized.put(entry.getKey().toString(), entry.getValue());
+                }
+            }
+            return normalized;
+        } catch (Exception ignored) {
+            return Map.of();
+        }
+    }
+
+    private void putDataIfPresent(Map<String, String> data, String key, Object value) {
+        if (value == null) return;
+        String normalized = value.toString().trim();
+        if (!normalized.isEmpty()) {
+            data.put(key, normalized);
+        }
     }
 
     private String safe(String value) {

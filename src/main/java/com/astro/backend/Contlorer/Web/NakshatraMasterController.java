@@ -31,10 +31,12 @@ public class NakshatraMasterController {
         if (name.isEmpty()) {
             throw new RuntimeException("Nakshatra name is required");
         }
+        String image = parseImage(payload);
         String description = payload.get("description") == null ? null : payload.get("description").toString().trim();
         NakshatraMaster saved = nakshatraMasterRepository.save(
                 NakshatraMaster.builder()
                         .name(name)
+                        .image(image)
                         .description(description)
                         .isActive(true)
                         .build()
@@ -56,6 +58,9 @@ public class NakshatraMasterController {
         if (payload.containsKey("description")) {
             existing.setDescription(payload.get("description") == null ? null : payload.get("description").toString().trim());
         }
+        if (payload.containsKey("image") || payload.containsKey("imageBase64")) {
+            existing.setImage(parseImage(payload));
+        }
         if (payload.containsKey("isActive") && payload.get("isActive") instanceof Boolean flag) {
             existing.setIsActive(flag);
         }
@@ -71,5 +76,13 @@ public class NakshatraMasterController {
         nakshatraMasterRepository.save(existing);
         return ResponseEntity.ok(Map.of("status", true, "message", "Nakshatra deleted successfully", "id", id));
     }
-}
 
+    private String parseImage(Map<String, Object> payload) {
+        Object value = payload.containsKey("image") ? payload.get("image") : payload.get("imageBase64");
+        if (value == null) {
+            return null;
+        }
+        String str = value.toString().trim();
+        return str.isEmpty() ? null : str;
+    }
+}

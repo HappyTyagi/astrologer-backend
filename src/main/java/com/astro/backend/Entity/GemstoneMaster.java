@@ -22,6 +22,10 @@ public class GemstoneMaster {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
+    private String image;
+
     private String associatedPlanet;
 
     @Column(length = 1200)

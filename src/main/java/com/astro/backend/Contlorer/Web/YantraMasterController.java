@@ -31,11 +31,13 @@ public class YantraMasterController {
         if (name.isEmpty()) {
             throw new RuntimeException("Yantra name is required");
         }
+        String image = parseImage(payload);
         String deity = payload.get("associatedDeity") == null ? null : payload.get("associatedDeity").toString().trim();
         String description = payload.get("description") == null ? null : payload.get("description").toString().trim();
         YantraMaster saved = yantraMasterRepository.save(
                 YantraMaster.builder()
                         .name(name)
+                        .image(image)
                         .associatedDeity(deity)
                         .description(description)
                         .isActive(true)
@@ -64,6 +66,9 @@ public class YantraMasterController {
         if (payload.containsKey("description")) {
             existing.setDescription(payload.get("description") == null ? null : payload.get("description").toString().trim());
         }
+        if (payload.containsKey("image") || payload.containsKey("imageBase64")) {
+            existing.setImage(parseImage(payload));
+        }
         if (payload.containsKey("isActive") && payload.get("isActive") instanceof Boolean flag) {
             existing.setIsActive(flag);
         }
@@ -85,5 +90,14 @@ public class YantraMasterController {
                 "message", "Yantra deleted successfully",
                 "id", id
         ));
+    }
+
+    private String parseImage(Map<String, Object> payload) {
+        Object value = payload.containsKey("image") ? payload.get("image") : payload.get("imageBase64");
+        if (value == null) {
+            return null;
+        }
+        String str = value.toString().trim();
+        return str.isEmpty() ? null : str;
     }
 }

@@ -14,6 +14,7 @@ public class VerifyOtpResponse {
     private String name;               // User name
     private String mobileNo;           // User mobile number
     private String email;              // User email
+    private String role;               // Role from users table (ADMIN/USER/ASTROLOGER)
     private Boolean isNewUser;         // Whether user was just created
     private Boolean isProfileComplete; // Whether user profile is complete (has MobileUserProfile with complete data)
     
@@ -30,4 +31,3 @@ public class VerifyOtpResponse {
     private String address;            // Full address
     private Integer isLanguage;        // Language preference (1 = English, 2 = Hindi)
 }
-

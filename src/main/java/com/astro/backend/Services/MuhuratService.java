@@ -209,23 +209,52 @@ public class MuhuratService {
     public Map<String, Object> getMonthlyAuspiciousDates(LocalDate monthStart, String eventType) {
         Map<String, Object> result = new LinkedHashMap<>();
         List<LocalDate> dates = new ArrayList<>();
+        List<Map<String, Object>> entries = new ArrayList<>();
 
         LocalDate current = monthStart;
-        for (int day = 0; day < 30; day++) {
+        int daysInMonth = monthStart.lengthOfMonth();
+        for (int day = 0; day < daysInMonth; day++) {
             if (isValidMuhuratDay(current, eventType)) {
                 dates.add(current);
+
+                List<LocalTime> slots = getAuspiciousTimeSlots(current, eventType);
+                LocalTime bestSlot = slots.isEmpty() ? LocalTime.of(6, 0) : slots.get(0);
+                int bestScore = calculateAuspiciousityScore(current, bestSlot, eventType);
+
+                String bestTiming = formatTime(bestSlot) + " - " + formatTime(bestSlot.plusHours(2));
+
+                Map<String, Object> row = new LinkedHashMap<>();
+                row.put("date", current.toString());
+                row.put("event", eventType);
+                row.put("muhuratsCount", slots.size());
+                row.put("bestTiming", bestTiming);
+                row.put("auspiciousness", bestScore);
+                entries.add(row);
             }
             current = current.plusDays(1);
         }
 
         result.put("event", eventType);
         result.put("month", monthStart.getMonth().toString());
+        result.put("year", monthStart.getYear());
         result.put("auspiciousDates", dates);
+        result.put("entries", entries);
         result.put("totalDays", dates.size());
         result.put("recommendation", "Best dates for " + eventType + ": " + 
                 (dates.isEmpty() ? "No auspicious dates found" : dates.stream().limit(5).toList()));
 
         return result;
+    }
+
+    private String formatTime(LocalTime time) {
+        int hour = time.getHour();
+        int minute = time.getMinute();
+        String amPm = hour >= 12 ? "PM" : "AM";
+        int displayHour = hour % 12;
+        if (displayHour == 0) {
+            displayHour = 12;
+        }
+        return String.format("%02d:%02d %s", displayHour, minute, amPm);
     }
 
     /**
