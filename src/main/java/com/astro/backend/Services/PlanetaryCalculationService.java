@@ -710,6 +710,31 @@ public class PlanetaryCalculationService {
         html.append(".header{display:grid;grid-template-columns:80px 1fr 80px;align-items:center;border-bottom:2px solid #8a5a2b;padding-bottom:15px;}\n");
         html.append(".header .om{font-size:48px;color:#8a5a2b;}\n");
         html.append(".header .title{text-align:center;}\n");
+        html.append(".footer {\n" +
+                "    background: #000;\n" +
+                "    color: #fff;\n" +
+                "    text-align: center;\n" +
+                "    padding: 15px;\n" +
+                "    font-size: 14px;\n" +
+                "    font-family: Arial, sans-serif;\n" +
+                "}\n" +
+                "\n" +
+                ".footer .bold {\n" +
+                "    font-weight: bold;\n" +
+                "}\n" +
+                "\n" +
+                ".footer .brand {\n" +
+                "    font-weight: bold;\n" +
+                "    background: linear-gradient(\n" +
+                "        90deg,\n" +
+                "        #f5d06f,\n" +
+                "        #d4af37,\n" +
+                "        #b8860b,\n" +
+                "        #ffd700\n" +
+                "    );\n" +
+                "    -webkit-background-clip: text;\n" +
+                "    -webkit-text-fill-color: transparent;\n" +
+                "}");
         html.append(".header .title h1{margin:0;font-size:32px;}\n");
         html.append(".header .title h2{margin:6px 0 0;font-weight:normal;font-size:18px;}\n");
         html.append(".header .sun{font-size:48px;text-align:right;}\n");
@@ -983,7 +1008,10 @@ public class PlanetaryCalculationService {
         html.append("</div>\n");
 
         html.append("</div>\n");
-        html.append("<div class=\"footer\">© Kundli Report</div>\n");
+        html.append("<div class=\"footer\">\n" +
+                "    © <span class=\"bold\">Chart Generated</span> by \n" +
+                "    <span class=\"brand\">Astrro Adhyaay</span>\n" +
+                "</div>\n");
         html.append("</div>\n");
         html.append("</body>\n");
         html.append("</html>");
@@ -1275,6 +1303,31 @@ public class PlanetaryCalculationService {
         html.append("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n");
         html.append("<title>").append(title).append(" - Kundli Report</title>\n");
         html.append("<style>\n");
+        html.append(".footer {\n" +
+                "    background: #000;\n" +
+                "    color: #fff;\n" +
+                "    text-align: center;\n" +
+                "    padding: 15px;\n" +
+                "    font-size: 14px;\n" +
+                "    font-family: Arial, sans-serif;\n" +
+                "}\n" +
+                "\n" +
+                ".footer .bold {\n" +
+                "    font-weight: bold;\n" +
+                "}\n" +
+                "\n" +
+                ".footer .brand {\n" +
+                "    font-weight: bold;\n" +
+                "    background: linear-gradient(\n" +
+                "        90deg,\n" +
+                "        #f5d06f,\n" +
+                "        #d4af37,\n" +
+                "        #b8860b,\n" +
+                "        #ffd700\n" +
+                "    );\n" +
+                "    -webkit-background-clip: text;\n" +
+                "    -webkit-text-fill-color: transparent;\n" +
+                "}\n");
         html.append("*{box-sizing:border-box}\n");
         html.append("html,body{width:100%;height:100%;margin:0;padding:0;font-size:16px;}\n");
         html.append("body{margin:0;background:#ead5be;font-family: Calibre, Calibri, Georgia, \"Times New Roman\", serif;}\n");
@@ -1291,7 +1344,10 @@ public class PlanetaryCalculationService {
         html.append("<body>\n");
         html.append("<div class=\"page\">\n");
         html.append(content);
-        html.append("<div class=\"footer\">© Kundli Report</div>\n");
+        html.append("<div class=\"footer\">\n" +
+                "    © <span class=\"bold\">Chart Generated</span> by \n" +
+                "    <span class=\"brand\">Astrro Adhyaay</span>\n" +
+                "</div>\n");
         html.append("</div>\n");
         html.append("</body>\n");
         html.append("</html>");
