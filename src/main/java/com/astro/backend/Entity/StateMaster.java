@@ -22,6 +22,9 @@ public class StateMaster {
     @Column(nullable = false, unique = true)
     private String name;  // State name
 
+    @Column(name = "hi_name")
+    private String hiName;
+
     private String code;  // State code (e.g., MH for Maharashtra)
 
     private String country;  // Country

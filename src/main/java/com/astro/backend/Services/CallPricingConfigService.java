@@ -63,6 +63,13 @@ public class CallPricingConfigService {
         return getOrCreateConfig();
     }
 
+    @Transactional(readOnly = true)
+    public String getRawConfigValue(String key) {
+        return appConfigRepository.findByConfigKey(key)
+                .map(AppConfig::getConfigValue)
+                .orElse(null);
+    }
+
     public boolean isVideo(String callType) {
         return "video".equalsIgnoreCase(normalizeCallType(callType));
     }

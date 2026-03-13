@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface PujaRepository extends JpaRepository<Puja, Long> {
     List<Puja> findByIsActiveTrue();
     Optional<Puja> findByNameIgnoreCase(String name);
+    long countByNameIgnoreCase(String name);
     List<Puja> findByPopupEndDateBeforeAndIsActiveTrue(LocalDate date);
     List<Puja> findByStatusIgnoreCaseAndIsActiveTrue(String status);
 }

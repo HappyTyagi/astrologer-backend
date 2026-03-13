@@ -64,6 +64,7 @@ public class GenderMasterService {
         // Create new gender
         GenderMaster gender = GenderMaster.builder()
                 .name(request.getName())
+                .hiName(request.getHiName())
                 .description(request.getDescription())
                 .isActive(request.getIsActive() != null ? request.getIsActive() : true)
                 .build();
@@ -73,6 +74,7 @@ public class GenderMasterService {
         return GenderMasterResponse.builder()
                 .id(savedGender.getId())
                 .name(savedGender.getName())
+                .hiName(savedGender.getHiName())
                 .description(savedGender.getDescription())
                 .isActive(savedGender.getIsActive())
                 .createdAt(savedGender.getCreatedAt())
@@ -99,6 +101,7 @@ public class GenderMasterService {
 
         // Update fields
         gender.setName(request.getName());
+        gender.setHiName(request.getHiName());
         gender.setDescription(request.getDescription());
         
         if (request.getIsActive() != null) {
@@ -110,6 +113,7 @@ public class GenderMasterService {
         return GenderMasterResponse.builder()
                 .id(updatedGender.getId())
                 .name(updatedGender.getName())
+                .hiName(updatedGender.getHiName())
                 .description(updatedGender.getDescription())
                 .isActive(updatedGender.getIsActive())
                 .createdAt(updatedGender.getCreatedAt())
@@ -133,6 +137,7 @@ public class GenderMasterService {
         return GenderMasterResponse.builder()
                 .id(gender.getId())
                 .name(gender.getName())
+                .hiName(gender.getHiName())
                 .status(true)
                 .message("Gender deleted successfully")
                 .build();
@@ -152,6 +157,7 @@ public class GenderMasterService {
         return GenderMasterResponse.builder()
                 .id(updatedGender.getId())
                 .name(updatedGender.getName())
+                .hiName(updatedGender.getHiName())
                 .description(updatedGender.getDescription())
                 .isActive(updatedGender.getIsActive())
                 .updatedAt(updatedGender.getUpdatedAt())
@@ -167,6 +173,7 @@ public class GenderMasterService {
         return GenderMasterResponse.builder()
                 .id(gender.getId())
                 .name(gender.getName())
+                .hiName(gender.getHiName())
                 .description(gender.getDescription())
                 .isActive(gender.getIsActive())
                 .createdAt(gender.getCreatedAt())

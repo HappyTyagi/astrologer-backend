@@ -37,7 +37,9 @@ public class SecurityConfig {
                                 "/api/master/rashi/active",
                                 "/api/master/nakshatra/active",
                                 "/api/master/gemstone/active",
-                                "/api/master/yantra/active"
+                                "/api/master/yantra/active",
+                                "/puja/join/**",
+                                "/puja/join-access/**"
                         ).permitAll()
                         .requestMatchers(
                                 "/api/web/auth/**",

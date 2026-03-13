@@ -83,18 +83,21 @@ public class DataInitializationService implements CommandLineRunner {
             List<GenderMaster> genders = Arrays.asList(
                     GenderMaster.builder()
                             .name("Male")
+                            .hiName("पुरुष")
                             .description("Male gender")
                             .isActive(true)
                             .build(),
                     
                     GenderMaster.builder()
                             .name("Female")
+                            .hiName("महिला")
                             .description("Female gender")
                             .isActive(true)
                             .build(),
                     
                     GenderMaster.builder()
                             .name("Other")
+                            .hiName("अन्य")
                             .description("Other/Prefer not to say")
                             .isActive(true)
                             .build()
@@ -914,17 +917,40 @@ public class DataInitializationService implements CommandLineRunner {
                 log.info("Nakshatra Master data already exists. Skipping initialization.");
                 return;
             }
-            List<String> nakshatraNames = Arrays.asList(
-                    "Ashwini", "Bharani", "Krittika", "Rohini", "Mrigashirsha", "Ardra",
-                    "Punarvasu", "Pushya", "Ashlesha", "Magha", "Purva Phalguni", "Uttara Phalguni",
-                    "Hasta", "Chitra", "Swati", "Vishakha", "Anuradha", "Jyeshtha",
-                    "Mula", "Purva Ashadha", "Uttara Ashadha", "Shravana", "Dhanishta", "Shatabhisha",
-                    "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
+            List<Map.Entry<String, String>> nakshatraNames = List.of(
+                    Map.entry("Ashwini", "अश्विनी"),
+                    Map.entry("Bharani", "भरणी"),
+                    Map.entry("Krittika", "कृत्तिका"),
+                    Map.entry("Rohini", "रोहिणी"),
+                    Map.entry("Mrigashirsha", "मृगशीर्षा"),
+                    Map.entry("Ardra", "आर्द्रा"),
+                    Map.entry("Punarvasu", "पुनर्वसु"),
+                    Map.entry("Pushya", "पुष्य"),
+                    Map.entry("Ashlesha", "आश्लेषा"),
+                    Map.entry("Magha", "मघा"),
+                    Map.entry("Purva Phalguni", "पूर्वा फाल्गुनी"),
+                    Map.entry("Uttara Phalguni", "उत्तरा फाल्गुनी"),
+                    Map.entry("Hasta", "हस्त"),
+                    Map.entry("Chitra", "चित्रा"),
+                    Map.entry("Swati", "स्वाती"),
+                    Map.entry("Vishakha", "विशाखा"),
+                    Map.entry("Anuradha", "अनुराधा"),
+                    Map.entry("Jyeshtha", "ज्येष्ठा"),
+                    Map.entry("Mula", "मूल"),
+                    Map.entry("Purva Ashadha", "पूर्वाषाढ़ा"),
+                    Map.entry("Uttara Ashadha", "उत्तराषाढ़ा"),
+                    Map.entry("Shravana", "श्रवण"),
+                    Map.entry("Dhanishta", "धनिष्ठा"),
+                    Map.entry("Shatabhisha", "शतभिषा"),
+                    Map.entry("Purva Bhadrapada", "पूर्वाभाद्रपदा"),
+                    Map.entry("Uttara Bhadrapada", "उत्तराभाद्रपदा"),
+                    Map.entry("Revati", "रेवती")
             );
             List<NakshatraMaster> rows = nakshatraNames.stream()
-                    .map(name -> NakshatraMaster.builder()
-                            .name(name)
-                            .description(name + " nakshatra")
+                    .map(item -> NakshatraMaster.builder()
+                            .name(item.getKey())
+                            .hiName(item.getValue())
+                            .description(item.getKey() + " nakshatra")
                             .isActive(true)
                             .build())
                     .toList();

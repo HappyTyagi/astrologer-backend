@@ -33,6 +33,7 @@ public class PujaReminderService {
     private final MobileUserProfileRepository mobileUserProfileRepository;
     private final EmailService emailService;
     private final FcmPushService fcmPushService;
+    private final PujaService pujaService;
 
     private static final DateTimeFormatter SLOT_FORMATTER = DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a");
     private static final Duration TRIGGER_WINDOW = Duration.ofMinutes(3);
@@ -79,9 +80,7 @@ public class PujaReminderService {
         final String pujaName = puja == null || puja.getName() == null || puja.getName().isBlank()
                 ? "Puja Booking"
                 : puja.getName();
-        final String meetingLink = booking.getMeetingLink() == null || booking.getMeetingLink().isBlank()
-                ? "https://meet.google.com/new"
-                : booking.getMeetingLink();
+        final String meetingLink = pujaService.resolveUserMeetingLink(booking, slot);
         final String toEmail = profile == null || profile.getEmail() == null ? "" : profile.getEmail().trim();
         final String fcmToken = extractFcmToken(profile);
         final Set<String> sentStages = parseSentStages(booking.getNotificationStatus());

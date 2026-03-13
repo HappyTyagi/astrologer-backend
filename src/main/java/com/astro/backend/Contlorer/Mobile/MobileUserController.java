@@ -54,6 +54,27 @@ public class MobileUserController {
     }
 
     /**
+     * Get mobile user profile by mobile number
+     * GET /api/mobile/user/profile/by-mobile/{mobileNumber}
+     */
+    @GetMapping("/profile/by-mobile/{mobileNumber}")
+    public ResponseEntity<MobileUserProfileResponse> getMobileUserProfileByMobile(
+            @PathVariable String mobileNumber) {
+        try {
+            String normalized = normalizeMobile(mobileNumber);
+            MobileUserProfileResponse response =
+                    mobileUserService.getMobileUserProfileByMobileNumber(normalized);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(MobileUserProfileResponse.builder()
+                            .status(false)
+                            .message(e.getMessage())
+                            .build());
+        }
+    }
+
+    /**
      * Update device details (token, fcmToken, appVersion)
      * PUT /api/mobile/user/device/{userId}
      */

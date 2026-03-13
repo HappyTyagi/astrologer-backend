@@ -1207,18 +1207,19 @@ public class PlanetaryCalculationService {
         }
 
         Map<Integer, int[]> planetCoords = new HashMap<>();
-        planetCoords.put(1, new int[]{200, 126});   // house1 top-center
-        planetCoords.put(2, new int[]{300, 72});    // house2 upper-right inner
-        planetCoords.put(3, new int[]{344, 106});   // house3 top-right corner (pulled inward)
-        planetCoords.put(4, new int[]{300, 158});   // house4 right-center
-        planetCoords.put(5, new int[]{344, 276});   // house5 bottom-right corner (pulled inward)
-        planetCoords.put(6, new int[]{288, 316});   // house6 lower-right inner
-        planetCoords.put(7, new int[]{200, 304});   // house7 bottom-center
-        planetCoords.put(8, new int[]{112, 344});   // house8 lower-left inner
-        planetCoords.put(9, new int[]{56, 352});    // house9 bottom-left corner (pulled inward)
-        planetCoords.put(10, new int[]{78, 200});   // house10 left-center
-        planetCoords.put(11, new int[]{56, 90});    // house11 top-left corner (pulled inward)
-        planetCoords.put(12, new int[]{108, 76});   // house12 upper-left inner
+        planetCoords.put(1, new int[]{200, 110});   // house1 top-center //12
+        planetCoords.put(2, new int[]{300, 30});    // house2 upper-right inner // 1
+        planetCoords.put(3, new int[]{370, 100});   // house3 top-right corner (pulled inward) //2
+        planetCoords.put(4, new int[]{300, 158});   // house4 right-center //3
+        planetCoords.put(5, new int[]{370, 300});   // house5 bottom-right corner (pulled inward) //4
+        planetCoords.put(6, new int[]{300, 360});   // house6 lower-right inner //5
+        planetCoords.put(7, new int[]{200, 290});   // house7 bottom-center //6
+        planetCoords.put(8, new int[]{100, 360});   // house8 lower-left inner //7
+        planetCoords.put(9, new int[]{26, 300});    // house9 bottom-left corner (pulled inward)//10
+        planetCoords.put(10, new int[]{100, 200});   // house10 left-center //9
+        planetCoords.put(11, new int[]{26, 95});    // house11 top-left corner (pulled inward)//8
+        planetCoords.put(12, new int[]{100, 30});   // house12 upper-left inner //11
+
 
         html.append("  <g fill=\"#b33a2b\" font-size=\"11.5\" font-weight=\"600\" text-anchor=\"middle\" dominant-baseline=\"middle\">\n");
         for (int house = 1; house <= 12; house++) {

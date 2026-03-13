@@ -31,12 +31,16 @@ public class YantraMasterController {
         if (name.isEmpty()) {
             throw new RuntimeException("Yantra name is required");
         }
+        String hiName = payload.get("hiName") == null
+                ? (payload.get("hi_name") == null ? null : payload.get("hi_name").toString().trim())
+                : payload.get("hiName").toString().trim();
         String image = parseImage(payload);
         String deity = payload.get("associatedDeity") == null ? null : payload.get("associatedDeity").toString().trim();
         String description = payload.get("description") == null ? null : payload.get("description").toString().trim();
         YantraMaster saved = yantraMasterRepository.save(
                 YantraMaster.builder()
                         .name(name)
+                        .hiName(hiName == null || hiName.isBlank() ? null : hiName)
                         .image(image)
                         .associatedDeity(deity)
                         .description(description)
@@ -62,6 +66,11 @@ public class YantraMasterController {
         }
         if (payload.containsKey("associatedDeity")) {
             existing.setAssociatedDeity(payload.get("associatedDeity") == null ? null : payload.get("associatedDeity").toString().trim());
+        }
+        if (payload.containsKey("hiName") || payload.containsKey("hi_name")) {
+            Object raw = payload.containsKey("hiName") ? payload.get("hiName") : payload.get("hi_name");
+            String hiName = raw == null ? null : raw.toString().trim();
+            existing.setHiName((hiName == null || hiName.isBlank()) ? null : hiName);
         }
         if (payload.containsKey("description")) {
             existing.setDescription(payload.get("description") == null ? null : payload.get("description").toString().trim());

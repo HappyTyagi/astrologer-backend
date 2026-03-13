@@ -112,6 +112,7 @@ public class AdminPujaController {
             row.put("email", userOpt.map(User::getEmail).orElse(""));
             row.put("slotId", booking.getSlotId());
             row.put("slotTime", slotOpt.map(PujaSlot::getSlotTime).orElse(null));
+            row.put("slotSelectedByMobile", booking.getSlotSelectedByMobile());
             row.put("bookingStatus", booking.getStatus());
             row.put("bookedAt", booking.getBookedAt());
             row.put("addressId", booking.getAddressId());
@@ -140,6 +141,29 @@ public class AdminPujaController {
                 "pujaId", pujaId,
                 "count", slots.size(),
                 "slots", slots
+        ));
+    }
+
+    @GetMapping("/booking-config")
+    public ResponseEntity<?> getBookingConfig() {
+        boolean mobileSlotSelectionEnabled = pujaService.isMobileSlotSelectionEnabled();
+        return ResponseEntity.ok(Map.of(
+                "status", true,
+                "mobileSlotSelectionEnabled", mobileSlotSelectionEnabled
+        ));
+    }
+
+    @PutMapping("/booking-config/mobile-slot-selection")
+    public ResponseEntity<?> updateMobileSlotSelectionConfig(@RequestBody Map<String, Object> payload) {
+        Boolean enabled = parseBoolean(payload == null ? null : payload.get("enabled"));
+        if (enabled == null) {
+            throw new RuntimeException("enabled field is required (true/false)");
+        }
+        boolean saved = pujaService.updateMobileSlotSelectionEnabled(enabled);
+        return ResponseEntity.ok(Map.of(
+                "status", true,
+                "message", "Mobile slot selection config updated",
+                "mobileSlotSelectionEnabled", saved
         ));
     }
 
@@ -318,6 +342,7 @@ public class AdminPujaController {
         puja.setPopupEnabled(request.getPopupEnabled());
         puja.setPopupStartDate(request.getPopupStartDate());
         puja.setPopupEndDate(request.getPopupEndDate());
+        puja.setIsSlot(Boolean.TRUE.equals(request.getIsSlot()));
         puja.setPopupPriority(request.getPopupPriority() == null ? 0 : request.getPopupPriority());
         puja.setPopupLabel(defaultText(request.getPopupLabel()).isBlank() ? "Upcoming" : request.getPopupLabel().trim());
         puja.setStatus(defaultText(request.getStatus()).isBlank() ? "ACTIVE" : request.getStatus().trim().toUpperCase());
@@ -329,5 +354,15 @@ public class AdminPujaController {
 
     private String defaultText(String value) {
         return value == null ? "" : value;
+    }
+
+    private Boolean parseBoolean(Object value) {
+        if (value == null) return null;
+        if (value instanceof Boolean b) return b;
+        String raw = value.toString().trim().toLowerCase(Locale.ROOT);
+        if (raw.isEmpty()) return null;
+        if (raw.equals("true") || raw.equals("1") || raw.equals("yes")) return true;
+        if (raw.equals("false") || raw.equals("0") || raw.equals("no")) return false;
+        return null;
     }
 }

@@ -65,6 +65,8 @@ public class MobileUserProfile {
     // ===== Profile Management =====
     private Boolean isProfileComplete; // Track profile completeness
     private LocalDateTime lastLoginAt;
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String profileImageUrl;
 
     // ===== Language Preference =====

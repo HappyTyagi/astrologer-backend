@@ -55,6 +55,14 @@ public class CallPricingController {
         body.put("success", true);
         body.put("message", message);
         body.put("billingUnitMinutes", CallPricingConfigService.BILLING_UNIT_MINUTES);
+        body.put("audioConfigKey", CallPricingConfigService.KEY_AUDIO_RATE);
+        body.put("audioConfigValue", callPricingConfigService.getRawConfigValue(CallPricingConfigService.KEY_AUDIO_RATE));
+        body.put("videoConfigKey", CallPricingConfigService.KEY_VIDEO_RATE);
+        body.put("videoConfigValue", callPricingConfigService.getRawConfigValue(CallPricingConfigService.KEY_VIDEO_RATE));
+        body.put("audioFreeMinutesConfigKey", CallPricingConfigService.KEY_AUDIO_FREE_MIN);
+        body.put("audioFreeMinutesConfigValue", callPricingConfigService.getRawConfigValue(CallPricingConfigService.KEY_AUDIO_FREE_MIN));
+        body.put("videoFreeMinutesConfigKey", CallPricingConfigService.KEY_VIDEO_FREE_MIN);
+        body.put("videoFreeMinutesConfigValue", callPricingConfigService.getRawConfigValue(CallPricingConfigService.KEY_VIDEO_FREE_MIN));
         body.put("audioRatePer30Min", cfg.getAudioRatePerMin());
         body.put("videoRatePer30Min", cfg.getVideoRatePerMin());
         body.put("audioRatePerMin", cfg.getAudioRatePerMin());

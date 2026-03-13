@@ -1,5 +1,6 @@
 package com.astro.backend.RequestDTO;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import lombok.Data;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -12,6 +13,9 @@ public class DistrictMasterRequest {
     
     @NotBlank(message = "District name is required")
     private String name;
+
+    @JsonAlias("hi_name")
+    private String hiName;
     
     private String code;
     

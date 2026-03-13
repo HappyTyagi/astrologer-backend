@@ -22,6 +22,9 @@ public class YantraMaster {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @Column(name = "hi_name")
+    private String hiName;
+
     @Lob
     @Column(columnDefinition = "LONGTEXT")
     private String image;

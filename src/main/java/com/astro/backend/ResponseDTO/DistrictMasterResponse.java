@@ -14,6 +14,7 @@ public class DistrictMasterResponse {
     private Long id;
     private Long stateId;
     private String name;
+    private String hiName;
     private String code;
     private String description;
     private Boolean isActive;

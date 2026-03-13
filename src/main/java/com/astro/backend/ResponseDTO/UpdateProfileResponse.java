@@ -24,6 +24,7 @@ public class UpdateProfileResponse {
     private Long districtMasterId;
     private Long gemstoneMasterId;
     private Long yantraMasterId;
+    private String profileImageUrl;
     private Double latitude;
     private Double longitude;
     private Double mobileLatitude;

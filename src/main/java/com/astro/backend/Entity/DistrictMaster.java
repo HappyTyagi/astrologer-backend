@@ -28,6 +28,9 @@ public class DistrictMaster {
     @Column(nullable = false, unique = true)
     private String name;  // District name
 
+    @Column(name = "hi_name")
+    private String hiName;
+
     private String code;  // District code
 
     private String description;

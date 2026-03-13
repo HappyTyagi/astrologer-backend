@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 public class GenderMasterResponse {
     private Long id;
     private String name;
+    private String hiName;
     private String description;
     private Boolean isActive;
     private LocalDateTime createdAt;

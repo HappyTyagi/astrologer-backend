@@ -16,6 +16,10 @@ import com.astro.backend.ResponseDTO.PujaRescheduleItemResponse;
 import com.astro.backend.Services.AstrologerDistrictPriceService;
 import com.astro.backend.Services.PujaService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -83,6 +87,16 @@ public class PujaController {
 
     @GetMapping("/slots/{pujaId}")
     public Object listSlots(@PathVariable Long pujaId) {
+        Puja puja = pujaRepo.findById(pujaId).orElse(null);
+        if (puja == null) {
+            return List.of();
+        }
+        boolean slotBookingEnabled = puja.getIsSlot() != null
+                ? Boolean.TRUE.equals(puja.getIsSlot())
+                : pujaService.isMobileSlotSelectionEnabled();
+        if (!slotBookingEnabled) {
+            return List.of();
+        }
         LocalDateTime now = LocalDateTime.now();
         return slotRepo.findByPujaIdOrderBySlotTimeAsc(pujaId)
                 .stream()
@@ -145,28 +159,61 @@ public class PujaController {
                 .map(PujaBooking::getSlotId)
                 .filter(id -> id != null && id > 0)
                 .collect(Collectors.toSet());
-        final Map<Long, LocalDateTime> slotTimeById = slotRepo.findAllById(slotIds)
+        final Map<Long, PujaSlot> slotById = slotRepo.findAllById(slotIds)
                 .stream()
-                .collect(Collectors.toMap(PujaSlot::getId, PujaSlot::getSlotTime));
+                .collect(Collectors.toMap(PujaSlot::getId, s -> s));
 
         return bookings.stream().map(b -> {
+            PujaSlot slot = b.getSlotId() == null ? null : slotById.get(b.getSlotId());
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("id", b.getId());
             row.put("userId", b.getUserId());
             row.put("pujaId", b.getPujaId());
             row.put("slotId", b.getSlotId());
-            row.put("slotTime", b.getSlotId() == null ? null : slotTimeById.get(b.getSlotId()));
+            row.put("slotTime", slot == null ? null : slot.getSlotTime());
+            row.put("slotSelectedByMobile", b.getSlotSelectedByMobile());
             row.put("addressId", b.getAddressId());
             row.put("bookedAt", b.getBookedAt());
             row.put("status", b.getStatus());
             row.put("totalPrice", b.getTotalPrice());
             row.put("paymentMethod", b.getPaymentMethod());
             row.put("transactionId", b.getTransactionId());
-            row.put("meetingLink", b.getMeetingLink());
+            row.put("meetingLink", pujaService.resolveUserMeetingLink(b, slot));
             row.put("notificationStatus", b.getNotificationStatus());
             row.put("reminderSentAt", b.getReminderSentAt());
             return row;
         }).toList();
+    }
+
+    @GetMapping("/join-access/{orderId}")
+    public Object joinAccess(
+            @PathVariable String orderId,
+            @RequestParam String token,
+            @RequestParam(required = false) String date
+    ) {
+        return pujaService.getJoinAccess(orderId, token, date);
+    }
+
+    @GetMapping(value = "/join/{orderId}", produces = MediaType.TEXT_HTML_VALUE)
+    public ResponseEntity<String> joinPuja(
+            @PathVariable String orderId,
+            @RequestParam String token,
+            @RequestParam(required = false) String date
+    ) {
+        Map<String, Object> access = pujaService.getJoinAccess(orderId, token, date);
+        if (Boolean.TRUE.equals(access.get("allowed"))) {
+            String meetingLink = access.get("meetingLink") == null
+                    ? ""
+                    : access.get("meetingLink").toString().trim();
+            if (!meetingLink.isEmpty()) {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setLocation(java.net.URI.create(meetingLink));
+                return new ResponseEntity<>(headers, HttpStatus.FOUND);
+            }
+        }
+        return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_HTML)
+                .body(buildJoinBlockedHtml(access));
     }
 
     @PostMapping("/history/{orderId}/resend-receipt")
@@ -223,5 +270,56 @@ public class PujaController {
                     .message(e.getMessage())
                     .build();
         }
+    }
+
+    private String buildJoinBlockedHtml(Map<String, Object> access) {
+        String message = access == null || access.get("message") == null
+                ? "Join link is not available right now."
+                : access.get("message").toString();
+        String orderId = access == null || access.get("orderId") == null
+                ? "-"
+                : access.get("orderId").toString();
+        String slotTime = access == null || access.get("slotTime") == null
+                ? "-"
+                : access.get("slotTime").toString();
+        String joinOpensAt = access == null || access.get("joinOpensAt") == null
+                ? "-"
+                : access.get("joinOpensAt").toString();
+
+        return """
+                <html>
+                <head>
+                  <meta charset="UTF-8"/>
+                  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                  <title>Puja Join Status</title>
+                </head>
+                <body style="margin:0;padding:0;background:#f6f8fc;font-family:Arial,sans-serif;color:#1f2533;">
+                  <div style="max-width:720px;margin:36px auto;padding:0 14px;">
+                    <div style="background:#fff;border:1px solid #e4e9f2;border-radius:14px;padding:22px;">
+                      <h2 style="margin:0 0 10px 0;color:#1f2f73;">Puja Join Status</h2>
+                      <p style="margin:0 0 16px 0;color:#5c6577;">%s</p>
+                      <table style="width:100%%;border-collapse:collapse;">
+                        <tr><td style="padding:8px 0;color:#607086;">Order</td><td style="padding:8px 0;text-align:right;">%s</td></tr>
+                        <tr><td style="padding:8px 0;color:#607086;">Slot Time</td><td style="padding:8px 0;text-align:right;">%s</td></tr>
+                        <tr><td style="padding:8px 0;color:#607086;">Join Opens At</td><td style="padding:8px 0;text-align:right;">%s</td></tr>
+                      </table>
+                    </div>
+                  </div>
+                </body>
+                </html>
+                """.formatted(
+                escapeHtml(message),
+                escapeHtml(orderId),
+                escapeHtml(slotTime),
+                escapeHtml(joinOpensAt)
+        );
+    }
+
+    private String escapeHtml(String value) {
+        if (value == null) return "";
+        return value
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;");
     }
 }

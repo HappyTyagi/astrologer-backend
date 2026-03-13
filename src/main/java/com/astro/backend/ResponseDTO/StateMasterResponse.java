@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 public class StateMasterResponse {
     private Long id;
     private String name;
+    private String hiName;
     private String code;
     private String country;
     private String description;

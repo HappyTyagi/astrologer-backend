@@ -31,10 +31,14 @@ public class GotraMasterController {
         if (name.isEmpty()) {
             throw new RuntimeException("Gotra name is required");
         }
+        String hiName = payload.get("hiName") == null
+                ? (payload.get("hi_name") == null ? null : payload.get("hi_name").toString().trim())
+                : payload.get("hiName").toString().trim();
         String description = payload.get("description") == null ? null : payload.get("description").toString().trim();
         GotraMaster saved = gotraMasterRepository.save(
                 GotraMaster.builder()
                         .name(name)
+                        .hiName(hiName == null || hiName.isBlank() ? null : hiName)
                         .description(description)
                         .isActive(true)
                         .build()
@@ -59,6 +63,11 @@ public class GotraMasterController {
         }
         if (payload.containsKey("description")) {
             existing.setDescription(payload.get("description") == null ? null : payload.get("description").toString().trim());
+        }
+        if (payload.containsKey("hiName") || payload.containsKey("hi_name")) {
+            Object raw = payload.containsKey("hiName") ? payload.get("hiName") : payload.get("hi_name");
+            String hiName = raw == null ? null : raw.toString().trim();
+            existing.setHiName((hiName == null || hiName.isBlank()) ? null : hiName);
         }
         if (payload.containsKey("isActive")) {
             Object raw = payload.get("isActive");

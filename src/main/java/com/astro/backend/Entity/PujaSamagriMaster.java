@@ -22,6 +22,10 @@ public class PujaSamagriMaster {
     @Column(nullable = false, unique = true)
     private String name;
 
+
+    @Column(nullable = false, unique = true)
+    private String hiName;
+
     private String description;
 
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")

@@ -67,6 +67,7 @@ public class StateMasterController {
         try {
             StateMaster state = StateMaster.builder()
                     .name(request.getName())
+                    .hiName(request.getHiName())
                     .code(request.getCode())
                     .country(DEFAULT_COUNTRY_CODE)
                     .description(request.getDescription())
@@ -78,6 +79,7 @@ public class StateMasterController {
             return ResponseEntity.status(HttpStatus.CREATED).body(StateMasterResponse.builder()
                     .id(savedState.getId())
                     .name(savedState.getName())
+                    .hiName(savedState.getHiName())
                     .code(savedState.getCode())
                     .country(savedState.getCountry())
                     .description(savedState.getDescription())
@@ -107,6 +109,7 @@ public class StateMasterController {
                     .orElseThrow(() -> new RuntimeException("State not found"));
 
             state.setName(request.getName());
+            state.setHiName(request.getHiName());
             state.setCode(request.getCode());
             state.setCountry(DEFAULT_COUNTRY_CODE);
             state.setDescription(request.getDescription());
@@ -119,6 +122,7 @@ public class StateMasterController {
             return ResponseEntity.ok(StateMasterResponse.builder()
                     .id(updatedState.getId())
                     .name(updatedState.getName())
+                    .hiName(updatedState.getHiName())
                     .code(updatedState.getCode())
                     .country(updatedState.getCountry())
                     .description(updatedState.getDescription())
@@ -151,6 +155,7 @@ public class StateMasterController {
             return ResponseEntity.ok(StateMasterResponse.builder()
                     .id(state.getId())
                     .name(state.getName())
+                    .hiName(state.getHiName())
                     .status(true)
                     .message("State deleted successfully")
                     .build());

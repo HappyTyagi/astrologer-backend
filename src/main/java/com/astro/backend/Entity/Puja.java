@@ -20,6 +20,7 @@ public class Puja {
     private Long id;
 
     private String name;
+     private String hiName;
     private String description;
     private double price;              // in INR
     private int durationMinutes;
@@ -46,6 +47,8 @@ public class Puja {
     private LocalDate popupEndDate;    // Popup valid till this date
     private Integer popupPriority;     // Higher priority first
     private String popupLabel;         // Optional badge text
+    @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")
+    private Boolean isSlot;            // true: mobile user selects slot, false: admin assigns slot
 
     @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime createdAt;
@@ -67,6 +70,9 @@ public class Puja {
         }
         if (popupPriority == null) {
             popupPriority = 0;
+        }
+        if (isSlot == null) {
+            isSlot = false;
         }
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();

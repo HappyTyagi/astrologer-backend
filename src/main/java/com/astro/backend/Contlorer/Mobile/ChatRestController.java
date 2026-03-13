@@ -6,7 +6,10 @@ import com.astro.backend.Repositry.ChatMessageRepository;
 import com.astro.backend.Repositry.ChatSessionRepository;
 import com.astro.backend.Services.ChatSessionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/chat")
@@ -19,11 +22,18 @@ public class ChatRestController {
     private final ChatMessageRepository messageRepo;
 
     @PostMapping("/start")
-    public ChatSession start(@RequestParam Long userId, @RequestParam(required = false) Long astrologerId) {
+    public ResponseEntity<ChatSession> start(
+            @RequestParam Long userId,
+            @RequestParam(required = false) Long astrologerId
+    ) {
         if (astrologerId != null && !ADMIN_ASTROLOGER_ID.equals(astrologerId)) {
             throw new IllegalArgumentException("Users can chat only with admin");
         }
-        return sessionService.startSession(userId, ADMIN_ASTROLOGER_ID);
+        try {
+            return ResponseEntity.ok(sessionService.startSession(userId, ADMIN_ASTROLOGER_ID));
+        } catch (RuntimeException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
+        }
     }
 
     @PostMapping("/stop/{sessionId}")

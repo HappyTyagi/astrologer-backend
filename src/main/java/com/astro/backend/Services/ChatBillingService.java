@@ -6,6 +6,7 @@ import com.astro.backend.Repositry.ChatSessionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,29 +26,48 @@ public class ChatBillingService {
                 .toList();
 
         for (ChatSession session : activeSessions) {
-            long minutes = Duration.between(session.getStartTime(), LocalDateTime.now()).toMinutes();
-            int billedMinutes = (int) minutes;
+            if (session.getStartTime() == null || session.getUserId() == null) {
+                continue;
+            }
 
-            if (billedMinutes > session.getTotalMinutes()) {
+            LocalDateTime now = LocalDateTime.now();
+            long elapsedLong = Duration.between(session.getStartTime(), now).toMinutes();
+            int elapsedMinutes = (int) Math.max(0L, Math.min(Integer.MAX_VALUE, elapsedLong));
+            int processedMinutes = Math.max(0, session.getTotalMinutes());
 
-                boolean debited = walletService.debit(
-                        session.getUserId(),
-                        session.getRatePerMin(),
-                        "CHAT_BILLING",
-                        "Chat billing for session " + session.getId()
-                );
+            if (elapsedMinutes <= processedMinutes) {
+                continue;
+            }
 
-                if (!debited) {
-                    session.setStatus(ChatSession.Status.AUTO_ENDED);
-                    session.setEndTime(LocalDateTime.now());
-                    sessionRepo.save(session);
-                    continue;
+            int freeMinutes = session.getFreeMinutesAllowed() == null
+                    ? 0
+                    : Math.max(0, session.getFreeMinutesAllowed());
+            double ratePerMin = Math.max(0.0, session.getRatePerMin());
+
+            while (processedMinutes < elapsedMinutes) {
+                int nextMinute = processedMinutes + 1;
+
+                if (nextMinute > freeMinutes && ratePerMin > 0.0) {
+                    String ref = "CHAT-" + session.getId() + "-" + nextMinute;
+                    boolean debited = walletService.debit(
+                            session.getUserId(),
+                            ratePerMin,
+                            ref,
+                            "Chat billing for session " + session.getId() + " minute " + nextMinute
+                    );
+
+                    if (!debited) {
+                        session.setStatus(ChatSession.Status.AUTO_ENDED);
+                        session.setEndTime(now);
+                        break;
+                    }
                 }
 
-                session.setTotalMinutes(billedMinutes);
-                sessionRepo.save(session);
+                processedMinutes = nextMinute;
             }
+
+            session.setTotalMinutes(processedMinutes);
+            sessionRepo.save(session);
         }
     }
 }
-

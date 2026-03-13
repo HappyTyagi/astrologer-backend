@@ -22,6 +22,9 @@ public class GotraMaster {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @Column(name = "hi_name")
+    private String hiName;
+
     private String description;
 
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")

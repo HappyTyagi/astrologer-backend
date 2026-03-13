@@ -46,6 +46,7 @@ public class WebAdminPujaRequest {
     @NotNull(message = "popupEndDate is required")
     private LocalDate popupEndDate;
 
+    private Boolean isSlot;
     private Integer popupPriority;
     private String popupLabel;
     private String status;

@@ -44,6 +44,8 @@ public class PujaBooking {
     private LocalDateTime reminderSentAt;
     private String meetingLink;        // Google Meet link
     private LocalDateTime meetLinkGeneratedAt;
+    private Boolean slotSelectedByMobile; // True when slot is selected during mobile booking
+    private String joinToken;          // Secure token used for join-access URL
 
     @JsonProperty("addressId")
     public Long getAddressId() {
@@ -61,6 +63,9 @@ public class PujaBooking {
     protected void onCreate() {
         if (isActive == null) {
             isActive = true;
+        }
+        if (slotSelectedByMobile == null) {
+            slotSelectedByMobile = false;
         }
         createdAt = LocalDateTime.now();
         bookedAt = LocalDateTime.now();

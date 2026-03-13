@@ -80,6 +80,7 @@ public class DistrictMasterController {
             DistrictMaster district = DistrictMaster.builder()
                     .stateId(request.getStateId())
                     .name(request.getName())
+                    .hiName(request.getHiName())
                     .code(request.getCode())
                     .description(request.getDescription())
                     .isActive(request.getIsActive() != null ? request.getIsActive() : true)
@@ -91,6 +92,7 @@ public class DistrictMasterController {
                     .id(savedDistrict.getId())
                     .stateId(savedDistrict.getStateId())
                     .name(savedDistrict.getName())
+                    .hiName(savedDistrict.getHiName())
                     .code(savedDistrict.getCode())
                     .description(savedDistrict.getDescription())
                     .isActive(savedDistrict.getIsActive())
@@ -120,6 +122,7 @@ public class DistrictMasterController {
 
             district.setStateId(request.getStateId());
             district.setName(request.getName());
+            district.setHiName(request.getHiName());
             district.setCode(request.getCode());
             district.setDescription(request.getDescription());
             if (request.getIsActive() != null) {
@@ -132,6 +135,7 @@ public class DistrictMasterController {
                     .id(updatedDistrict.getId())
                     .stateId(updatedDistrict.getStateId())
                     .name(updatedDistrict.getName())
+                    .hiName(updatedDistrict.getHiName())
                     .code(updatedDistrict.getCode())
                     .description(updatedDistrict.getDescription())
                     .isActive(updatedDistrict.getIsActive())
@@ -163,6 +167,7 @@ public class DistrictMasterController {
             return ResponseEntity.ok(DistrictMasterResponse.builder()
                     .id(district.getId())
                     .name(district.getName())
+                    .hiName(district.getHiName())
                     .status(true)
                     .message("District deleted successfully")
                     .build());

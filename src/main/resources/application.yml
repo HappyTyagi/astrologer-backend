@@ -11,7 +11,7 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: deepak.kumar.rd2013@gmail.com
+    username: adhyaystore@gmail.com
     password: ouyb tauv udkd cssf
     properties:
       mail.smtp.auth: true
@@ -24,7 +24,7 @@ spring:
 
 springdoc:
   swagger-ui:
-    path: /swagger-ui.html
+    path: /swagger-ui.
     defaultModelsExpandDepth: -1
     docExpansion: none
   default-produces-media-type: application/json
@@ -54,6 +54,7 @@ resend:
 app:
   mail:
     from: "deepak.kumar.rd2013@gmail.com"
+  public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:1234}
 
 razorpay:
   key-id: "rzp_live_SGnLtGTl5vgLLC"

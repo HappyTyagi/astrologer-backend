@@ -20,6 +20,7 @@ public class ChatSession {
 
     private double ratePerMin; // Rate per minute
     private String currency;   // INR
+    private Integer freeMinutesAllowed; // Free minutes before billing starts
 
     private LocalDateTime startTime;
     private LocalDateTime endTime;
@@ -44,7 +45,7 @@ public class ChatSession {
 
     @Temporal(TemporalType.TIMESTAMP)
     private LocalDateTime createdAt;
-    
+
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
     @JsonIgnore
     private Boolean isActive;
@@ -54,6 +55,12 @@ public class ChatSession {
         if (isActive == null) {
             isActive = true;
         }
+        if (freeMinutesAllowed == null || freeMinutesAllowed < 0) {
+            freeMinutesAllowed = 0;
+        }
+        if (totalMinutes < 0) {
+            totalMinutes = 0;
+        }
         createdAt = LocalDateTime.now();
     }
 
@@ -61,4 +68,3 @@ public class ChatSession {
         STARTED, ENDED, AUTO_ENDED, CANCELED
     }
 }
-

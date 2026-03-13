@@ -87,7 +87,15 @@ public class PujaDataInitializationService implements CommandLineRunner {
 
         int inserted = 0;
         for (Puja seed : seeds) {
-            if (pujaRepository.findByNameIgnoreCase(seed.getName()).isPresent()) {
+            long existingCount = pujaRepository.countByNameIgnoreCase(seed.getName());
+            if (existingCount > 0) {
+                if (existingCount > 1) {
+                    log.warn(
+                            "Found {} puja records with same name '{}'. Skipping seed insert.",
+                            existingCount,
+                            seed.getName()
+                    );
+                }
                 continue;
             }
             pujaRepository.save(seed);
