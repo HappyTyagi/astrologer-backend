@@ -2,6 +2,7 @@ package com.astro.backend.Contlorer.Mobile;
 
 import com.astro.backend.Entity.MobileUserProfile;
 import com.astro.backend.Entity.OtpTransaction;
+import com.astro.backend.Entity.User;
 import com.astro.backend.Auth.JwtService;
 import com.astro.backend.Helper.AstrologyHelper;
 import com.astro.backend.RequestDTO.SendOtpRequest;
@@ -117,7 +118,8 @@ public class OtpController {
 
             // Verify OTP only (does not create user)
             boolean isOtpValid = otpService.verifyOtpOnly(mobileNumber, otp, sessionId);
-            String role = userRepository.findByMobileNumber(mobileNumber)
+            Optional<User> existingUserOpt = userRepository.findByMobileNumber(mobileNumber);
+            String role = existingUserOpt
                     .map(user -> user.getRole() == null ? null : user.getRole().name())
                     .orElse("USER");
 
@@ -174,18 +176,27 @@ public class OtpController {
 
                     String accessToken = jwtService.generateTokenWithClaimsWithoutExpiry(mobileNumber, "User");
                     String refreshToken = jwtService.generateTokenWithClaimsWithoutExpiry(mobileNumber, "User");
-                    VerifyOtpResponse response = VerifyOtpResponse.builder()
+                    VerifyOtpResponse.VerifyOtpResponseBuilder builder = VerifyOtpResponse.builder()
                         .success(true)
                         .message("OTP verified successfully. Proceed to complete profile.")
                         .token(accessToken)
                         .refreshToken(refreshToken)
                         .mobileNo(mobileNumber)
                         .role(role)
-                        .isNewUser(true)
-                        .isProfileComplete(false)
-                        .build();
+                        .isProfileComplete(false);
 
-            return ResponseEntity.ok(response);
+                    if (existingUserOpt.isPresent()) {
+                        User existing = existingUserOpt.get();
+                        builder
+                                .userId(existing.getId())
+                                .name(existing.getName())
+                                .email(existing.getEmail())
+                                .isNewUser(false);
+                    } else {
+                        builder.isNewUser(true);
+                    }
+
+            return ResponseEntity.ok(builder.build());
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

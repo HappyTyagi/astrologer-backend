@@ -194,18 +194,37 @@ public class MobileUserService {
         if (mobileNumber == null || mobileNumber.isEmpty()) {
             throw new RuntimeException("Mobile number is required");
         }
-        
-        MobileUserProfile profile = mobileUserProfileRepository.findByMobileNumber(mobileNumber)
-                .orElseThrow(() -> new RuntimeException("Mobile user profile not found for mobile number: " + mobileNumber));
 
-        User user = userRepository.findById(profile.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found for userId: " + profile.getUserId()));
+        MobileUserProfile profile = mobileUserProfileRepository.findByMobileNumber(mobileNumber).orElse(null);
+        User user= null;
 
-        // Update device details
-        profile.setDeviceToken(deviceToken);
-        profile.setFcmToken(fcmToken);
-        profile.setAppVersion(appVersion);
-        profile.setLastLoginAt(LocalDateTime.now());
+        if (profile == null) {
+            user = userRepository.findByMobileNumber(mobileNumber)
+                    .orElseThrow(() -> new RuntimeException("User not found for mobile number: " + mobileNumber));
+
+            profile = MobileUserProfile.builder()
+                    .userId(user.getId())
+                    .name(user.getName())
+                    .mobileNumber(user.getMobileNumber())
+                    .email(user.getEmail())
+                    .deviceToken(deviceToken)
+                    .fcmToken(fcmToken)
+                    .appVersion(appVersion)
+                    .isProfileComplete(true)
+                    .isLanguage(1)
+                    .lastLoginAt(LocalDateTime.now())
+                    .build();
+        } else {
+            MobileUserProfile finalProfile = profile;
+            user = userRepository.findById(profile.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found for userId: " + finalProfile.getUserId()));
+
+            // Update device details
+            profile.setDeviceToken(deviceToken);
+            profile.setFcmToken(fcmToken);
+            profile.setAppVersion(appVersion);
+            profile.setLastLoginAt(LocalDateTime.now());
+        }
 
         MobileUserProfile updatedProfile = mobileUserProfileRepository.save(profile);
 

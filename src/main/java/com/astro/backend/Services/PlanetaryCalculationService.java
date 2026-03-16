@@ -1,7 +1,5 @@
 package com.astro.backend.Services;
 
-import com.astro.backend.Entity.BirthChart;
-import com.astro.backend.Repositry.BirthChartRepository;
 import com.astro.backend.RequestDTO.PlanetaryPositionRequest;
 import com.astro.backend.ResponseDTO.PlanetaryPositionResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,7 +10,6 @@ import swisseph.SweConst;
 import swisseph.SweDate;
 import swisseph.SwissEph;
 
-import java.time.LocalDate;
 import java.util.*;
 
 @Service
@@ -22,7 +19,6 @@ public class PlanetaryCalculationService {
 
     private static final SwissEph swissEph = new SwissEph("libs/ephe");
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    private final BirthChartRepository birthChartRepository;
 
     // Planet constants
     private static final int[] PLANET_CONSTANTS = {
@@ -45,7 +41,7 @@ public class PlanetaryCalculationService {
     );
 
     /**
-     * Calculate planetary positions with house numbers and save to database
+     * Calculate planetary positions with house numbers
      */
     public PlanetaryPositionResponse calculatePlanetaryPositions(PlanetaryPositionRequest request, Long userId) {
         try {
@@ -324,8 +320,8 @@ public class PlanetaryCalculationService {
 
             outputList.add(outputMap);
 
-            // Save to database
-            Long chartId = saveBirthChart(request, outputList, userId);
+            // NOTE: Birth chart DB persistence removed (no birth_charts table writes)
+            Long chartId = null;
 
             // Generate HTML content
             PlanetaryPositionResponse tempResponse = PlanetaryPositionResponse.builder()
@@ -467,59 +463,6 @@ public class PlanetaryCalculationService {
             difference += 12;
         }
         return (difference % 12) + 1;
-    }
-
-    /**
-     * Save birth chart data to database
-     */
-    private Long saveBirthChart(PlanetaryPositionRequest request,
-                                List<Map<String, Object>> outputData,
-                                Long userId) {
-        try {
-            LocalDate dob = LocalDate.of(request.getYear(), request.getMonth(), request.getDate());
-            double birthTime = request.getHours() + (request.getMinutes() / 60.0);
-
-            // Extract key data from output - new structure with "kundli" and "navamsha" keys
-            @SuppressWarnings("unchecked")
-            Map<String, Object> outputMap = (Map<String, Object>) outputData.get(0);
-
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> kundliData = (List<Map<String, Object>>) outputMap.get("kundli");
-            Map<String, Object> namedPlanets = kundliData.get(1);
-
-            @SuppressWarnings("unchecked")
-            Map<String, Object> ascendantData = (Map<String, Object>) namedPlanets.get("Ascendant");
-            Integer ascendantSign = (Integer) ascendantData.get("current_sign");
-
-            @SuppressWarnings("unchecked")
-            Map<String, Object> sunData = (Map<String, Object>) namedPlanets.get("Sun");
-            Integer sunSign = (Integer) sunData.get("current_sign");
-
-            @SuppressWarnings("unchecked")
-            Map<String, Object> moonData = (Map<String, Object>) namedPlanets.get("Moon");
-            Integer moonSign = (Integer) moonData.get("current_sign");
-
-            BirthChart birthChart = BirthChart.builder()
-                    .userId(userId != null ? userId : 0L)
-                    .dateOfBirth(dob)
-                    .birthTime(birthTime)
-                    .latitude(request.getLatitude())
-                    .longitude(request.getLongitude())
-                    .timezone("UTC+" + request.getTimezone())
-                    .lagna(SIGN_MAP.get(ascendantSign))
-                    .sunSign(SIGN_MAP.get(sunSign))
-                    .moonSign(SIGN_MAP.get(moonSign))
-                    .planetaryPositions(objectMapper.writeValueAsString(namedPlanets))
-                    .build();
-
-            @SuppressWarnings("null")
-            BirthChart saved = birthChartRepository.save(birthChart);
-            return saved.getId();
-
-        } catch (Exception e) {
-            log.error("Error saving birth chart", e);
-            return null;
-        }
     }
 
     /**

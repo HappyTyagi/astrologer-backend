@@ -44,6 +44,9 @@ public class PujaBooking {
     private LocalDateTime reminderSentAt;
     private String meetingLink;        // Google Meet link
     private LocalDateTime meetLinkGeneratedAt;
+    private String agoraChannel;       // Agora RTC channel for puja session
+    private String pujaOtp;            // OTP for puja start/end verification
+    private LocalDateTime startedAt;   // When puja is started after OTP verification
     private Boolean slotSelectedByMobile; // True when slot is selected during mobile booking
     private String joinToken;          // Secure token used for join-access URL
 

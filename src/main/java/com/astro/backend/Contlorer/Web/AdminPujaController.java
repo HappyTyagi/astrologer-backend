@@ -178,8 +178,93 @@ public class AdminPujaController {
             row.put("slotTime", slot == null ? null : slot.getSlotTime());
             row.put("bookingStatus", booking.getStatus() == null ? null : booking.getStatus().name());
             row.put("bookedAt", booking.getBookedAt());
+            row.put("agoraChannel", booking.getAgoraChannel());
             row.put("paymentMethod", defaultText(booking.getPaymentMethod()));
             row.put("transactionId", defaultText(booking.getTransactionId()));
+            row.put("pujaOtp", pujaService.ensurePujaOtp(booking));
+            row.put("startedAt", booking.getStartedAt());
+            row.put("completedAt", booking.getCompletedAt());
+            row.put("totalPrice", booking.getTotalPrice());
+            row.put("discountApplied", booking.getDiscountApplied());
+            row.put("addressId", booking.getAddressId());
+            row.put("slotSelectedByMobile", booking.getSlotSelectedByMobile());
+            rows.add(row);
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "status", true,
+                "count", rows.size(),
+                "bookings", rows
+        ));
+    }
+
+    @GetMapping("/bookings/upcoming")
+    public ResponseEntity<?> getUpcomingPujaBookings() {
+        List<PujaBooking> bookings = pujaBookingRepository.findAll(Sort.by(Sort.Direction.DESC, "bookedAt"));
+        if (bookings.isEmpty()) {
+            return ResponseEntity.ok(Map.of(
+                    "status", true,
+                    "count", 0,
+                    "bookings", List.of()
+            ));
+        }
+
+        Set<Long> userIds = bookings.stream()
+                .map(PujaBooking::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Set<Long> pujaIds = bookings.stream()
+                .map(PujaBooking::getPujaId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Set<Long> slotIds = bookings.stream()
+                .map(PujaBooking::getSlotId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, user -> user, (a, b) -> a));
+        Map<Long, Puja> pujaMap = pujaRepository.findAllById(pujaIds).stream()
+                .collect(Collectors.toMap(Puja::getId, puja -> puja, (a, b) -> a));
+        Map<Long, PujaSlot> slotMap = pujaSlotRepository.findAllById(slotIds).stream()
+                .collect(Collectors.toMap(PujaSlot::getId, slot -> slot, (a, b) -> a));
+
+        final LocalDateTime now = LocalDateTime.now();
+        final List<Map<String, Object>> rows = new ArrayList<>();
+        for (PujaBooking booking : bookings) {
+            if (booking.getStatus() == PujaBooking.BookingStatus.COMPLETED
+                    || booking.getStatus() == PujaBooking.BookingStatus.CANCELLED
+                    || booking.getStatus() == PujaBooking.BookingStatus.REFUNDED) {
+                continue;
+            }
+
+            PujaSlot slot = booking.getSlotId() == null ? null : slotMap.get(booking.getSlotId());
+            if (slot != null && slot.getSlotTime() != null && !slot.getSlotTime().isAfter(now)) {
+                continue;
+            }
+
+            User user = booking.getUserId() == null ? null : userMap.get(booking.getUserId());
+            Puja puja = booking.getPujaId() == null ? null : pujaMap.get(booking.getPujaId());
+
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("bookingId", booking.getId());
+            row.put("userId", booking.getUserId());
+            row.put("userName", user == null ? "Unknown" : user.getName());
+            row.put("mobileNumber", user == null ? "" : defaultText(user.getMobileNumber()));
+            row.put("email", user == null ? "" : defaultText(user.getEmail()));
+            row.put("pujaId", booking.getPujaId());
+            row.put("pujaName", puja == null ? "" : defaultText(puja.getName()));
+            row.put("pujaImage", puja == null ? null : puja.getImage());
+            row.put("slotId", booking.getSlotId());
+            row.put("slotTime", slot == null ? null : slot.getSlotTime());
+            row.put("bookingStatus", booking.getStatus() == null ? null : booking.getStatus().name());
+            row.put("bookedAt", booking.getBookedAt());
+            row.put("agoraChannel", booking.getAgoraChannel());
+            row.put("paymentMethod", defaultText(booking.getPaymentMethod()));
+            row.put("transactionId", defaultText(booking.getTransactionId()));
+            row.put("pujaOtp", pujaService.ensurePujaOtp(booking));
+            row.put("startedAt", booking.getStartedAt());
+            row.put("completedAt", booking.getCompletedAt());
             row.put("totalPrice", booking.getTotalPrice());
             row.put("discountApplied", booking.getDiscountApplied());
             row.put("addressId", booking.getAddressId());

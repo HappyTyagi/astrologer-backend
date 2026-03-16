@@ -71,6 +71,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
@@ -91,6 +92,7 @@ public class PujaService {
     private final PujaBookingSpiritualDetailRepository pujaBookingSpiritualDetailRepository;
     private final PujaSamagriMasterRepository pujaSamagriMasterRepository;
     private final PujaSamagriItemRepository pujaSamagriItemRepository;
+    private final PujaBookingNotificationService pujaBookingNotificationService;
     private static final LocalTime DEFAULT_DAY_START = LocalTime.of(8, 0);
     private static final LocalTime DEFAULT_DAY_END = LocalTime.of(20, 0);
     private static final int DEFAULT_GAP_MINUTES = 30;
@@ -101,6 +103,25 @@ public class PujaService {
 
     @Value("${app.public-base-url:http://localhost:1234}")
     private String appPublicBaseUrl;
+
+    public String ensurePujaOtp(PujaBooking booking) {
+        if (booking == null) {
+            return "";
+        }
+        final String existing = booking.getPujaOtp() == null ? "" : booking.getPujaOtp().trim();
+        if (!existing.isEmpty()) {
+            return existing;
+        }
+        final String generated = generatePujaOtp();
+        booking.setPujaOtp(generated);
+        bookingRepo.save(booking);
+        return generated;
+    }
+
+    private String generatePujaOtp() {
+        // 4-digit OTP for puja start/end confirmation
+        return String.valueOf(ThreadLocalRandom.current().nextInt(1000, 10000));
+    }
 
     @Transactional
     public boolean isMobileSlotSelectionEnabled() {
@@ -282,6 +303,7 @@ public class PujaService {
                 .transactionId(finalTransactionId)
                 .meetingLink(defaultGoogleMeetLink())
                 .meetLinkGeneratedAt(LocalDateTime.now())
+                .pujaOtp(generatePujaOtp())
                 .notificationStatus("PENDING")
                 .slotSelectedByMobile(mobileSlotSelectionEnabled && slot != null)
                 .joinToken(UUID.randomUUID().toString().replace("-", ""))
@@ -301,6 +323,10 @@ public class PujaService {
                         .build()
         );
         orderHistoryService.recordPujaBooking(savedBooking, puja, slot);
+        try {
+            pujaBookingNotificationService.notifyAdminAndPandit(savedBooking, puja, slot);
+        } catch (Exception ignored) {
+        }
         if (isPaymentConfirmed(savedBooking) && Boolean.TRUE.equals(savedBooking.getSlotSelectedByMobile())) {
             sendPujaReceiptIfEmailAvailable(savedBooking, puja, slot);
             sendCalendarInviteIfEmailAvailable(savedBooking, false);
@@ -912,6 +938,10 @@ public class PujaService {
 
         booking.setSlotId(newSlot.getId());
         bookingRepo.save(booking);
+        try {
+            pujaBookingNotificationService.notifyAdminAndPandit(booking, puja, newSlot);
+        } catch (Exception ignored) {
+        }
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", true);
@@ -2029,6 +2059,12 @@ public class PujaService {
 
         booking.setSlotId(newSlot.getId());
         booking.setStatus(PujaBooking.BookingStatus.CONFIRMED);
-        return bookingRepo.save(booking);
+        PujaBooking saved = bookingRepo.save(booking);
+        try {
+            Puja puja = saved.getPujaId() == null ? null : pujaRepo.findById(saved.getPujaId()).orElse(null);
+            pujaBookingNotificationService.notifyAdminAndPandit(saved, puja, newSlot);
+        } catch (Exception ignored) {
+        }
+        return saved;
     }
 }

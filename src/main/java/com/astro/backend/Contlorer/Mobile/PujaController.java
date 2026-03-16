@@ -1,20 +1,27 @@
 package com.astro.backend.Contlorer.Mobile;
 
 
+import com.astro.backend.Auth.JwtAuthFilter;
 import com.astro.backend.Entity.Puja;
 import com.astro.backend.Entity.PujaBooking;
 import com.astro.backend.Entity.PujaSlot;
+import com.astro.backend.Entity.User;
+import com.astro.backend.EnumFile.Role;
 import com.astro.backend.Repositry.PujaBookingRepository;
 import com.astro.backend.Repositry.PujaRepository;
 import com.astro.backend.Repositry.PujaSlotRepository;
+import com.astro.backend.Repositry.UserRepository;
 import com.astro.backend.RequestDTO.PujaBookingRequest;
 import com.astro.backend.RequestDTO.PujaRescheduleRequest;
 import com.astro.backend.RequestDTO.PujaSlotMasterRequest;
 import com.astro.backend.RequestDTO.ResendReceiptRequest;
+import com.astro.backend.ResponseDTO.AgoraTokenResponse;
 import com.astro.backend.ResponseDTO.AstrologerDistrictPriceResponse;
 import com.astro.backend.ResponseDTO.PujaRescheduleItemResponse;
+import com.astro.backend.Services.AgoraTokenService;
 import com.astro.backend.Services.AstrologerDistrictPriceService;
 import com.astro.backend.Services.PujaService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -42,6 +49,8 @@ public class PujaController {
     private final PujaService pujaService;
     private final PujaBookingRepository bookingRepo;
     private final AstrologerDistrictPriceService astrologerDistrictPriceService;
+    private final UserRepository userRepository;
+    private final AgoraTokenService agoraTokenService;
 
     @GetMapping("/list")
     public Object listPujas() {
@@ -178,11 +187,358 @@ public class PujaController {
             row.put("totalPrice", b.getTotalPrice());
             row.put("paymentMethod", b.getPaymentMethod());
             row.put("transactionId", b.getTransactionId());
+            row.put("pujaOtp", pujaService.ensurePujaOtp(b));
+            row.put("startedAt", b.getStartedAt());
+            row.put("completedAt", b.getCompletedAt());
             row.put("meetingLink", pujaService.resolveUserMeetingLink(b, slot));
             row.put("notificationStatus", b.getNotificationStatus());
             row.put("reminderSentAt", b.getReminderSentAt());
             return row;
         }).toList();
+    }
+
+    @PostMapping("/{bookingId}/generate-agora-link")
+    public ResponseEntity<AgoraTokenResponse> generateAgoraLink(
+            @PathVariable Long bookingId,
+            @RequestBody(required = false) Map<String, Object> payload,
+            HttpServletRequest request
+    ) {
+        try {
+            User actor = requireCurrentUser(request);
+            if (actor.getRole() == null) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                        AgoraTokenResponse.builder()
+                                .success(false)
+                                .message("Access denied")
+                                .appId("")
+                                .token("")
+                                .channelName("")
+                                .uid(actor.getId() == null ? 0 : actor.getId().intValue())
+                                .tokenRequired(true)
+                                .build()
+                );
+            }
+            PujaBooking booking = bookingRepo.findById(bookingId)
+                    .orElseThrow(() -> new RuntimeException("Puja booking not found: " + bookingId));
+            Puja puja = booking.getPujaId() == null
+                    ? null
+                    : pujaRepo.findById(booking.getPujaId()).orElse(null);
+            PujaSlot slot = booking.getSlotId() == null
+                    ? null
+                    : slotRepo.findById(booking.getSlotId()).orElse(null);
+
+            if (booking.getStatus() == PujaBooking.BookingStatus.CANCELLED
+                    || booking.getStatus() == PujaBooking.BookingStatus.REFUNDED
+                    || booking.getStatus() == PujaBooking.BookingStatus.COMPLETED) {
+                return ResponseEntity.badRequest().body(
+                        AgoraTokenResponse.builder()
+                                .success(false)
+                                .message("Puja booking is not active.")
+                                .appId("")
+                                .token("")
+                                .channelName("")
+                                .uid(actor.getId() == null ? 0 : actor.getId().intValue())
+                                .tokenRequired(true)
+                                .build()
+                );
+            }
+
+            if (actor.getRole() == Role.USER) {
+                if (!java.util.Objects.equals(actor.getId(), booking.getUserId())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                            AgoraTokenResponse.builder()
+                                    .success(false)
+                                    .message("Access denied")
+                                    .appId("")
+                                    .token("")
+                                    .channelName("")
+                                    .uid(actor.getId() == null ? 0 : actor.getId().intValue())
+                                    .tokenRequired(true)
+                                    .build()
+                    );
+                }
+            }
+            if (actor.getRole() == Role.ASTROLOGER) {
+                if (puja == null || puja.getAstrologerId() == null ||
+                        !java.util.Objects.equals(puja.getAstrologerId(), actor.getId())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                            AgoraTokenResponse.builder()
+                                    .success(false)
+                                    .message("Access denied")
+                                    .appId("")
+                                    .token("")
+                                    .channelName("")
+                                    .uid(actor.getId() == null ? 0 : actor.getId().intValue())
+                                    .tokenRequired(true)
+                                    .build()
+                    );
+                }
+                if (booking.getStartedAt() == null) {
+                    return ResponseEntity.badRequest().body(
+                            AgoraTokenResponse.builder()
+                                    .success(false)
+                                    .message("Please start puja with OTP first.")
+                                    .appId("")
+                                    .token("")
+                                    .channelName("")
+                                    .uid(actor.getId() == null ? 0 : actor.getId().intValue())
+                                    .tokenRequired(true)
+                                    .build()
+                    );
+                }
+            }
+
+            if (slot == null || slot.getSlotTime() == null) {
+                return ResponseEntity.badRequest().body(
+                        AgoraTokenResponse.builder()
+                                .success(false)
+                                .message("Puja slot is not assigned yet.")
+                                .appId("")
+                                .token("")
+                                .channelName("")
+                                .uid(actor.getId() == null ? 0 : actor.getId().intValue())
+                                .tokenRequired(true)
+                                .build()
+                );
+            }
+
+            LocalDateTime slotTime = slot.getSlotTime();
+            LocalDateTime joinOpensAt = slotTime.minusMinutes(10);
+            LocalDateTime now = LocalDateTime.now();
+            if (now.isBefore(joinOpensAt)) {
+                return ResponseEntity.badRequest().body(
+                        AgoraTokenResponse.builder()
+                                .success(false)
+                                .message("Join will be enabled 10 minutes before slot time.")
+                                .appId("")
+                                .token("")
+                                .channelName("")
+                                .uid(actor.getId() == null ? 0 : actor.getId().intValue())
+                                .tokenRequired(true)
+                                .build()
+                );
+            }
+
+            String channel = booking.getAgoraChannel() == null ? "" : booking.getAgoraChannel().trim();
+            if (channel.isEmpty()) {
+                channel = "puja_" + booking.getId();
+                booking.setAgoraChannel(channel);
+                bookingRepo.save(booking);
+            }
+
+            int uid = actor.getId() == null ? 0 : actor.getId().intValue();
+            AgoraTokenResponse response = agoraTokenService.generateRtcToken(channel, uid, "publisher");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(AgoraTokenResponse.builder()
+                            .success(false)
+                            .message("Failed to generate Agora link: " + e.getMessage())
+                            .token("")
+                            .appId("")
+                            .channelName("")
+                            .uid(0)
+                            .tokenRequired(true)
+                            .build());
+        }
+    }
+
+    @PostMapping("/{bookingId}/start")
+    public ResponseEntity<?> startPuja(
+            @PathVariable Long bookingId,
+            @RequestBody(required = false) Map<String, Object> payload,
+            HttpServletRequest request
+    ) {
+        try {
+            User actor = requireCurrentUser(request);
+            if (actor.getRole() != Role.ADMIN && actor.getRole() != Role.ASTROLOGER) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                        "status", false,
+                        "message", "Access denied"
+                ));
+            }
+
+            PujaBooking booking = bookingRepo.findById(bookingId)
+                    .orElseThrow(() -> new RuntimeException("Puja booking not found: " + bookingId));
+            Puja puja = booking.getPujaId() == null
+                    ? null
+                    : pujaRepo.findById(booking.getPujaId()).orElse(null);
+            PujaSlot slot = booking.getSlotId() == null
+                    ? null
+                    : slotRepo.findById(booking.getSlotId()).orElse(null);
+
+            if (actor.getRole() == Role.ASTROLOGER) {
+                if (puja == null || puja.getAstrologerId() == null
+                        || !java.util.Objects.equals(puja.getAstrologerId(), actor.getId())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                            "status", false,
+                            "message", "Access denied"
+                    ));
+                }
+            }
+
+            if (booking.getStatus() == PujaBooking.BookingStatus.CANCELLED
+                    || booking.getStatus() == PujaBooking.BookingStatus.REFUNDED) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", false,
+                        "message", "Puja booking is not active"
+                ));
+            }
+            if (booking.getStatus() == PujaBooking.BookingStatus.COMPLETED) {
+                return ResponseEntity.ok(Map.of(
+                        "status", true,
+                        "message", "Puja already completed",
+                        "bookingId", booking.getId(),
+                        "startedAt", booking.getStartedAt(),
+                        "completedAt", booking.getCompletedAt()
+                ));
+            }
+
+            if (slot == null || slot.getSlotTime() == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", false,
+                        "message", "Puja slot is not assigned yet."
+                ));
+            }
+
+            final LocalDateTime slotTime = slot.getSlotTime();
+            final LocalDateTime joinOpensAt = slotTime.minusMinutes(10);
+            final LocalDateTime now = LocalDateTime.now();
+            if (now.isBefore(joinOpensAt)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", false,
+                        "message", "Puja can be started 10 minutes before slot time."
+                ));
+            }
+
+            final String otp = readPujaOtp(payload);
+            if (!otp.matches("^[0-9]{4}$")) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", false,
+                        "message", "Invalid OTP. Please enter a 4-digit OTP."
+                ));
+            }
+
+            final String expected = pujaService.ensurePujaOtp(booking);
+            if (!expected.equals(otp)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", false,
+                        "message", "Invalid OTP"
+                ));
+            }
+
+            if (booking.getStartedAt() != null) {
+                return ResponseEntity.ok(Map.of(
+                        "status", true,
+                        "message", "Puja already started",
+                        "bookingId", booking.getId(),
+                        "startedAt", booking.getStartedAt()
+                ));
+            }
+
+            booking.setStartedAt(LocalDateTime.now());
+            bookingRepo.save(booking);
+            return ResponseEntity.ok(Map.of(
+                    "status", true,
+                    "message", "Puja started successfully",
+                    "bookingId", booking.getId(),
+                    "startedAt", booking.getStartedAt()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", false,
+                    "message", "Failed to start puja: " + e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/{bookingId}/end")
+    public ResponseEntity<?> endPuja(
+            @PathVariable Long bookingId,
+            @RequestBody(required = false) Map<String, Object> payload,
+            HttpServletRequest request
+    ) {
+        try {
+            User actor = requireCurrentUser(request);
+            if (actor.getRole() != Role.ADMIN && actor.getRole() != Role.ASTROLOGER) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                        "status", false,
+                        "message", "Access denied"
+                ));
+            }
+
+            PujaBooking booking = bookingRepo.findById(bookingId)
+                    .orElseThrow(() -> new RuntimeException("Puja booking not found: " + bookingId));
+            Puja puja = booking.getPujaId() == null
+                    ? null
+                    : pujaRepo.findById(booking.getPujaId()).orElse(null);
+
+            if (actor.getRole() == Role.ASTROLOGER) {
+                if (puja == null || puja.getAstrologerId() == null
+                        || !java.util.Objects.equals(puja.getAstrologerId(), actor.getId())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
+                            "status", false,
+                            "message", "Access denied"
+                    ));
+                }
+            }
+
+            if (booking.getStatus() == PujaBooking.BookingStatus.CANCELLED
+                    || booking.getStatus() == PujaBooking.BookingStatus.REFUNDED) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", false,
+                        "message", "Puja booking is not active"
+                ));
+            }
+            if (booking.getStatus() == PujaBooking.BookingStatus.COMPLETED) {
+                return ResponseEntity.ok(Map.of(
+                        "status", true,
+                        "message", "Puja already completed",
+                        "bookingId", booking.getId(),
+                        "startedAt", booking.getStartedAt(),
+                        "completedAt", booking.getCompletedAt()
+                ));
+            }
+
+            if (booking.getStartedAt() == null) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", false,
+                        "message", "Puja is not started yet."
+                ));
+            }
+
+            final String otp = readPujaOtp(payload);
+            if (!otp.matches("^[0-9]{4}$")) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", false,
+                        "message", "Invalid OTP. Please enter a 4-digit OTP."
+                ));
+            }
+
+            final String expected = pujaService.ensurePujaOtp(booking);
+            if (!expected.equals(otp)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "status", false,
+                        "message", "Invalid OTP"
+                ));
+            }
+
+            booking.setStatus(PujaBooking.BookingStatus.COMPLETED);
+            booking.setCompletedAt(LocalDateTime.now());
+            bookingRepo.save(booking);
+            return ResponseEntity.ok(Map.of(
+                    "status", true,
+                    "message", "Puja completed successfully",
+                    "bookingId", booking.getId(),
+                    "startedAt", booking.getStartedAt(),
+                    "completedAt", booking.getCompletedAt()
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                    "status", false,
+                    "message", "Failed to end puja: " + e.getMessage()
+            ));
+        }
     }
 
     @GetMapping("/join-access/{orderId}")
@@ -270,6 +626,34 @@ public class PujaController {
                     .message(e.getMessage())
                     .build();
         }
+    }
+
+    private User requireCurrentUser(HttpServletRequest request) {
+        Object value = request.getAttribute(JwtAuthFilter.AUTH_USER_ID_ATTR);
+        Long currentUserId = null;
+        if (value instanceof Long longValue) {
+            currentUserId = longValue;
+        } else if (value instanceof Integer intValue) {
+            currentUserId = intValue.longValue();
+        } else if (value != null) {
+            currentUserId = Long.parseLong(String.valueOf(value));
+        }
+        if (currentUserId == null || currentUserId <= 0) {
+            throw new RuntimeException("Unauthorized");
+        }
+        return userRepository.findById(currentUserId)
+                .orElseThrow(() -> new RuntimeException("Unauthorized"));
+    }
+
+    private String readPujaOtp(Map<String, Object> payload) {
+        if (payload == null) {
+            return "";
+        }
+        Object value = payload.get("otp");
+        if (value == null) {
+            value = payload.get("pujaOtp");
+        }
+        return value == null ? "" : String.valueOf(value).trim();
     }
 
     private String buildJoinBlockedHtml(Map<String, Object> access) {
