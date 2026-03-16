@@ -22,6 +22,9 @@ public class NakshatraMaster {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @Column(length = 120)
+    private String slug;
+
     @Column(name = "hi_name")
     private String hiName;
 
@@ -29,7 +32,16 @@ public class NakshatraMaster {
     @Column(columnDefinition = "LONGTEXT")
     private String image;
 
+    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String description;
+
+    @Lob
+    @Column(name = "description_hi", columnDefinition = "LONGTEXT")
+    private String descriptionHi;
+
+    @Column(name = "source_url", length = 500)
+    private String sourceUrl;
 
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 1")
     @JsonIgnore

@@ -23,6 +23,9 @@ public interface RemidesPurchaseRepository extends JpaRepository<RemidesPurchase
     );
 
     @EntityGraph(attributePaths = {"remides", "address"})
+    List<RemidesPurchase> findAllByOrderByPurchasedAtDesc();
+
+    @EntityGraph(attributePaths = {"remides", "address"})
     List<RemidesPurchase> findByOrderIdOrderByIdAsc(String orderId);
 
     Optional<RemidesPurchase> findFirstByOrderIdOrderByIdDesc(String orderId);

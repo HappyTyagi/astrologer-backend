@@ -164,6 +164,13 @@
 			<version>2.5.0</version>
 		</dependency>
 
+		<!-- HTML parsing for source-backed master data sync -->
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>1.18.1</version>
+		</dependency>
+
 		<!-- DEVTOOLS -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

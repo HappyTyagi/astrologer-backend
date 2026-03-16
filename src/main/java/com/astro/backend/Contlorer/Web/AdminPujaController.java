@@ -20,11 +20,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/web/puja")
@@ -130,6 +132,65 @@ public class AdminPujaController {
                 "pujaId", pujaId,
                 "totalRegistrations", rows.size(),
                 "registrations", rows
+        ));
+    }
+
+    @GetMapping("/bookings")
+    public ResponseEntity<?> getAllPujaBookings() {
+        List<PujaBooking> bookings = pujaBookingRepository.findAll(Sort.by(Sort.Direction.DESC, "bookedAt"));
+
+        Set<Long> userIds = bookings.stream()
+                .map(PujaBooking::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Set<Long> pujaIds = bookings.stream()
+                .map(PujaBooking::getPujaId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        Set<Long> slotIds = bookings.stream()
+                .map(PujaBooking::getSlotId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, user -> user));
+        Map<Long, Puja> pujaMap = pujaRepository.findAllById(pujaIds).stream()
+                .collect(Collectors.toMap(Puja::getId, puja -> puja));
+        Map<Long, PujaSlot> slotMap = pujaSlotRepository.findAllById(slotIds).stream()
+                .collect(Collectors.toMap(PujaSlot::getId, slot -> slot));
+
+        List<Map<String, Object>> rows = new ArrayList<>();
+        for (PujaBooking booking : bookings) {
+            User user = booking.getUserId() == null ? null : userMap.get(booking.getUserId());
+            Puja puja = booking.getPujaId() == null ? null : pujaMap.get(booking.getPujaId());
+            PujaSlot slot = booking.getSlotId() == null ? null : slotMap.get(booking.getSlotId());
+
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("bookingId", booking.getId());
+            row.put("userId", booking.getUserId());
+            row.put("userName", user == null ? "Unknown" : user.getName());
+            row.put("mobileNumber", user == null ? "" : defaultText(user.getMobileNumber()));
+            row.put("email", user == null ? "" : defaultText(user.getEmail()));
+            row.put("pujaId", booking.getPujaId());
+            row.put("pujaName", puja == null ? "" : defaultText(puja.getName()));
+            row.put("pujaImage", puja == null ? null : puja.getImage());
+            row.put("slotId", booking.getSlotId());
+            row.put("slotTime", slot == null ? null : slot.getSlotTime());
+            row.put("bookingStatus", booking.getStatus() == null ? null : booking.getStatus().name());
+            row.put("bookedAt", booking.getBookedAt());
+            row.put("paymentMethod", defaultText(booking.getPaymentMethod()));
+            row.put("transactionId", defaultText(booking.getTransactionId()));
+            row.put("totalPrice", booking.getTotalPrice());
+            row.put("discountApplied", booking.getDiscountApplied());
+            row.put("addressId", booking.getAddressId());
+            row.put("slotSelectedByMobile", booking.getSlotSelectedByMobile());
+            rows.add(row);
+        }
+
+        return ResponseEntity.ok(Map.of(
+                "status", true,
+                "count", rows.size(),
+                "bookings", rows
         ));
     }
 

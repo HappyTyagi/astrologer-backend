@@ -40,6 +40,7 @@ public class AstroServicesController {
             String dateOfBirth = (String) payload.get("dateOfBirth");
             String timeOfBirth = (String) payload.get("timeOfBirth");
             String timezone = payload.get("timezone") != null ? payload.get("timezone").toString() : null;
+            String name = payload.get("name") != null ? payload.get("name").toString().trim() : null;
 
             if (userId == null || userId <= 0) {
                 throw new IllegalArgumentException("userId is required");
@@ -61,7 +62,7 @@ public class AstroServicesController {
                     dob[1],
                     dob[2],
                     birthTime,
-                    "User",
+                    resolveKundliName(userId, name),
                     timeOfBirth,
                     tz
             );
@@ -723,6 +724,18 @@ int[] groomDob = parseDate(groom.dateOfBirth());
             return false;
         }
         return latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180;
+    }
+
+    private String resolveKundliName(Long userId, String fallbackName) {
+        if (fallbackName != null && !fallbackName.isBlank()) {
+            return fallbackName.trim();
+        }
+
+        return mobileUserProfileRepository.findByUserId(userId)
+                .map(MobileUserProfile::getName)
+                .filter(name -> name != null && !name.isBlank())
+                .map(String::trim)
+                .orElse("User");
     }
 
     private record Coordinates(double latitude, double longitude) {
