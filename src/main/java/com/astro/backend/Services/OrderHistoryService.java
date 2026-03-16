@@ -5,11 +5,13 @@ import com.astro.backend.Entity.Puja;
 import com.astro.backend.Entity.PujaBooking;
 import com.astro.backend.Entity.PujaSlot;
 import com.astro.backend.Entity.RemidesPurchase;
+import com.astro.backend.Entity.PujaSamagriPurchase;
 import com.astro.backend.Repositry.OrderHistoryRepository;
 import com.astro.backend.Repositry.PujaBookingRepository;
 import com.astro.backend.Repositry.PujaRepository;
 import com.astro.backend.Repositry.PujaSlotRepository;
 import com.astro.backend.Repositry.RemidesPurchaseRepository;
+import com.astro.backend.Repositry.PujaSamagriPurchaseRepository;
 import com.astro.backend.ResponseDTO.RemidesPurchaseHistoryResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,7 @@ public class OrderHistoryService {
 
     private final OrderHistoryRepository orderHistoryRepository;
     private final RemidesPurchaseRepository remidesPurchaseRepository;
+    private final PujaSamagriPurchaseRepository pujaSamagriPurchaseRepository;
     private final PujaBookingRepository pujaBookingRepository;
     private final PujaRepository pujaRepository;
     private final PujaSlotRepository pujaSlotRepository;
@@ -76,7 +79,51 @@ public class OrderHistoryService {
         }
     }
 
+    
+
     @Transactional
+    public void recordSamagriPurchases(List<PujaSamagriPurchase> purchases) {
+        if (purchases == null || purchases.isEmpty()) return;
+
+        List<OrderHistoryEntry> entries = new ArrayList<>();
+        for (PujaSamagriPurchase purchase : purchases) {
+            if (purchase == null || purchase.getId() == null) continue;
+            if (orderHistoryRepository.existsByOrderTypeAndSourceId("SAMAGRI", purchase.getId())) {
+                continue;
+            }
+
+            String subtitle = purchase.getSamagriMaster() != null ? purchase.getSamagriMaster().getDescription() : null;
+            String image = purchase.getSamagriMaster() != null ? purchase.getSamagriMaster().getImageUrl() : null;
+
+            entries.add(
+                    OrderHistoryEntry.builder()
+                            .orderId(purchase.getOrderId())
+                            .orderType("SAMAGRI")
+                            .userId(purchase.getUserId())
+                            .sourceId(purchase.getId())
+                            .remidesId(purchase.getSamagriMasterId())
+                            .pujaId(null)
+                            .title(purchase.getName())
+                            .subtitle(subtitle)
+                            .imageBase64(image)
+                            .totalItems(purchase.getQuantity() == null ? 1 : purchase.getQuantity())
+                            .unitPrice(purchase.getUnitPrice() == null ? 0.0 : purchase.getUnitPrice())
+                            .discountPercentage(purchase.getDiscountPercentage())
+                            .finalUnitPrice(purchase.getFinalUnitPrice() == null ? 0.0 : purchase.getFinalUnitPrice())
+                            .amount(purchase.getLineTotal() == null ? 0.0 : purchase.getLineTotal())
+                            .currency(purchase.getCurrency() == null ? "INR" : purchase.getCurrency())
+                            .status(purchase.getStatus() == null ? "COMPLETED" : purchase.getStatus())
+                            .purchasedAt(purchase.getPurchasedAt() == null ? LocalDateTime.now() : purchase.getPurchasedAt())
+                            .isActive(true)
+                            .build()
+            );
+        }
+
+        if (!entries.isEmpty()) {
+            orderHistoryRepository.saveAll(entries);
+        }
+    }
+@Transactional
     public void recordPujaBooking(PujaBooking booking, Puja puja, PujaSlot slot) {
         if (booking == null || booking.getId() == null) return;
         if (orderHistoryRepository.existsByOrderTypeAndSourceId("PUJA", booking.getId())) {
@@ -151,6 +198,18 @@ public class OrderHistoryService {
             }
         }
 
+
+
+        if ("SAMAGRI".equalsIgnoreCase(e.getOrderType()) && e.getSourceId() != null) {
+            PujaSamagriPurchase purchase = pujaSamagriPurchaseRepository.findById(e.getSourceId()).orElse(null);
+            if (purchase != null) {
+                paymentMethod = purchase.getPaymentMethod();
+                transactionId = purchase.getTransactionId();
+                walletUsed = purchase.getWalletUsed();
+                gatewayPaid = purchase.getGatewayPaid();
+                fullAmount = purchase.getLineTotal() == null ? e.getAmount() : purchase.getLineTotal();
+            }
+        }
         if ("PUJA".equalsIgnoreCase(e.getOrderType()) && e.getSourceId() != null) {
             PujaBooking booking = pujaBookingRepository.findById(e.getSourceId()).orElse(null);
             if (booking != null) {
@@ -200,6 +259,9 @@ public class OrderHistoryService {
         }
 
         List<RemidesPurchase> remedyPurchases = remidesPurchaseRepository.findByUserIdOrderByPurchasedAtDesc(userId);
+
+        List<PujaSamagriPurchase> samagriPurchases = pujaSamagriPurchaseRepository.findByUserIdOrderByPurchasedAtDesc(userId);
+        recordSamagriPurchases(samagriPurchases);
         recordRemedyPurchases(remedyPurchases);
 
         List<PujaBooking> pujaBookings = pujaBookingRepository.findByUserIdOrderByBookedAtDesc(userId);

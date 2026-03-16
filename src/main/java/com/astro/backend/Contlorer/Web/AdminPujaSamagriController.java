@@ -29,7 +29,7 @@ public class AdminPujaSamagriController {
         return ResponseEntity.ok(Map.of(
                 "status", true,
                 "message", "Samagri master created",
-                "item", pujaService.createSamagriMaster(request.getName(), request.getDescription(), request.getIsActive())
+                "item", pujaService.createSamagriMaster(request)
         ));
     }
 
@@ -38,7 +38,7 @@ public class AdminPujaSamagriController {
         return ResponseEntity.ok(Map.of(
                 "status", true,
                 "message", "Samagri master updated",
-                "item", pujaService.updateSamagriMaster(id, request.getName(), request.getDescription(), request.getIsActive())
+                "item", pujaService.updateSamagriMaster(id, request)
         ));
     }
 

@@ -13,6 +13,7 @@ import com.astro.backend.Entity.NakshatraMaster;
 import com.astro.backend.Entity.PujaBookingSpiritualDetail;
 import com.astro.backend.Entity.PujaSamagriItem;
 import com.astro.backend.Entity.PujaSamagriMaster;
+import com.astro.backend.Entity.PujaSamagriMasterImage;
 import com.astro.backend.Entity.RashiMaster;
 import com.astro.backend.Repositry.AddressRepository;
 import com.astro.backend.Repositry.AppConfigRepository;
@@ -22,9 +23,11 @@ import com.astro.backend.Repositry.NakshatraMasterRepository;
 import com.astro.backend.Repositry.PujaBookingSpiritualDetailRepository;
 import com.astro.backend.Repositry.PujaSamagriItemRepository;
 import com.astro.backend.Repositry.PujaSamagriMasterRepository;
+import com.astro.backend.Repositry.PujaSamagriMasterImageRepository;
 import com.astro.backend.Repositry.RashiMasterRepository;
 import com.astro.backend.RequestDTO.PujaSlotMasterRequest;
 import com.astro.backend.RequestDTO.ResendReceiptRequest;
+import com.astro.backend.RequestDTO.PujaSamagriMasterRequest;
 import com.astro.backend.Repositry.PujaBookingRepository;
 import com.astro.backend.Repositry.PujaRepository;
 import com.astro.backend.Repositry.PujaSlotRepository;
@@ -66,6 +69,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -91,6 +95,7 @@ public class PujaService {
     private final NakshatraMasterRepository nakshatraMasterRepository;
     private final PujaBookingSpiritualDetailRepository pujaBookingSpiritualDetailRepository;
     private final PujaSamagriMasterRepository pujaSamagriMasterRepository;
+    private final PujaSamagriMasterImageRepository pujaSamagriMasterImageRepository;
     private final PujaSamagriItemRepository pujaSamagriItemRepository;
     private final PujaBookingNotificationService pujaBookingNotificationService;
     private static final LocalTime DEFAULT_DAY_START = LocalTime.of(8, 0);
@@ -444,39 +449,198 @@ public class PujaService {
                 .toList();
     }
 
-    public PujaSamagriMaster createSamagriMaster(String name, String description, Boolean isActive) {
-        String cleanedName = name == null ? "" : name.trim();
+    public PujaSamagriMaster createSamagriMaster(PujaSamagriMasterRequest request) {
+        if (request == null) {
+            throw new RuntimeException("Request body is required");
+        }
+        String cleanedName = request.getName() == null ? "" : request.getName().trim();
         if (cleanedName.isEmpty()) {
             throw new RuntimeException("Samagri name is required");
         }
+        String cleanedHiName = request.getHiName() == null ? "" : request.getHiName().trim();
+        if (cleanedHiName.isEmpty()) {
+            cleanedHiName = cleanedName;
+        }
+
+        final List<String> normalizedImages = normalizeImageUrls(request.getImageUrl(), request.getImageUrls());
+
         PujaSamagriMaster entity = PujaSamagriMaster.builder()
                 .name(cleanedName)
-                .description(description == null ? null : description.trim())
-                .isActive(isActive == null ? true : isActive)
+                .hiName(cleanedHiName)
+                .description(request.getDescription() == null ? null : request.getDescription().trim())
+                .hiDescription(request.getHiDescription() == null ? null : request.getHiDescription().trim())
+                .price(request.getPrice())
+                .discountPercentage(request.getDiscountPercentage())
+                .currency(request.getCurrency() == null ? null : request.getCurrency().trim())
+                .imageUrl(normalizedImages.isEmpty() ? trimToNull(request.getImageUrl()) : normalizedImages.get(0))
+                .shopEnabled(request.getShopEnabled() != null ? request.getShopEnabled() : false)
+                .isActive(request.getIsActive() == null ? true : request.getIsActive())
                 .build();
-        return pujaSamagriMasterRepository.save(entity);
+
+        PujaSamagriMaster saved = pujaSamagriMasterRepository.save(entity);
+        syncSamagriMasterImages(saved, normalizedImages);
+        return saved;
     }
 
-    public PujaSamagriMaster updateSamagriMaster(Long id, String name, String description, Boolean isActive) {
+    public PujaSamagriMaster updateSamagriMaster(Long id, PujaSamagriMasterRequest request) {
         PujaSamagriMaster entity = pujaSamagriMasterRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Samagri master not found: " + id));
-        if (name != null && !name.trim().isEmpty()) {
-            entity.setName(name.trim());
+
+        boolean replaceImages = false;
+        List<String> normalizedImages = List.of();
+
+        if (request != null) {
+            if (request.getName() != null && !request.getName().trim().isEmpty()) {
+                entity.setName(request.getName().trim());
+            }
+            if (request.getHiName() != null) {
+                final String hi = request.getHiName().trim();
+                if (!hi.isEmpty()) {
+                    entity.setHiName(hi);
+                }
+            }
+            if (request.getDescription() != null) {
+                entity.setDescription(request.getDescription().trim());
+            }
+            if (request.getHiDescription() != null) {
+                entity.setHiDescription(request.getHiDescription().trim());
+            }
+            if (request.getPrice() != null) {
+                entity.setPrice(request.getPrice());
+            }
+            if (request.getDiscountPercentage() != null) {
+                entity.setDiscountPercentage(request.getDiscountPercentage());
+            }
+            if (request.getCurrency() != null && !request.getCurrency().trim().isEmpty()) {
+                entity.setCurrency(request.getCurrency().trim());
+            }
+            replaceImages = request.getImageUrls() != null;
+            if (replaceImages) {
+                normalizedImages = normalizeImageUrls(request.getImageUrl(), request.getImageUrls());
+                if (!normalizedImages.isEmpty()) {
+                    entity.setImageUrl(normalizedImages.get(0));
+                } else if (request.getImageUrl() != null) {
+                    entity.setImageUrl(trimToNull(request.getImageUrl()));
+                }
+            } else if (request.getImageUrl() != null) {
+                entity.setImageUrl(trimToNull(request.getImageUrl()));
+            }
+            if (request.getShopEnabled() != null) {
+                entity.setShopEnabled(request.getShopEnabled());
+            }
+            if (request.getIsActive() != null) {
+                entity.setIsActive(request.getIsActive());
+            }
         }
-        if (description != null) {
-            entity.setDescription(description.trim());
+
+        if (entity.getHiName() == null || entity.getHiName().trim().isEmpty()) {
+            entity.setHiName(entity.getName());
         }
-        if (isActive != null) {
-            entity.setIsActive(isActive);
+
+        PujaSamagriMaster saved = pujaSamagriMasterRepository.save(entity);
+
+        if (replaceImages) {
+            syncSamagriMasterImages(saved, normalizedImages);
+        } else if (request != null && request.getImageUrl() != null) {
+            upsertPrimarySamagriImage(saved, saved.getImageUrl());
         }
-        return pujaSamagriMasterRepository.save(entity);
+
+        return saved;
     }
 
-    public void softDeleteSamagriMaster(Long id) {
+public void softDeleteSamagriMaster(Long id) {
         PujaSamagriMaster entity = pujaSamagriMasterRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Samagri master not found: " + id));
         entity.setIsActive(false);
         pujaSamagriMasterRepository.save(entity);
+    }
+
+    private void syncSamagriMasterImages(PujaSamagriMaster master, List<String> imageUrls) {
+        if (master == null || master.getId() == null) {
+            return;
+        }
+
+        List<PujaSamagriMasterImage> existing = pujaSamagriMasterImageRepository
+                .findBySamagriMaster_IdOrderByDisplayOrderAscIdAsc(master.getId());
+        if (!existing.isEmpty()) {
+            existing.forEach(img -> img.setIsActive(false));
+            pujaSamagriMasterImageRepository.saveAll(existing);
+        }
+
+        if (imageUrls == null || imageUrls.isEmpty()) {
+            return;
+        }
+
+        List<PujaSamagriMasterImage> toSave = new ArrayList<>();
+        int order = 0;
+        for (String url : imageUrls) {
+            if (url == null || url.trim().isEmpty()) continue;
+            toSave.add(PujaSamagriMasterImage.builder()
+                    .samagriMaster(master)
+                    .imageUrl(url.trim())
+                    .displayOrder(order++)
+                    .isActive(true)
+                    .build());
+        }
+        if (!toSave.isEmpty()) {
+            pujaSamagriMasterImageRepository.saveAll(toSave);
+        }
+    }
+
+    private void upsertPrimarySamagriImage(PujaSamagriMaster master, String imageUrl) {
+        if (master == null || master.getId() == null) {
+            return;
+        }
+        final String cleaned = trimToNull(imageUrl);
+        if (cleaned == null) {
+            return;
+        }
+
+        List<PujaSamagriMasterImage> active = pujaSamagriMasterImageRepository
+                .findBySamagriMaster_IdAndIsActiveTrueOrderByDisplayOrderAscIdAsc(master.getId());
+        if (active.isEmpty()) {
+            pujaSamagriMasterImageRepository.save(PujaSamagriMasterImage.builder()
+                    .samagriMaster(master)
+                    .imageUrl(cleaned)
+                    .displayOrder(0)
+                    .isActive(true)
+                    .build());
+            return;
+        }
+
+        PujaSamagriMasterImage first = active.get(0);
+        first.setImageUrl(cleaned);
+        first.setIsActive(true);
+        if (first.getDisplayOrder() == null) {
+            first.setDisplayOrder(0);
+        }
+        pujaSamagriMasterImageRepository.save(first);
+    }
+
+    private List<String> normalizeImageUrls(String primary, List<String> imageUrls) {
+        final LinkedHashSet<String> ordered = new LinkedHashSet<>();
+
+        final String p = trimToNull(primary);
+        if (p != null) {
+            ordered.add(p);
+        }
+
+        if (imageUrls != null) {
+            for (String url : imageUrls) {
+                final String cleaned = trimToNull(url);
+                if (cleaned == null) continue;
+                ordered.add(cleaned);
+                if (ordered.size() >= 12) break;
+            }
+        }
+
+        return ordered.stream().toList();
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) return null;
+        final String cleaned = value.trim();
+        return cleaned.isEmpty() ? null : cleaned;
     }
 
     public List<Map<String, Object>> getPujaSamagriForMobile(Long pujaId) {
