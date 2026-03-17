@@ -3,6 +3,8 @@ server:
   address: 0.0.0.0
 
 spring:
+  config:
+    import: optional:classpath:application-secrets.yml
   datasource:
     url: jdbc:mysql://localhost:3306/astrodb?createDatabaseIfNotExist=true
     username: root
@@ -11,8 +13,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: adhyaystore@gmail.com
-    password: ouyb tauv udkd cssf
+    username: ${SMTP_USERNAME:adhyaystore@gmail.com}
+    password: ${SMTP_PASSWORD:ljpy pecz oclj wuex}
     properties:
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
@@ -53,7 +55,7 @@ resend:
 
 app:
   mail:
-    from: "deepak.kumar.rd2013@gmail.com"
+    from: "adhyaystore@gmail.com"
   public-base-url: ${APP_PUBLIC_BASE_URL:http://localhost:1234}
 
 razorpay:
@@ -72,6 +74,13 @@ fcm:
   service-account-base64: ${FCM_SERVICE_ACCOUNT_BASE64:}
 
 agora:
-  app-id: ${AGORA_APP_ID:cbe31f2b8684484a92cdcb6b81ca8ab6}
+  app-id: ${AGORA_APP_ID:}
   app-certificate: ${AGORA_APP_CERTIFICATE:}
   token-expire-seconds: ${AGORA_TOKEN_EXPIRE_SECONDS:3600}
+
+google:
+  maps:
+    api-key: ${GOOGLE_MAPS_API_KEY:}
+    places-autocomplete-url: ${GOOGLE_PLACES_AUTOCOMPLETE_URL:https://maps.googleapis.com/maps/api/place/autocomplete/json}
+    places-details-url: ${GOOGLE_PLACES_DETAILS_URL:https://maps.googleapis.com/maps/api/place/details/json}
+    geocode-url: ${GOOGLE_GEOCODE_URL:https://maps.googleapis.com/maps/api/geocode/json}

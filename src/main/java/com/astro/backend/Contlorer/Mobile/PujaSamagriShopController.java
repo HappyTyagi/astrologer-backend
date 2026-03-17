@@ -5,6 +5,8 @@ import com.astro.backend.Entity.PujaSamagriMaster;
 import com.astro.backend.Repositry.PujaSamagriMasterImageRepository;
 import com.astro.backend.Repositry.PujaSamagriMasterRepository;
 import com.astro.backend.ResponseDTO.PujaSamagriShopItemResponse;
+import com.astro.backend.apiResponse.ApiResponse;
+import com.astro.backend.apiResponse.ResponseUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,13 +24,23 @@ public class PujaSamagriShopController {
     private final PujaSamagriMasterImageRepository imageRepository;
 
     @GetMapping
-    public ResponseEntity<?> listShopItems() {
-        List<PujaSamagriMaster> masters = masterRepository.findByIsActiveOrderByName(true)
-                .stream()
+    public ResponseEntity<ApiResponse<List<PujaSamagriShopItemResponse>>> listShopItems() {
+        final List<PujaSamagriMaster> activeMasters = masterRepository.findByIsActiveOrderByName(true);
+        List<PujaSamagriMaster> masters = activeMasters.stream()
                 .filter(m -> Boolean.TRUE.equals(m.getShopEnabled()))
                 .toList();
         if (masters.isEmpty()) {
-            return ResponseEntity.ok(List.of());
+            // Backward compatibility: if shopEnabled isn't configured yet, show all active items.
+            masters = activeMasters;
+        }
+        if (masters.isEmpty()) {
+            return ResponseEntity.ok(
+                    ResponseUtils.createSuccessResponse(
+                            List.of(),
+                            true,
+                            "No items available"
+                    )
+            );
         }
 
         final List<Long> ids = masters.stream()
@@ -48,17 +60,24 @@ public class PujaSamagriShopController {
         final List<PujaSamagriShopItemResponse> response = masters.stream()
                 .map(m -> toShopResponse(m, imagesByMasterId.get(m.getId())))
                 .toList();
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(
+                ResponseUtils.createSuccessResponse(
+                        response,
+                        true,
+                        "Shop items fetched successfully"
+                )
+        );
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getItem(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<PujaSamagriShopItemResponse>> getItem(@PathVariable Long id) {
         PujaSamagriMaster item = masterRepository.findById(id).orElse(null);
-        if (item == null || Boolean.FALSE.equals(item.getIsActive()) || Boolean.FALSE.equals(item.getShopEnabled())) {
+        if (item == null || Boolean.FALSE.equals(item.getIsActive())) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of(
-                            "status", false,
-                            "message", "Samagri item not found"
+                    .body(ResponseUtils.createFailureResponse(
+                            "Samagri item not found",
+                            false,
+                            "SAMAGRI_NOT_FOUND"
                     ));
         }
         final List<String> images = imageRepository
@@ -67,7 +86,13 @@ public class PujaSamagriShopController {
                 .map(PujaSamagriMasterImage::getImageUrl)
                 .toList();
 
-        return ResponseEntity.ok(toShopResponse(item, images));
+        return ResponseEntity.ok(
+                ResponseUtils.createSuccessResponse(
+                        toShopResponse(item, images),
+                        true,
+                        "Shop item fetched successfully"
+                )
+        );
     }
 
     private PujaSamagriShopItemResponse toShopResponse(PujaSamagriMaster master, List<String> images) {

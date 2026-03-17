@@ -95,8 +95,10 @@ public class FcmPushService {
             Map<String, Object> message = new LinkedHashMap<>();
             message.put("token", fcmToken.trim());
 
-            boolean callPush = isCallPush(type, actionData);
-            if (!callPush) {
+            Map<String, Object> actionDataMap = parseActionDataMap(actionData);
+            boolean callPush = isCallPush(type, actionDataMap);
+            boolean showNotificationPayload = !callPush || isAdminTargetCallPush(actionDataMap);
+            if (showNotificationPayload) {
                 Map<String, Object> notification = new LinkedHashMap<>();
                 notification.put("title", safe(title));
                 notification.put("body", safe(body));
@@ -108,14 +110,15 @@ public class FcmPushService {
             data.put("title", safe(title));
             data.put("message", safe(body));
             data.put("type", safe(type));
-            Map<String, Object> actionDataMap = parseActionDataMap(actionData);
             putDataIfPresent(data, "source", actionDataMap.get("source"));
             putDataIfPresent(data, "chatId", actionDataMap.get("chatId"));
             putDataIfPresent(data, "callId", actionDataMap.get("callId"));
             putDataIfPresent(data, "callType", actionDataMap.get("callType"));
             putDataIfPresent(data, "targetRole", actionDataMap.get("targetRole"));
+            putDataIfPresent(data, "callerName", actionDataMap.get("callerName"));
             putDataIfPresent(data, "callerNumber", actionDataMap.get("callerNumber"));
             putDataIfPresent(data, "callerMobile", actionDataMap.get("callerMobile"));
+            putDataIfPresent(data, "callerAvatar", actionDataMap.get("callerAvatar"));
             if (!isBlank(actionUrl)) data.put("actionUrl", actionUrl.trim());
             if (!isBlank(actionData)) data.put("actionData", actionData.trim());
             if (!isBlank(imageUrl)) data.put("imageUrl", imageUrl.trim());
@@ -123,7 +126,7 @@ public class FcmPushService {
 
             Map<String, Object> android = new LinkedHashMap<>();
             android.put("priority", "HIGH");
-            if (!callPush) {
+            if (showNotificationPayload) {
                 android.put("notification", Map.of(
                         "sound", "default"
                 ));
@@ -131,7 +134,7 @@ public class FcmPushService {
             message.put("android", android);
 
             Map<String, Object> apns = new LinkedHashMap<>();
-            if (callPush) {
+            if (callPush && !showNotificationPayload) {
                 apns.put("headers", Map.of(
                         "apns-priority", "5",
                         "apns-push-type", "background"
@@ -257,18 +260,20 @@ public class FcmPushService {
         return value == null || value.trim().isEmpty();
     }
 
-    private boolean isCallPush(String type, String actionData) {
+    private boolean isCallPush(String type, Map<String, Object> actionDataMap) {
         if ("CALL".equalsIgnoreCase(safe(type).trim())) {
             return true;
         }
-        Map<String, Object> actionDataMap = parseActionDataMap(actionData);
         Object source = actionDataMap.get("source");
         if (source != null && "call".equalsIgnoreCase(source.toString().trim())) {
             return true;
         }
-        String normalized = safe(actionData).toLowerCase();
-        return normalized.contains("\"source\":\"call\"")
-                || normalized.contains("\"source\": \"call\"");
+        return false;
+    }
+
+    private boolean isAdminTargetCallPush(Map<String, Object> actionDataMap) {
+        Object targetRole = actionDataMap.get("targetRole");
+        return targetRole != null && "admin".equalsIgnoreCase(targetRole.toString().trim());
     }
 
     private Map<String, Object> parseActionDataMap(String actionData) {

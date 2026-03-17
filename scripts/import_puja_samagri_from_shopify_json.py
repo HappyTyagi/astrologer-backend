@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import ssl
 import sys
 import urllib.request
 
@@ -26,7 +27,8 @@ def strip_html(value: str) -> str:
     return text
 
 
-def fetch_json(url: str) -> dict:
+def fetch_json(url: str, *, insecure: bool = False) -> dict:
+    context = ssl._create_unverified_context() if insecure else None
     req = urllib.request.Request(
         url,
         headers={
@@ -34,7 +36,7 @@ def fetch_json(url: str) -> dict:
             "Accept": "application/json",
         },
     )
-    with urllib.request.urlopen(req, timeout=40) as resp:
+    with urllib.request.urlopen(req, timeout=40, context=context) as resp:
         return json.loads(resp.read().decode("utf-8", errors="ignore"))
 
 
@@ -62,6 +64,11 @@ def main() -> int:
         default="",
         help="Admin JWT token for /api/web/** endpoints (Bearer <token>)",
     )
+    parser.add_argument(
+        "--insecure",
+        action="store_true",
+        help="Disable SSL certificate verification when scraping (use only if required).",
+    )
     parser.add_argument("--limit", type=int, default=250)
     args = parser.parse_args()
 
@@ -80,7 +87,7 @@ def main() -> int:
         return 5
 
     try:
-        data = fetch_json(products_url)
+        data = fetch_json(products_url, insecure=args.insecure)
     except Exception as exc:
         print(f"Failed to fetch {products_url}: {exc}", file=sys.stderr)
         return 2

@@ -38,6 +38,8 @@ public class SecurityConfig {
                                 "/api/master/nakshatra/active",
                                 "/api/master/gemstone/active",
                                 "/api/master/yantra/active",
+                                "/puja-samagri",
+                                "/puja-samagri/*",
                                 "/puja/join/**",
                                 "/puja/join-access/**"
                         ).permitAll()

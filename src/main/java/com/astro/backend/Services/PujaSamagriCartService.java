@@ -6,6 +6,7 @@ import com.astro.backend.Repositry.PujaSamagriCartRepository;
 import com.astro.backend.Repositry.PujaSamagriMasterRepository;
 import com.astro.backend.RequestDTO.PujaSamagriCartSyncRequest;
 import com.astro.backend.ResponseDTO.PujaSamagriCartItemResponse;
+import com.astro.backend.ResponseDTO.PujaSamagriCartResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,7 +25,7 @@ public class PujaSamagriCartService {
     private final PujaSamagriMasterRepository masterRepository;
 
     @Transactional
-    public Map<String, Object> syncCart(PujaSamagriCartSyncRequest request) {
+    public PujaSamagriCartResponse syncCart(PujaSamagriCartSyncRequest request) {
         validateRequest(request);
 
         final Long userId = request.getUserId();
@@ -88,19 +89,19 @@ public class PujaSamagriCartService {
             }
         }
 
-        return buildCartResponse(userId, "Cart synced successfully");
+        return buildCartResponse(userId);
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> getCart(Long userId) {
+    public PujaSamagriCartResponse getCart(Long userId) {
         if (userId == null || userId <= 0) {
             throw new RuntimeException("Valid userId is required");
         }
-        return buildCartResponse(userId, "Cart fetched successfully");
+        return buildCartResponse(userId);
     }
 
     @Transactional
-    public Map<String, Object> removeItem(Long userId, Long samagriMasterId) {
+    public PujaSamagriCartResponse removeItem(Long userId, Long samagriMasterId) {
         if (userId == null || userId <= 0) {
             throw new RuntimeException("Valid userId is required");
         }
@@ -114,21 +115,21 @@ public class PujaSamagriCartService {
                     cartRepository.save(cart);
                 });
 
-        return buildCartResponse(userId, "Item removed from cart");
+        return buildCartResponse(userId);
     }
 
     @Transactional
-    public Map<String, Object> clearCart(Long userId) {
+    public PujaSamagriCartResponse clearCart(Long userId) {
         if (userId == null || userId <= 0) {
             throw new RuntimeException("Valid userId is required");
         }
         final List<PujaSamagriCart> userItems = cartRepository.findByUserId(userId);
         userItems.forEach(item -> item.setIsActive(false));
         cartRepository.saveAll(userItems);
-        return buildCartResponse(userId, "Cart cleared successfully");
+        return buildCartResponse(userId);
     }
 
-    private Map<String, Object> buildCartResponse(Long userId, String message) {
+    private PujaSamagriCartResponse buildCartResponse(Long userId) {
         final List<PujaSamagriCartItemResponse> items = cartRepository
                 .findByUserIdAndIsActiveTrueOrderByUpdatedAtDesc(userId)
                 .stream()
@@ -151,16 +152,14 @@ public class PujaSamagriCartService {
                 })
                 .sum();
 
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("status", true);
-        response.put("message", message);
-        response.put("userId", userId);
-        response.put("totalItems", totalItems);
-        response.put("totalAmount", totalAmount);
-        response.put("payableAmount", totalAmount);
-        response.put("items", items);
-        response.put("serverTime", LocalDateTime.now());
-        return response;
+        return PujaSamagriCartResponse.builder()
+                .userId(userId)
+                .totalItems(totalItems)
+                .totalAmount(totalAmount)
+                .payableAmount(totalAmount)
+                .items(items)
+                .serverTime(LocalDateTime.now())
+                .build();
     }
 
     private PujaSamagriCartItemResponse toResponse(PujaSamagriCart cart) {

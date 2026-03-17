@@ -21,7 +21,11 @@ public class AgoraTokenService {
 
     public AgoraTokenResponse generateRtcToken(String channelName, int uid, String roleInput) {
         long now = System.currentTimeMillis() / 1000L;
-        long expireAt = now + (tokenExpireSeconds == null ? 3600 : tokenExpireSeconds);
+        int expirySeconds = tokenExpireSeconds == null ? 3600 : tokenExpireSeconds;
+        if (expirySeconds <= 0) {
+            expirySeconds = 3600;
+        }
+        long expireAt = now + expirySeconds;
 
         if (isBlank(appId)) {
             return AgoraTokenResponse.builder()
@@ -61,8 +65,8 @@ public class AgoraTokenService {
                 channelName,
                 uid,
                 role,
-                (int) expireAt,
-                (int) expireAt
+                expirySeconds,
+                expirySeconds
         );
 
         return AgoraTokenResponse.builder()
@@ -80,7 +84,11 @@ public class AgoraTokenService {
 
     public AgoraRtmTokenResponse generateRtmToken(String rtmUserId) {
         long now = System.currentTimeMillis() / 1000L;
-        long expireAt = now + (tokenExpireSeconds == null ? 3600 : tokenExpireSeconds);
+        int expirySeconds = tokenExpireSeconds == null ? 3600 : tokenExpireSeconds;
+        if (expirySeconds <= 0) {
+            expirySeconds = 3600;
+        }
+        long expireAt = now + expirySeconds;
 
         if (isBlank(appId)) {
             return AgoraRtmTokenResponse.builder()
@@ -112,7 +120,7 @@ public class AgoraTokenService {
                 appId.trim(),
                 appCertificate.trim(),
                 rtmUserId,
-                (int) expireAt
+                expirySeconds
         );
 
         return AgoraRtmTokenResponse.builder()

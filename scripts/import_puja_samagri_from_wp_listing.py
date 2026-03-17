@@ -19,6 +19,7 @@ import argparse
 import html as html_lib
 import json
 import re
+import ssl
 import sys
 import urllib.parse
 import urllib.request
@@ -26,7 +27,8 @@ from dataclasses import dataclass
 from html.parser import HTMLParser
 
 
-def fetch_html(url: str) -> str:
+def fetch_html(url: str, *, insecure: bool = False) -> str:
+    context = ssl._create_unverified_context() if insecure else None
     req = urllib.request.Request(
         url,
         headers={
@@ -34,7 +36,7 @@ def fetch_html(url: str) -> str:
             "Accept": "text/html,*/*",
         },
     )
-    with urllib.request.urlopen(req, timeout=40) as resp:
+    with urllib.request.urlopen(req, timeout=40, context=context) as resp:
         return resp.read().decode("utf-8", errors="ignore")
 
 
@@ -221,8 +223,8 @@ class WooListingParser(HTMLParser):
                 prod.sale_price = price
 
 
-def scrape_page(base_url: str, url: str) -> list[ScrapedProduct]:
-    html_text = fetch_html(url)
+def scrape_page(base_url: str, url: str, *, insecure: bool = False) -> list[ScrapedProduct]:
+    html_text = fetch_html(url, insecure=insecure)
     parser = WooListingParser(base_url=base_url)
     parser.feed(html_text)
     products = []
@@ -257,6 +259,11 @@ def main() -> int:
         action="store_true",
         help="Scrape and print items without importing to backend",
     )
+    parser.add_argument(
+        "--insecure",
+        action="store_true",
+        help="Disable SSL certificate verification when scraping (use only if required).",
+    )
     parser.add_argument("--max-pages", type=int, default=20)
     parser.add_argument("--limit", type=int, default=500)
     args = parser.parse_args()
@@ -276,7 +283,7 @@ def main() -> int:
             break
         listing_url = build_listing_url(base_url, page)
         try:
-            products = scrape_page(base_url, listing_url)
+            products = scrape_page(base_url, listing_url, insecure=args.insecure)
         except Exception as exc:
             print(f"Failed to fetch/scrape page {page} ({listing_url}): {exc}", file=sys.stderr)
             break

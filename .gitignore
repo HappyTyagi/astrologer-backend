@@ -34,3 +34,6 @@ build/
 
 # Firebase service account (local secret)
 src/main/resources/firebase-service-account.json
+
+# Local-only Spring secrets (Agora, etc.)
+src/main/resources/application-secrets.yml

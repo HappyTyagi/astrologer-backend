@@ -43,6 +43,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AdminSupportChatService {
     public static final Long ADMIN_USER_ID = 1L;
+    private static final String FIXED_ADMIN_MOBILE = "8057700080";
     private static final Path UPLOAD_DIR = Path.of("uploads", "admin-support");
 
     private final AdminSupportChatSessionRepository sessionRepository;
@@ -67,6 +68,7 @@ public class AdminSupportChatService {
         ensureNotAdmin(actor);
 
         Long userId = actor.getId();
+        Long adminUserId = resolvePrimaryAdminUserId();
         String userName = firstNonBlank(
                 safe(request.getUserName()),
                 profileFor(userId).map(MobileUserProfile::getName).orElse(null),
@@ -84,14 +86,14 @@ public class AdminSupportChatService {
         );
 
         AdminSupportChatSession session = sessionRepository
-                .findByUserIdAndAdminUserId(userId, ADMIN_USER_ID)
+                .findByUserIdAndAdminUserId(userId, adminUserId)
                 .orElseGet(() -> AdminSupportChatSession.builder()
-                        .chatId(buildChatId(userId))
+                        .chatId(buildChatId(userId, adminUserId))
                         .userId(userId)
-                        .adminUserId(ADMIN_USER_ID)
+                        .adminUserId(adminUserId)
                         .rtmChannelName(buildChannelName(userId))
                         .userRtmId(buildUserRtmId(userId))
-                        .adminRtmId(buildAdminRtmId(ADMIN_USER_ID))
+                        .adminRtmId(buildAdminRtmId(adminUserId))
                         .lastMessage("Chat started")
                         .lastMessageType("text")
                         .lastMessageAt(LocalDateTime.now())
@@ -103,9 +105,11 @@ public class AdminSupportChatService {
         if (userAvatar != null && !userAvatar.isBlank()) {
             session.setUserAvatar(userAvatar);
         }
+        session.setChatId(buildChatId(userId, adminUserId));
+        session.setAdminUserId(adminUserId);
         session.setRtmChannelName(buildChannelName(userId));
         session.setUserRtmId(buildUserRtmId(userId));
-        session.setAdminRtmId(buildAdminRtmId(ADMIN_USER_ID));
+        session.setAdminRtmId(buildAdminRtmId(adminUserId));
         session.setIsUserOnline(true);
         session.setUserLastSeenAt(LocalDateTime.now());
 
@@ -441,7 +445,12 @@ public class AdminSupportChatService {
     }
 
     public String buildChatId(Long userId) {
-        return "user_" + userId + "_admin_" + ADMIN_USER_ID;
+        return buildChatId(userId, resolvePrimaryAdminUserId());
+    }
+
+    public String buildChatId(Long userId, Long adminUserId) {
+        Long safeAdminUserId = (adminUserId == null || adminUserId <= 0) ? ADMIN_USER_ID : adminUserId;
+        return "user_" + userId + "_admin_" + safeAdminUserId;
     }
 
     public String buildChannelName(Long userId) {
@@ -464,6 +473,19 @@ public class AdminSupportChatService {
 
     private String safe(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private Long resolvePrimaryAdminUserId() {
+        Optional<User> fixedAdmin = userRepository.findByMobileNumber(FIXED_ADMIN_MOBILE)
+                .filter(user -> user.getRole() == Role.ADMIN);
+        if (fixedAdmin.isPresent()) {
+            return fixedAdmin.get().getId();
+        }
+        return userRepository.findByRoleOrderByCreatedAtDesc(Role.ADMIN)
+                .stream()
+                .findFirst()
+                .map(User::getId)
+                .orElse(ADMIN_USER_ID);
     }
 
     private int safeInt(Integer value) {

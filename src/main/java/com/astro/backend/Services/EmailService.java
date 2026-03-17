@@ -3,6 +3,7 @@ package com.astro.backend.Services;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.MailAuthenticationException;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
@@ -61,6 +62,9 @@ public class EmailService {
             return CompletableFuture.completedFuture(true);
         } catch (Exception e) {
             log.error("Async email send failed. to={}, subject={}", toEmail, subject, e);
+            if (isAuthFailure(e)) {
+                log.error("SMTP authentication failed. Check spring.mail.username/spring.mail.password (use Gmail App Password without spaces).");
+            }
             return CompletableFuture.completedFuture(false);
         }
     }
@@ -79,6 +83,9 @@ public class EmailService {
             return CompletableFuture.completedFuture(true);
         } catch (Exception e) {
             log.error("Async email attachment send failed. to={}, subject={}, file={}", toEmail, subject, fileName, e);
+            if (isAuthFailure(e)) {
+                log.error("SMTP authentication failed. Check spring.mail.username/spring.mail.password (use Gmail App Password without spaces).");
+            }
             return CompletableFuture.completedFuture(false);
         }
     }
@@ -91,6 +98,17 @@ public class EmailService {
         helper.setSubject(subject);
         helper.setText(htmlContent, true);
         mailSender.send(message);
+    }
+
+    private boolean isAuthFailure(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof MailAuthenticationException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private void doSendEmailWithAttachment(
