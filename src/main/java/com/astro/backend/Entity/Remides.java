@@ -26,8 +26,24 @@ public class Remides {
     @Column(nullable = false)
     private String title;
 
+    @Column(name = "hi_title")
+    private String hiTitle;
+
+    private String subtitle;
+
+    @Column(name = "hi_subtitle")
+    private String hiSubtitle;
+
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Column(name = "hi_description", columnDefinition = "TEXT")
+    private String hiDescription;
+
+    private String category;
+
+    @Column(name = "hi_category")
+    private String hiCategory;
 
     @Column(nullable = false)
     private Double price;

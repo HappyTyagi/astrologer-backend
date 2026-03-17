@@ -181,6 +181,10 @@ public class AdminPujaController {
             row.put("agoraChannel", booking.getAgoraChannel());
             row.put("paymentMethod", defaultText(booking.getPaymentMethod()));
             row.put("transactionId", defaultText(booking.getTransactionId()));
+            row.put("packageCode", defaultText(booking.getPackageCode()).isBlank() ? "BASE" : booking.getPackageCode());
+            row.put("packageName", defaultText(booking.getPackageName()).isBlank() ? "BASE" : booking.getPackageName());
+            row.put("packagePrice", booking.getPackagePrice());
+            row.put("packageDurationMinutes", booking.getPackageDurationMinutes());
             row.put("pujaOtp", pujaService.ensurePujaOtp(booking));
             row.put("startedAt", booking.getStartedAt());
             row.put("completedAt", booking.getCompletedAt());
@@ -262,6 +266,10 @@ public class AdminPujaController {
             row.put("agoraChannel", booking.getAgoraChannel());
             row.put("paymentMethod", defaultText(booking.getPaymentMethod()));
             row.put("transactionId", defaultText(booking.getTransactionId()));
+            row.put("packageCode", defaultText(booking.getPackageCode()).isBlank() ? "BASE" : booking.getPackageCode());
+            row.put("packageName", defaultText(booking.getPackageName()).isBlank() ? "BASE" : booking.getPackageName());
+            row.put("packagePrice", booking.getPackagePrice());
+            row.put("packageDurationMinutes", booking.getPackageDurationMinutes());
             row.put("pujaOtp", pujaService.ensurePujaOtp(booking));
             row.put("startedAt", booking.getStartedAt());
             row.put("completedAt", booking.getCompletedAt());
@@ -433,6 +441,7 @@ public class AdminPujaController {
                 pujaService.updateBookingSpiritualDetails(
                         bookingId,
                         request == null ? null : request.getGotraMasterId(),
+                        request == null ? null : request.getCustomGotraName(),
                         request == null ? null : request.getRashiMasterId(),
                         request == null ? null : request.getNakshatraMasterId()
                 )

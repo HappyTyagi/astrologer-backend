@@ -40,7 +40,7 @@ public class User {
     private String password;
 
     @Enumerated(EnumType.STRING)
-    private Role role; // ASTROLOGER, ADMIN, USER
+    private Role role; // ADMIN, ASTROLOGER, PANDIT, USER
 
     private Boolean isVerified;
 

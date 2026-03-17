@@ -6,6 +6,7 @@ import com.astro.backend.Entity.PujaBooking;
 import com.astro.backend.Entity.PujaSlot;
 import com.astro.backend.Entity.RemidesPurchase;
 import com.astro.backend.Entity.PujaSamagriPurchase;
+import com.astro.backend.Helper.PujaOrderIdHelper;
 import com.astro.backend.Repositry.OrderHistoryRepository;
 import com.astro.backend.Repositry.PujaBookingRepository;
 import com.astro.backend.Repositry.PujaRepository;
@@ -137,7 +138,7 @@ public class OrderHistoryService {
         double total = booking.getTotalPrice() != null ? booking.getTotalPrice() : basePrice;
 
         OrderHistoryEntry entry = OrderHistoryEntry.builder()
-                .orderId("PUJA-" + booking.getId())
+                .orderId(PujaOrderIdHelper.build(booking.getUserId(), booking.getId()))
                 .orderType("PUJA")
                 .userId(booking.getUserId())
                 .sourceId(booking.getId())
@@ -226,7 +227,9 @@ public class OrderHistoryService {
 
         return RemidesPurchaseHistoryResponse.builder()
                 .id(e.getId())
-                .orderId(e.getOrderId())
+                .orderId("PUJA".equalsIgnoreCase(e.getOrderType()) && e.getSourceId() != null
+                        ? PujaOrderIdHelper.build(e.getUserId(), e.getSourceId())
+                        : e.getOrderId())
                 .orderType(e.getOrderType())
                 .userId(e.getUserId())
                 .remidesId(e.getRemidesId())

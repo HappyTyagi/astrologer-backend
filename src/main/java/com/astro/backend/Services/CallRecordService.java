@@ -128,6 +128,7 @@ public class CallRecordService {
         return userRepository.findById(Long.valueOf(userId))
                 .filter(user -> user.getRole() != Role.ADMIN)
                 .filter(user -> user.getRole() != Role.ASTROLOGER)
+                .filter(user -> user.getRole() != Role.PANDIT)
                 .map(User::getId);
     }
 }

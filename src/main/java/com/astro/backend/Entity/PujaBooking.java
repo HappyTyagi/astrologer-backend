@@ -29,6 +29,10 @@ public class PujaBooking {
 
     // ===== Enhanced Tracking =====
     private Double totalPrice;         // Final price after discounts
+    private String packageCode;        // BASE / REGULAR / PREMIUM
+    private String packageName;        // User selected package label
+    private Double packagePrice;       // Selected package price used for billing
+    private Integer packageDurationMinutes;
     private Double discountApplied;
     private String discountCode;
     private String paymentMethod;      // UPI, Card, Wallet, etc.

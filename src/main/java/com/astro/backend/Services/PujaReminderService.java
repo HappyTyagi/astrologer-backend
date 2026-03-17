@@ -4,6 +4,7 @@ import com.astro.backend.Entity.MobileUserProfile;
 import com.astro.backend.Entity.Puja;
 import com.astro.backend.Entity.PujaBooking;
 import com.astro.backend.Entity.PujaSlot;
+import com.astro.backend.Helper.PujaOrderIdHelper;
 import com.astro.backend.Repositry.MobileUserProfileRepository;
 import com.astro.backend.Repositry.PujaBookingRepository;
 import com.astro.backend.Repositry.PujaRepository;
@@ -80,6 +81,7 @@ public class PujaReminderService {
         final String pujaName = puja == null || puja.getName() == null || puja.getName().isBlank()
                 ? "Puja Booking"
                 : puja.getName();
+        final String bookingCode = PujaOrderIdHelper.build(booking.getUserId(), booking.getId());
         final String meetingLink = pujaService.resolveUserMeetingLink(booking, slot);
         final String toEmail = profile == null || profile.getEmail() == null ? "" : profile.getEmail().trim();
         final String fcmToken = extractFcmToken(profile);
@@ -103,7 +105,7 @@ public class PujaReminderService {
                     <h2 style="margin:0 0 8px 0;color:#1f2f73;">Puja Reminder</h2>
                     <p style="margin:0 0 12px 0;">Your puja session will start in approximately <strong>%s</strong>.</p>
                     <table style="width:100%%;border-collapse:collapse;">
-                      <tr><td style="padding:8px 0;color:#546074;">Booking ID</td><td style="padding:8px 0;text-align:right;">PUJA-%d</td></tr>
+                      <tr><td style="padding:8px 0;color:#546074;">Booking ID</td><td style="padding:8px 0;text-align:right;">%s</td></tr>
                       <tr><td style="padding:8px 0;color:#546074;">Puja Name</td><td style="padding:8px 0;text-align:right;">%s</td></tr>
                       <tr><td style="padding:8px 0;color:#546074;">Slot Time</td><td style="padding:8px 0;text-align:right;">%s</td></tr>
                       <tr><td style="padding:8px 0;color:#546074;">Meeting Link</td><td style="padding:8px 0;text-align:right;"><a href="%s">Join Google Meet</a></td></tr>
@@ -114,7 +116,7 @@ public class PujaReminderService {
                 </html>
                 """.formatted(
                 escapeHtml(stage.label()),
-                booking.getId() == null ? 0L : booking.getId(),
+                escapeHtml(bookingCode),
                 escapeHtml(pujaName),
                 escapeHtml(slotTime.format(SLOT_FORMATTER)),
                 escapeHtml(meetingLink)
@@ -133,7 +135,7 @@ public class PujaReminderService {
                         "PUJA_REMINDER",
                         null,
                         null,
-                        "{\"bookingId\":\"PUJA-" + (booking.getId() == null ? 0L : booking.getId()) + "\",\"meetingLink\":\"" + escapeJson(meetingLink) + "\"}"
+                        "{\"bookingId\":\"" + escapeJson(bookingCode) + "\",\"meetingLink\":\"" + escapeJson(meetingLink) + "\"}"
                 );
             }
 

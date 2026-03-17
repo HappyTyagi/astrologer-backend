@@ -14,7 +14,7 @@ public class VerifyOtpResponse {
     private String name;               // User name
     private String mobileNo;           // User mobile number
     private String email;              // User email
-    private String role;               // Role from users table (ADMIN/USER/ASTROLOGER)
+    private String role;               // Role from users table (ADMIN/USER/ASTROLOGER/PANDIT)
     private Boolean isNewUser;         // Whether user was just created
     private Boolean isProfileComplete; // Whether user profile is complete (has MobileUserProfile with complete data)
     

@@ -7,11 +7,13 @@ import com.astro.backend.Entity.PujaBooking;
 import com.astro.backend.Entity.PujaSlot;
 import com.astro.backend.Entity.User;
 import com.astro.backend.EnumFile.Role;
+import com.astro.backend.Helper.PujaOrderIdHelper;
 import com.astro.backend.Repositry.PujaBookingRepository;
 import com.astro.backend.Repositry.PujaRepository;
 import com.astro.backend.Repositry.PujaSlotRepository;
 import com.astro.backend.Repositry.UserRepository;
 import com.astro.backend.RequestDTO.PujaBookingRequest;
+import com.astro.backend.RequestDTO.PujaBookingPreferenceUpdateRequest;
 import com.astro.backend.RequestDTO.PujaRescheduleRequest;
 import com.astro.backend.RequestDTO.PujaSlotMasterRequest;
 import com.astro.backend.RequestDTO.ResendReceiptRequest;
@@ -35,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -137,9 +140,16 @@ public class PujaController {
                 req.getSlotId(),
                 req.getAddressId(),
                 req.getGotraMasterId(),
+                req.getCustomGotraName(),
                 req.getPaymentMethod(),
                 req.getTransactionId(),
-                req.getUseWallet()
+                req.getUseWallet(),
+                req.getPackageCode(),
+                req.getPackageName(),
+                req.getPackagePrice(),
+                req.getPackageDurationMinutes(),
+                req.getRashiMasterId(),
+                req.getNakshatraMasterId()
         );
     }
 
@@ -151,6 +161,20 @@ public class PujaController {
     @GetMapping("/booking-preferences/{userId}")
     public Object bookingPreferences(@PathVariable Long userId) {
         return pujaService.getUserBookingPreferences(userId);
+    }
+
+    @PostMapping("/booking-preferences/{userId}")
+    public Object updateBookingPreferences(
+            @PathVariable Long userId,
+            @RequestBody PujaBookingPreferenceUpdateRequest request
+    ) {
+        return pujaService.updateUserBookingPreferences(
+                userId,
+                request.getGotraMasterId(),
+                request.getCustomGotraName(),
+                request.getRashiMasterId(),
+                request.getNakshatraMasterId()
+        );
     }
 
     @PostMapping("/slot-master/generate")
@@ -176,6 +200,7 @@ public class PujaController {
             PujaSlot slot = b.getSlotId() == null ? null : slotById.get(b.getSlotId());
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("id", b.getId());
+            row.put("orderId", PujaOrderIdHelper.build(b.getUserId(), b.getId()));
             row.put("userId", b.getUserId());
             row.put("pujaId", b.getPujaId());
             row.put("slotId", b.getSlotId());
@@ -244,7 +269,7 @@ public class PujaController {
             }
 
             if (actor.getRole() == Role.USER) {
-                if (!java.util.Objects.equals(actor.getId(), booking.getUserId())) {
+                if (!Objects.equals(actor.getId(), booking.getUserId())) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
                             AgoraTokenResponse.builder()
                                     .success(false)
@@ -257,10 +282,8 @@ public class PujaController {
                                     .build()
                     );
                 }
-            }
-            if (actor.getRole() == Role.ASTROLOGER) {
-                if (puja == null || puja.getAstrologerId() == null ||
-                        !java.util.Objects.equals(puja.getAstrologerId(), actor.getId())) {
+            } else if (isPujaPerformer(actor)) {
+                if (!isAssignedPujaPerformer(actor, puja)) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
                             AgoraTokenResponse.builder()
                                     .success(false)
@@ -286,6 +309,18 @@ public class PujaController {
                                     .build()
                     );
                 }
+            } else if (actor.getRole() != Role.ADMIN) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(
+                        AgoraTokenResponse.builder()
+                                .success(false)
+                                .message("Access denied")
+                                .appId("")
+                                .token("")
+                                .channelName("")
+                                .uid(actor.getId() == null ? 0 : actor.getId().intValue())
+                                .tokenRequired(true)
+                                .build()
+                );
             }
 
             if (slot == null || slot.getSlotTime() == null) {
@@ -351,7 +386,7 @@ public class PujaController {
     ) {
         try {
             User actor = requireCurrentUser(request);
-            if (actor.getRole() != Role.ADMIN && actor.getRole() != Role.ASTROLOGER) {
+            if (!canManagePuja(actor)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
                         "status", false,
                         "message", "Access denied"
@@ -367,9 +402,8 @@ public class PujaController {
                     ? null
                     : slotRepo.findById(booking.getSlotId()).orElse(null);
 
-            if (actor.getRole() == Role.ASTROLOGER) {
-                if (puja == null || puja.getAstrologerId() == null
-                        || !java.util.Objects.equals(puja.getAstrologerId(), actor.getId())) {
+            if (isPujaPerformer(actor)) {
+                if (!isAssignedPujaPerformer(actor, puja)) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
                             "status", false,
                             "message", "Access denied"
@@ -460,7 +494,7 @@ public class PujaController {
     ) {
         try {
             User actor = requireCurrentUser(request);
-            if (actor.getRole() != Role.ADMIN && actor.getRole() != Role.ASTROLOGER) {
+            if (!canManagePuja(actor)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
                         "status", false,
                         "message", "Access denied"
@@ -473,9 +507,8 @@ public class PujaController {
                     ? null
                     : pujaRepo.findById(booking.getPujaId()).orElse(null);
 
-            if (actor.getRole() == Role.ASTROLOGER) {
-                if (puja == null || puja.getAstrologerId() == null
-                        || !java.util.Objects.equals(puja.getAstrologerId(), actor.getId())) {
+            if (isPujaPerformer(actor)) {
+                if (!isAssignedPujaPerformer(actor, puja)) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of(
                             "status", false,
                             "message", "Access denied"
@@ -654,6 +687,30 @@ public class PujaController {
             value = payload.get("pujaOtp");
         }
         return value == null ? "" : String.valueOf(value).trim();
+    }
+
+    private boolean isPujaPerformer(User actor) {
+        if (actor == null || actor.getRole() == null) {
+            return false;
+        }
+        return actor.getRole() == Role.ASTROLOGER || actor.getRole() == Role.PANDIT;
+    }
+
+    private boolean canManagePuja(User actor) {
+        if (actor == null || actor.getRole() == null) {
+            return false;
+        }
+        return actor.getRole() == Role.ADMIN || isPujaPerformer(actor);
+    }
+
+    private boolean isAssignedPujaPerformer(User actor, Puja puja) {
+        if (!isPujaPerformer(actor)) {
+            return false;
+        }
+        if (puja == null || puja.getAstrologerId() == null) {
+            return false;
+        }
+        return Objects.equals(puja.getAstrologerId(), actor.getId());
     }
 
     private String buildJoinBlockedHtml(Map<String, Object> access) {

@@ -15,6 +15,7 @@ import com.astro.backend.Entity.PujaSamagriItem;
 import com.astro.backend.Entity.PujaSamagriMaster;
 import com.astro.backend.Entity.PujaSamagriMasterImage;
 import com.astro.backend.Entity.RashiMaster;
+import com.astro.backend.Helper.PujaOrderIdHelper;
 import com.astro.backend.Repositry.AddressRepository;
 import com.astro.backend.Repositry.AppConfigRepository;
 import com.astro.backend.Repositry.MobileUserProfileRepository;
@@ -176,15 +177,83 @@ public class PujaService {
         return isMobileSlotSelectionEnabled();
     }
 
+    private String resolveBookingPackageCode(PujaBooking booking) {
+        if (booking == null || booking.getPackageCode() == null) {
+            return "BASE";
+        }
+        String normalized = booking.getPackageCode().trim().toUpperCase(Locale.ROOT);
+        if ("REGULAR".equals(normalized) || "PREMIUM".equals(normalized)) {
+            return normalized;
+        }
+        return "BASE";
+    }
+
+    private String resolveBookingPackageName(PujaBooking booking) {
+        if (booking == null || booking.getPackageName() == null) {
+            return resolveBookingPackageCode(booking);
+        }
+        String name = booking.getPackageName().trim();
+        return name.isEmpty() ? resolveBookingPackageCode(booking) : name;
+    }
+
+    private boolean isSamagriRequiredForBooking(PujaBooking booking) {
+        return "BASE".equals(resolveBookingPackageCode(booking));
+    }
+
+    private String normalizeGotraToken(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value
+                .trim()
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[\\s_\\-/.]+", "");
+    }
+
+    private boolean isOtherLikeGotraLabel(String value) {
+        final String normalized = normalizeGotraToken(value);
+        if (normalized.isEmpty()) {
+            return false;
+        }
+        return "other".equals(normalized)
+                || "others".equals(normalized)
+                || "unknown".equals(normalized)
+                || "na".equals(normalized)
+                || "अन्य".equals(normalized)
+                || "अन्यगोत्र".equals(normalized)
+                || "अन्यगौत्र".equals(normalized);
+    }
+
+    private String resolveGotraDisplayName(GotraMaster gotraMaster, String customGotraName) {
+        final String masterName = gotraMaster == null || gotraMaster.getName() == null
+                ? ""
+                : gotraMaster.getName().trim();
+        if (!isOtherLikeGotraLabel(masterName)) {
+            return masterName;
+        }
+        final String custom = customGotraName == null ? "" : customGotraName.trim();
+        if (custom.isEmpty()) {
+            throw new RuntimeException("Please enter gotra name.");
+        }
+        return custom;
+    }
+
     public PujaBooking bookPuja(
             Long userId,
             Long pujaId,
             Long slotId,
             Long addressId,
             Long gotraMasterId,
+            String customGotraName,
             String paymentMethod,
             String transactionId,
-            Boolean useWallet
+            Boolean useWallet,
+            String packageCode,
+            String packageName,
+            Double packagePrice,
+            Integer packageDurationMinutes,
+            Long rashiMasterId,
+            Long nakshatraMasterId
     ) {
 
         if (addressId == null || addressId <= 0) {
@@ -211,6 +280,38 @@ public class PujaService {
         GotraMaster gotraMaster = gotraMasterRepository.findById(gotraMasterId)
                 .filter(g -> Boolean.TRUE.equals(g.getIsActive()))
                 .orElseThrow(() -> new RuntimeException("Invalid gotra selected."));
+        final String resolvedGotraName = resolveGotraDisplayName(gotraMaster, customGotraName);
+        final PujaBookingSpiritualDetail latestSpiritual = pujaBookingSpiritualDetailRepository
+                .findTopByUserIdOrderByCreatedAtDesc(userId)
+                .orElse(null);
+
+        final Long fallbackRashiId = latestSpiritual == null ? null : latestSpiritual.getRashiMasterId();
+        final Long fallbackNakshatraId = latestSpiritual == null ? null : latestSpiritual.getNakshatraMasterId();
+
+        final Long resolvedRashiId = rashiMasterId != null && rashiMasterId > 0 ? rashiMasterId : fallbackRashiId;
+        final Long resolvedNakshatraId = nakshatraMasterId != null && nakshatraMasterId > 0
+                ? nakshatraMasterId
+                : fallbackNakshatraId;
+
+        RashiMaster rashiMaster = null;
+        if (resolvedRashiId != null && resolvedRashiId > 0) {
+            rashiMaster = rashiMasterRepository.findById(resolvedRashiId)
+                    .filter(r -> Boolean.TRUE.equals(r.getIsActive()))
+                    .orElse(null);
+            if (rashiMaster == null && rashiMasterId != null && rashiMasterId > 0) {
+                throw new RuntimeException("Invalid rashi selected");
+            }
+        }
+
+        NakshatraMaster nakshatraMaster = null;
+        if (resolvedNakshatraId != null && resolvedNakshatraId > 0) {
+            nakshatraMaster = nakshatraMasterRepository.findById(resolvedNakshatraId)
+                    .filter(n -> Boolean.TRUE.equals(n.getIsActive()))
+                    .orElse(null);
+            if (nakshatraMaster == null && nakshatraMasterId != null && nakshatraMasterId > 0) {
+                throw new RuntimeException("Invalid nakshatra selected");
+            }
+        }
 
         if (slot != null) {
             if (!Objects.equals(slot.getPujaId(), pujaId)) {
@@ -241,13 +342,30 @@ public class PujaService {
 
         String finalTransactionId = transactionId == null ? "" : transactionId.trim();
         String finalPaymentMethod = normalizedMethod;
-        final double pujaAmount = puja.getPrice();
+        final String resolvedPackageCode = packageCode == null
+                ? "BASE"
+                : packageCode.trim().toUpperCase(Locale.ROOT);
+        final String normalizedPackageCode =
+                ("REGULAR".equals(resolvedPackageCode) || "PREMIUM".equals(resolvedPackageCode))
+                        ? resolvedPackageCode
+                        : "BASE";
+        final String resolvedPackageName = packageName == null || packageName.trim().isEmpty()
+                ? normalizedPackageCode
+                : packageName.trim();
+        final double baseAmount = puja.getPrice();
+        final double resolvedAmount = packagePrice == null ? baseAmount : packagePrice;
+        final double pujaAmount = resolvedAmount > 0
+                ? Math.max(resolvedAmount, baseAmount)
+                : baseAmount;
+        final Integer resolvedPackageDuration = packageDurationMinutes == null || packageDurationMinutes <= 0
+                ? puja.getDurationMinutes()
+                : packageDurationMinutes;
         if (isWalletPayment) {
             boolean debited = walletService.debit(
                     userId,
                     pujaAmount,
                     "PUJA_BOOKING",
-                    "Puja booking: " + puja.getName()
+                    "Puja booking (" + resolvedPackageCode + "): " + puja.getName()
             );
 
             if (!debited) {
@@ -267,7 +385,7 @@ public class PujaService {
                             userId,
                             pujaAmount,
                             "PUJA_BOOKING",
-                            "Puja booking (wallet part): " + puja.getName()
+                            "Puja booking (wallet part, " + resolvedPackageCode + "): " + puja.getName()
                     );
                 }
             }
@@ -303,7 +421,11 @@ public class PujaService {
                 .address(address)
                 .bookedAt(LocalDateTime.now())
                 .status(PujaBooking.BookingStatus.CONFIRMED)
-                .totalPrice(puja.getPrice())
+                .totalPrice(pujaAmount)
+                .packageCode(normalizedPackageCode)
+                .packageName(resolvedPackageName)
+                .packagePrice(pujaAmount)
+                .packageDurationMinutes(resolvedPackageDuration)
                 .paymentMethod(finalPaymentMethod)
                 .transactionId(finalTransactionId)
                 .meetingLink(defaultGoogleMeetLink())
@@ -315,17 +437,23 @@ public class PujaService {
                 .build();
 
         PujaBooking savedBooking = bookingRepo.save(booking);
-        pujaBookingSpiritualDetailRepository.save(
+        PujaBookingSpiritualDetail savedSpiritualDetail = pujaBookingSpiritualDetailRepository.save(
                 PujaBookingSpiritualDetail.builder()
                         .booking(savedBooking)
                         .userId(userId)
                         .gotraMasterId(gotraMaster.getId())
-                        .rashiMasterId(null)
-                        .nakshatraMasterId(null)
-                        .gotraName(gotraMaster.getName())
-                        .rashiName(null)
-                        .nakshatraName(null)
+                        .rashiMasterId(rashiMaster == null ? null : rashiMaster.getId())
+                        .nakshatraMasterId(nakshatraMaster == null ? null : nakshatraMaster.getId())
+                        .gotraName(resolvedGotraName)
+                        .rashiName(rashiMaster == null ? null : rashiMaster.getName())
+                        .nakshatraName(nakshatraMaster == null ? null : nakshatraMaster.getName())
                         .build()
+        );
+        persistUserSpiritualPreference(
+                userId,
+                savedSpiritualDetail.getGotraMasterId(),
+                savedSpiritualDetail.getRashiMasterId(),
+                savedSpiritualDetail.getNakshatraMasterId()
         );
         orderHistoryService.recordPujaBooking(savedBooking, puja, slot);
         try {
@@ -343,6 +471,8 @@ public class PujaService {
         return Map.of(
                 "status", true,
                 "gotra", gotraMasterRepository.findByIsActiveOrderByName(true),
+                "rashi", rashiMasterRepository.findByIsActiveOrderByName(true),
+                "nakshatra", nakshatraMasterRepository.findByIsActiveOrderByName(true),
                 "mobileSlotSelectionEnabled", isMobileSlotSelectionEnabled()
         );
     }
@@ -351,25 +481,139 @@ public class PujaService {
         PujaBookingSpiritualDetail latest = pujaBookingSpiritualDetailRepository
                 .findTopByUserIdOrderByCreatedAtDesc(userId)
                 .orElse(null);
-        if (latest == null) {
+        MobileUserProfile profile = mobileUserProfileRepository.findByUserId(userId).orElse(null);
+
+        Long gotraMasterId = latest == null ? null : latest.getGotraMasterId();
+        Long rashiMasterId = latest == null ? null : latest.getRashiMasterId();
+        Long nakshatraMasterId = latest == null ? null : latest.getNakshatraMasterId();
+        String gotraName = latest == null ? null : latest.getGotraName();
+        String rashiName = latest == null ? null : latest.getRashiName();
+        String nakshatraName = latest == null ? null : latest.getNakshatraName();
+
+        if (profile != null) {
+            if (gotraMasterId == null || gotraMasterId <= 0) {
+                gotraMasterId = profile.getGotraMasterId();
+            }
+            if (rashiMasterId == null || rashiMasterId <= 0) {
+                rashiMasterId = profile.getRashiMasterId();
+            }
+            if (nakshatraMasterId == null || nakshatraMasterId <= 0) {
+                nakshatraMasterId = profile.getNakshatraMasterId();
+            }
+        }
+
+        if ((gotraName == null || gotraName.isBlank()) && gotraMasterId != null && gotraMasterId > 0) {
+            gotraName = gotraMasterRepository.findById(gotraMasterId).map(GotraMaster::getName).orElse(null);
+        }
+        if ((rashiName == null || rashiName.isBlank()) && rashiMasterId != null && rashiMasterId > 0) {
+            rashiName = rashiMasterRepository.findById(rashiMasterId).map(RashiMaster::getName).orElse(null);
+        }
+        if ((nakshatraName == null || nakshatraName.isBlank()) && nakshatraMasterId != null && nakshatraMasterId > 0) {
+            nakshatraName = nakshatraMasterRepository.findById(nakshatraMasterId).map(NakshatraMaster::getName).orElse(null);
+        }
+
+        if ((gotraMasterId == null || gotraMasterId <= 0)
+                && (rashiMasterId == null || rashiMasterId <= 0)
+                && (nakshatraMasterId == null || nakshatraMasterId <= 0)) {
             return Map.of(
                     "status", true,
                     "message", "No previous spiritual details found",
                     "preferences", Map.of()
             );
         }
-        return Map.of(
-                "status", true,
-                "preferences", Map.of(
-                        "gotraMasterId", latest.getGotraMasterId(),
-                        "gotraName", latest.getGotraName()
-                )
+
+        Map<String, Object> preferences = new LinkedHashMap<>();
+        preferences.put("gotraMasterId", gotraMasterId);
+        preferences.put("gotraName", gotraName);
+        preferences.put("rashiMasterId", rashiMasterId);
+        preferences.put("rashiName", rashiName);
+        preferences.put("nakshatraMasterId", nakshatraMasterId);
+        preferences.put("nakshatraName", nakshatraName);
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", true);
+        response.put("preferences", preferences);
+        return response;
+    }
+
+    public Map<String, Object> updateUserBookingPreferences(
+            Long userId,
+            Long gotraMasterId,
+            String customGotraName,
+            Long rashiMasterId,
+            Long nakshatraMasterId
+    ) {
+        if (userId == null || userId <= 0) {
+            throw new RuntimeException("Valid userId is required");
+        }
+        if (gotraMasterId == null || gotraMasterId <= 0) {
+            throw new RuntimeException("gotraMasterId is required");
+        }
+
+        GotraMaster gotraMaster = gotraMasterRepository.findById(gotraMasterId)
+                .filter(g -> Boolean.TRUE.equals(g.getIsActive()))
+                .orElseThrow(() -> new RuntimeException("Invalid gotra selected"));
+        final String resolvedGotraName = resolveGotraDisplayName(gotraMaster, customGotraName);
+
+        RashiMaster rashiMaster = null;
+        if (rashiMasterId != null && rashiMasterId > 0) {
+            rashiMaster = rashiMasterRepository.findById(rashiMasterId)
+                    .filter(r -> Boolean.TRUE.equals(r.getIsActive()))
+                    .orElseThrow(() -> new RuntimeException("Invalid rashi selected"));
+        }
+
+        NakshatraMaster nakshatraMaster = null;
+        if (nakshatraMasterId != null && nakshatraMasterId > 0) {
+            nakshatraMaster = nakshatraMasterRepository.findById(nakshatraMasterId)
+                    .filter(n -> Boolean.TRUE.equals(n.getIsActive()))
+                    .orElseThrow(() -> new RuntimeException("Invalid nakshatra selected"));
+        }
+
+        boolean preferencePersisted = persistUserSpiritualPreference(
+                userId,
+                gotraMaster.getId(),
+                rashiMaster == null ? null : rashiMaster.getId(),
+                nakshatraMaster == null ? null : nakshatraMaster.getId()
         );
+
+        PujaBookingSpiritualDetail latest = pujaBookingSpiritualDetailRepository
+                .findTopByUserIdOrderByCreatedAtDesc(userId)
+                .orElse(null);
+        if (latest != null) {
+            latest.setGotraMasterId(gotraMaster.getId());
+            latest.setGotraName(resolvedGotraName);
+            latest.setRashiMasterId(rashiMaster == null ? null : rashiMaster.getId());
+            latest.setRashiName(rashiMaster == null ? null : rashiMaster.getName());
+            latest.setNakshatraMasterId(nakshatraMaster == null ? null : nakshatraMaster.getId());
+            latest.setNakshatraName(nakshatraMaster == null ? null : nakshatraMaster.getName());
+            latest.setIsActive(true);
+            pujaBookingSpiritualDetailRepository.save(latest);
+        }
+
+        Map<String, Object> preferences = new LinkedHashMap<>();
+        preferences.put("gotraMasterId", gotraMaster.getId());
+        preferences.put("gotraName", resolvedGotraName);
+        preferences.put("rashiMasterId", rashiMaster == null ? null : rashiMaster.getId());
+        preferences.put("rashiName", rashiMaster == null ? null : rashiMaster.getName());
+        preferences.put("nakshatraMasterId", nakshatraMaster == null ? null : nakshatraMaster.getId());
+        preferences.put("nakshatraName", nakshatraMaster == null ? null : nakshatraMaster.getName());
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", true);
+        response.put(
+                "message",
+                (latest != null || preferencePersisted)
+                        ? "Preferences updated successfully."
+                        : "No profile found. Preference will be saved at booking time."
+        );
+        response.put("preferences", preferences);
+        return response;
     }
 
     public Map<String, Object> updateBookingSpiritualDetails(
             Long bookingId,
             Long gotraMasterId,
+            String customGotraName,
             Long rashiMasterId,
             Long nakshatraMasterId
     ) {
@@ -394,6 +638,7 @@ public class PujaService {
         GotraMaster gotraMaster = gotraMasterRepository.findById(resolvedGotraId)
                 .filter(g -> Boolean.TRUE.equals(g.getIsActive()))
                 .orElseThrow(() -> new RuntimeException("Invalid gotra selected"));
+        final String resolvedGotraName = resolveGotraDisplayName(gotraMaster, customGotraName);
 
         RashiMaster rashiMaster = null;
         if (rashiMasterId != null && rashiMasterId > 0) {
@@ -418,7 +663,7 @@ public class PujaService {
                 : detail;
 
         entity.setGotraMasterId(gotraMaster.getId());
-        entity.setGotraName(gotraMaster.getName());
+        entity.setGotraName(resolvedGotraName);
         entity.setRashiMasterId(rashiMaster == null ? null : rashiMaster.getId());
         entity.setRashiName(rashiMaster == null ? null : rashiMaster.getName());
         entity.setNakshatraMasterId(nakshatraMaster == null ? null : nakshatraMaster.getId());
@@ -436,6 +681,26 @@ public class PujaService {
         response.put("nakshatraMasterId", saved.getNakshatraMasterId());
         response.put("inviteQueued", false);
         return response;
+    }
+
+    private boolean persistUserSpiritualPreference(
+            Long userId,
+            Long gotraMasterId,
+            Long rashiMasterId,
+            Long nakshatraMasterId
+    ) {
+        if (userId == null || userId <= 0) {
+            return false;
+        }
+        MobileUserProfile profile = mobileUserProfileRepository.findByUserId(userId).orElse(null);
+        if (profile == null) {
+            return false;
+        }
+        profile.setGotraMasterId(gotraMasterId);
+        profile.setRashiMasterId(rashiMasterId);
+        profile.setNakshatraMasterId(nakshatraMasterId);
+        mobileUserProfileRepository.save(profile);
+        return true;
     }
 
     public List<PujaSamagriMaster> getAllSamagriMasterForAdmin() {
@@ -699,6 +964,7 @@ public void softDeleteSamagriMaster(Long id) {
 
     public Map<String, Object> addSamagriToPuja(
             Long pujaId,
+            Long bookingId,
             Long samagriMasterId,
             String quantity,
             String unit,
@@ -706,6 +972,16 @@ public void softDeleteSamagriMaster(Long id) {
             Integer displayOrder
     ) {
         pujaRepo.findById(pujaId).orElseThrow(() -> new RuntimeException("Puja not found: " + pujaId));
+        if (bookingId != null && bookingId > 0) {
+            PujaBooking booking = bookingRepo.findById(bookingId)
+                    .orElseThrow(() -> new RuntimeException("Puja booking not found: " + bookingId));
+            if (!Objects.equals(booking.getPujaId(), pujaId)) {
+                throw new RuntimeException("Booking does not belong to selected puja.");
+            }
+            if (!isSamagriRequiredForBooking(booking)) {
+                throw new RuntimeException("Samagri can only be added for BASIC package bookings.");
+            }
+        }
         PujaSamagriMaster master = pujaSamagriMasterRepository.findById(samagriMasterId)
                 .orElseThrow(() -> new RuntimeException("Samagri master not found: " + samagriMasterId));
         if (Boolean.FALSE.equals(master.getIsActive())) {
@@ -729,6 +1005,7 @@ public void softDeleteSamagriMaster(Long id) {
                 "message", "Puja samagri saved",
                 "itemId", saved.getId(),
                 "pujaId", saved.getPujaId(),
+                "bookingId", bookingId,
                 "samagriMasterId", saved.getSamagriMasterId(),
                 "samagriMailQueued", 0
         );
@@ -1001,17 +1278,21 @@ public void softDeleteSamagriMaster(Long id) {
                     .orElse(null);
 
             boolean appSlotBookingEnabled = isPujaSlotSelectionEnabled(puja);
+            String packageCode = resolveBookingPackageCode(booking);
+            String packageName = resolveBookingPackageName(booking);
+            boolean samagriRequired = isSamagriRequiredForBooking(booking);
             boolean hasPujaTime = slot != null && slot.getSlotTime() != null;
             boolean hasRashi = spiritual != null && spiritual.getRashiMasterId() != null;
             boolean hasNakshatra = spiritual != null && spiritual.getNakshatraMasterId() != null;
             boolean hasSamagri = !getPujaSamagriForAdmin(booking.getPujaId() == null ? 0L : booking.getPujaId()).isEmpty();
+            boolean hasRequiredSamagri = !samagriRequired || hasSamagri;
             boolean isCompleted = appSlotBookingEnabled
-                    ? hasSamagri
-                    : (hasPujaTime && hasRashi && hasNakshatra && hasSamagri);
+                    ? hasRequiredSamagri
+                    : (hasPujaTime && hasRashi && hasNakshatra && hasRequiredSamagri);
 
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("bookingId", booking.getId());
-            row.put("orderId", "PUJA-" + (booking.getId() == null ? 0L : booking.getId()));
+            row.put("orderId", PujaOrderIdHelper.build(booking.getUserId(), booking.getId()));
             row.put("userId", booking.getUserId());
             row.put("userName", profile == null || profile.getName() == null ? "Unknown" : profile.getName());
             row.put("email", profile == null || profile.getEmail() == null ? "" : profile.getEmail());
@@ -1022,6 +1303,9 @@ public void softDeleteSamagriMaster(Long id) {
             row.put("slotTime", slot == null ? null : slot.getSlotTime());
             row.put("bookedAt", booking.getBookedAt());
             row.put("bookingStatus", booking.getStatus());
+            row.put("packageCode", packageCode);
+            row.put("packageName", packageName);
+            row.put("packagePrice", booking.getPackagePrice());
             row.put("gotraMasterId", spiritual == null ? null : spiritual.getGotraMasterId());
             row.put("gotraName", spiritual == null ? null : spiritual.getGotraName());
             row.put("rashiMasterId", spiritual == null ? null : spiritual.getRashiMasterId());
@@ -1032,6 +1316,9 @@ public void softDeleteSamagriMaster(Long id) {
             row.put("hasRashi", hasRashi);
             row.put("hasNakshatra", hasNakshatra);
             row.put("hasSamagri", hasSamagri);
+            row.put("hasRequiredSamagri", hasRequiredSamagri);
+            row.put("canAdminAddSamagri", samagriRequired);
+            row.put("samagriMailEnabled", samagriRequired);
             row.put("isCompleted", isCompleted);
 
             if (isCompleted) {
@@ -1041,7 +1328,7 @@ public void softDeleteSamagriMaster(Long id) {
                 if (!appSlotBookingEnabled && !hasPujaTime) missing.add("pujaTime");
                 if (!appSlotBookingEnabled && !hasRashi) missing.add("rashi");
                 if (!appSlotBookingEnabled && !hasNakshatra) missing.add("nakshatra");
-                if (!hasSamagri) missing.add("samagri");
+                if (samagriRequired && !hasSamagri) missing.add("samagri");
                 row.put("missing", missing);
                 pending.add(row);
             }
@@ -1130,9 +1417,10 @@ public void softDeleteSamagriMaster(Long id) {
         PujaBookingSpiritualDetail spiritual = pujaBookingSpiritualDetailRepository
                 .findTopByBookingIdOrderByCreatedAtDesc(bookingId)
                 .orElse(null);
+        boolean samagriRequired = isSamagriRequiredForBooking(booking);
         List<Map<String, Object>> samagri = getPujaSamagriForAdmin(booking.getPujaId() == null ? 0L : booking.getPujaId());
 
-        if (samagri.isEmpty()) {
+        if (samagriRequired && samagri.isEmpty()) {
             throw new RuntimeException("Please add at least one samagri item before confirmation.");
         }
         if (!appSlotBookingEnabled) {
@@ -1155,19 +1443,23 @@ public void softDeleteSamagriMaster(Long id) {
                 : (Boolean.TRUE.equals(booking.getSlotSelectedByMobile())
                 ? false
                 : sendCalendarInviteIfEmailAvailable(booking));
-        boolean samagriQueued = sendSamagriMailForBooking(booking);
+        boolean samagriQueued = samagriRequired && sendSamagriMailForBooking(booking);
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", true);
-        response.put(
-                "message",
-                appSlotBookingEnabled
-                        ? "Samagri template sent for app-slot booking"
-                        : "Booking finalized and emails queued"
-        );
+        String message;
+        if (samagriRequired) {
+            message = appSlotBookingEnabled
+                    ? "Samagri template sent for app-slot booking"
+                    : "Booking finalized and emails queued";
+        } else {
+            message = "Booking finalized. Samagri is not required for selected package.";
+        }
+        response.put("message", message);
         response.put("bookingId", bookingId);
         response.put("inviteQueued", appSlotBookingEnabled ? false : inviteQueued);
         response.put("samagriMailQueued", samagriQueued ? 1 : 0);
+        response.put("samagriRequired", samagriRequired);
         response.put("isSlot", appSlotBookingEnabled);
         return response;
     }
@@ -1195,7 +1487,7 @@ public void softDeleteSamagriMaster(Long id) {
                 ? null
                 : slotRepo.findById(booking.getSlotId()).orElse(null);
 
-        final String subject = "Your Astrologer Puja Receipt - #" + bookingId;
+        final String subject = "Your Astrologer Puja Receipt - " + PujaOrderIdHelper.build(booking.getUserId(), bookingId);
         final String html = buildPujaReceiptHtml(booking, puja, slot);
         final byte[] pdf = buildPujaReceiptPdf(booking, puja, slot);
         final String fileName = "invoice.pdf";
@@ -1212,7 +1504,7 @@ public void softDeleteSamagriMaster(Long id) {
         response.put("status", true);
         response.put("message", "Receipt mail request sent successfully. You will receive the email shortly.");
         response.put("queued", true);
-        response.put("orderId", "PUJA-" + bookingId);
+        response.put("orderId", PujaOrderIdHelper.build(booking.getUserId(), bookingId));
         response.put("email", toEmail);
         response.put("requestedAt", LocalDateTime.now());
         return response;
@@ -1235,13 +1527,9 @@ public void softDeleteSamagriMaster(Long id) {
     }
 
     private Long parseBookingId(String orderId) {
-        final String normalized = orderId.trim().toUpperCase();
-        final String numeric = normalized.startsWith("PUJA-")
-                ? normalized.substring(5).trim()
-                : normalized;
         try {
-            return Long.parseLong(numeric);
-        } catch (NumberFormatException e) {
+            return PujaOrderIdHelper.parseBookingId(orderId);
+        } catch (IllegalArgumentException e) {
             throw new RuntimeException("Invalid puja orderId: " + orderId);
         }
     }
@@ -1296,7 +1584,7 @@ public void softDeleteSamagriMaster(Long id) {
                             <tr><th>Field</th><th>Value</th></tr>
                           </thead>
                           <tbody>
-                            <tr><td>Order ID</td><td>PUJA-%d</td></tr>
+                            <tr><td>Order ID</td><td>%s</td></tr>
                             <tr><td>Puja Name</td><td>%s</td></tr>
                             <tr><td>Booked At</td><td>%s</td></tr>
                             <tr><td>Slot Time</td><td>%s</td></tr>
@@ -1313,7 +1601,7 @@ public void softDeleteSamagriMaster(Long id) {
                 </html>
                 """.formatted(
                 escapeHtml(status),
-                booking.getId() == null ? 0L : booking.getId(),
+                escapeHtml(PujaOrderIdHelper.build(booking.getUserId(), booking.getId())),
                 escapeHtml(pujaName),
                 escapeHtml(bookedAt),
                 escapeHtml(slotTime),
@@ -1327,7 +1615,7 @@ public void softDeleteSamagriMaster(Long id) {
         final String pujaName = puja == null || puja.getName() == null || puja.getName().isBlank()
                 ? "Puja Booking"
                 : puja.getName();
-        final String orderId = "PUJA-" + (booking.getId() == null ? 0L : booking.getId());
+        final String orderId = PujaOrderIdHelper.build(booking.getUserId(), booking.getId());
         final String userId = booking.getUserId() == null ? "-" : String.valueOf(booking.getUserId());
         final String bookedAt = formatDateTime(booking.getBookedAt());
         final String slotTime = formatDateTime(slot == null ? null : slot.getSlotTime());
@@ -1744,7 +2032,7 @@ public void softDeleteSamagriMaster(Long id) {
             return defaultGoogleMeetLink();
         }
         String token = ensureJoinToken(booking);
-        String orderId = "PUJA-" + booking.getId();
+        String orderId = PujaOrderIdHelper.build(booking.getUserId(), booking.getId());
         String slotParam = formatJoinSlotParam(slot == null ? null : slot.getSlotTime());
         String dateParam = formatJoinDateParam(slot == null ? null : slot.getSlotTime());
         String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
@@ -1774,7 +2062,7 @@ public void softDeleteSamagriMaster(Long id) {
             Map<String, Object> blocked = new LinkedHashMap<>();
             blocked.put("status", false);
             blocked.put("allowed", false);
-            blocked.put("orderId", "PUJA-" + bookingId);
+            blocked.put("orderId", PujaOrderIdHelper.build(booking.getUserId(), bookingId));
             blocked.put("message", "Invalid or expired join link.");
             return blocked;
         }
@@ -1783,7 +2071,7 @@ public void softDeleteSamagriMaster(Long id) {
             Map<String, Object> blocked = new LinkedHashMap<>();
             blocked.put("status", false);
             blocked.put("allowed", false);
-            blocked.put("orderId", "PUJA-" + bookingId);
+            blocked.put("orderId", PujaOrderIdHelper.build(booking.getUserId(), bookingId));
             blocked.put("message", "Puja slot is not assigned yet. Please wait for admin confirmation.");
             return blocked;
         }
@@ -1795,7 +2083,7 @@ public void softDeleteSamagriMaster(Long id) {
             Map<String, Object> blocked = new LinkedHashMap<>();
             blocked.put("status", false);
             blocked.put("allowed", false);
-            blocked.put("orderId", "PUJA-" + bookingId);
+            blocked.put("orderId", PujaOrderIdHelper.build(booking.getUserId(), bookingId));
             blocked.put("message", "Join link is not valid for this puja date.");
             return blocked;
         }
@@ -1810,7 +2098,7 @@ public void softDeleteSamagriMaster(Long id) {
             Map<String, Object> blocked = new LinkedHashMap<>();
             blocked.put("status", false);
             blocked.put("allowed", false);
-            blocked.put("orderId", "PUJA-" + bookingId);
+            blocked.put("orderId", PujaOrderIdHelper.build(booking.getUserId(), bookingId));
             blocked.put("slotTime", slotTime);
             blocked.put("joinOpensAt", joinOpensAt);
             blocked.put("minutesToOpen", Math.max(mins, 1));
@@ -1821,7 +2109,7 @@ public void softDeleteSamagriMaster(Long id) {
         Map<String, Object> allowed = new LinkedHashMap<>();
         allowed.put("status", true);
         allowed.put("allowed", true);
-        allowed.put("orderId", "PUJA-" + bookingId);
+        allowed.put("orderId", PujaOrderIdHelper.build(booking.getUserId(), bookingId));
         allowed.put("slotTime", slotTime);
         allowed.put("joinOpensAt", joinOpensAt);
         allowed.put("meetingLink", resolveActualMeetingLink(booking));
@@ -1838,7 +2126,7 @@ public void softDeleteSamagriMaster(Long id) {
             if (toEmail.isEmpty()) return false;
 
             Long bookingId = booking.getId() == null ? 0L : booking.getId();
-            String subject = "Your Astrologer Puja Receipt - #" + bookingId;
+            String subject = "Your Astrologer Puja Receipt - " + PujaOrderIdHelper.build(booking.getUserId(), bookingId);
             String html = buildPujaReceiptHtml(booking, puja, slot);
             byte[] pdf = buildPujaReceiptPdf(booking, puja, slot);
             emailService.sendEmailWithAttachmentAsync(
@@ -1888,7 +2176,7 @@ public void softDeleteSamagriMaster(Long id) {
             String devoteeName = profile == null || profile.getName() == null || profile.getName().isBlank()
                     ? "Devotee"
                     : profile.getName().trim();
-            String subject = "Puja Invitation - PUJA-" + bookingId;
+            String subject = "Puja Invitation - " + PujaOrderIdHelper.build(booking.getUserId(), bookingId);
             String meetLink = resolveUserMeetingLink(booking, slot);
             String slotTimeText = formatDateTime(slot.getSlotTime());
             String html = buildPujaConfirmationMailHtml(
@@ -1925,7 +2213,7 @@ public void softDeleteSamagriMaster(Long id) {
             List<PujaBooking> bookings = bookingRepo.findByPujaIdOrderByBookedAtDesc(pujaId);
             int queued = 0;
             for (PujaBooking booking : bookings) {
-                if (!isPaymentConfirmed(booking)) continue;
+                if (!isPaymentConfirmed(booking) || !isSamagriRequiredForBooking(booking)) continue;
 
                 MobileUserProfile profile = mobileUserProfileRepository.findByUserId(booking.getUserId()).orElse(null);
                 String toEmail = profile == null || profile.getEmail() == null ? "" : profile.getEmail().trim();
@@ -1937,7 +2225,7 @@ public void softDeleteSamagriMaster(Long id) {
                         : puja.getName();
                 String meetLink = resolveUserMeetingLink(booking, slot);
                 String slotTimeText = slot == null || slot.getSlotTime() == null ? "-" : formatDateTime(slot.getSlotTime());
-                String samagriSubject = "Puja Samagri List - PUJA-" + (booking.getId() == null ? 0L : booking.getId());
+                String samagriSubject = "Puja Samagri List - " + PujaOrderIdHelper.build(booking.getUserId(), booking.getId());
                 String samagriHtml = buildPujaSamagriMailHtml(booking, pujaName, slotTimeText, meetLink);
                 emailService.sendEmailAsync(toEmail, samagriSubject, samagriHtml);
                 queued++;
@@ -1950,6 +2238,7 @@ public void softDeleteSamagriMaster(Long id) {
 
     private boolean sendSamagriMailForBooking(PujaBooking booking) {
         if (booking == null || booking.getPujaId() == null || booking.getPujaId() <= 0) return false;
+        if (!isSamagriRequiredForBooking(booking)) return false;
         if (!isPaymentConfirmed(booking)) return false;
         try {
             MobileUserProfile profile = mobileUserProfileRepository.findByUserId(booking.getUserId()).orElse(null);
@@ -1963,7 +2252,7 @@ public void softDeleteSamagriMaster(Long id) {
                     : puja.getName();
             String meetLink = resolveUserMeetingLink(booking, slot);
             String slotTimeText = slot == null || slot.getSlotTime() == null ? "-" : formatDateTime(slot.getSlotTime());
-            String samagriSubject = "Puja Samagri List - PUJA-" + (booking.getId() == null ? 0L : booking.getId());
+            String samagriSubject = "Puja Samagri List - " + PujaOrderIdHelper.build(booking.getUserId(), booking.getId());
             String samagriHtml = buildPujaSamagriMailHtml(booking, pujaName, slotTimeText, meetLink);
             emailService.sendEmailAsync(toEmail, samagriSubject, samagriHtml);
             return true;

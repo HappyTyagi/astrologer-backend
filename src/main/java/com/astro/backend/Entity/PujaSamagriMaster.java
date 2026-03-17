@@ -39,6 +39,7 @@ public class PujaSamagriMaster {
 
     private String currency;
 
+    @Column(columnDefinition = "LONGTEXT")
     private String imageUrl;
 
     @Column(nullable = false, columnDefinition = "TINYINT(1) DEFAULT 0")

@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class PujaSamagriItemRequest {
+    private Long bookingId;
     private Long samagriMasterId;
     private String quantity;
     private String unit;

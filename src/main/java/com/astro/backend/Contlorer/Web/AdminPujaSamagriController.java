@@ -129,6 +129,7 @@ public class AdminPujaSamagriController {
                     ResponseUtils.createSuccessResponse(
                             pujaService.addSamagriToPuja(
                                     pujaId,
+                                    request.getBookingId(),
                                     request.getSamagriMasterId(),
                                     request.getQuantity(),
                                     request.getUnit(),

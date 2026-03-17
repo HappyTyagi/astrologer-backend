@@ -27,13 +27,19 @@ public class RemidesController {
         try {
             Remides remides = Remides.builder()
                     .userId(request.getUserId())
-                    .title(request.getTitle())
-                    .description(request.getDescription())
+                    .title(request.getTitle().trim())
+                    .hiTitle(trimToNull(request.getTitleHindi()))
+                    .subtitle(trimToNull(request.getSubtitle()))
+                    .hiSubtitle(trimToNull(request.getSubtitleHindi()))
+                    .description(trimToNull(request.getDescription()))
+                    .hiDescription(trimToNull(request.getDescriptionHindi()))
+                    .category(trimToNull(request.getCategory()))
+                    .hiCategory(trimToNull(request.getCategoryHindi()))
                     .price(request.getPrice())
                     .tokenAmount(request.getTokenAmount())
                     .discountPercentage(request.getDiscountPercentage())
-                    .currency(request.getCurrency())
-                    .imageBase64(request.getImageBase64())
+                    .currency(trimToNull(request.getCurrency()))
+                    .imageBase64(trimToNull(request.getImageBase64()))
                     .build();
 
                 Remides saved = remidesRepository.save(Objects.requireNonNull(remides, "remides"));
@@ -84,10 +90,28 @@ public class RemidesController {
                 remides.setUserId(request.getUserId());
             }
             if (request.getTitle() != null && !request.getTitle().isEmpty()) {
-                remides.setTitle(request.getTitle());
+                remides.setTitle(request.getTitle().trim());
+            }
+            if (request.getTitleHindi() != null) {
+                remides.setHiTitle(trimToNull(request.getTitleHindi()));
+            }
+            if (request.getSubtitle() != null) {
+                remides.setSubtitle(trimToNull(request.getSubtitle()));
+            }
+            if (request.getSubtitleHindi() != null) {
+                remides.setHiSubtitle(trimToNull(request.getSubtitleHindi()));
             }
             if (request.getDescription() != null) {
-                remides.setDescription(request.getDescription());
+                remides.setDescription(trimToNull(request.getDescription()));
+            }
+            if (request.getDescriptionHindi() != null) {
+                remides.setHiDescription(trimToNull(request.getDescriptionHindi()));
+            }
+            if (request.getCategory() != null) {
+                remides.setCategory(trimToNull(request.getCategory()));
+            }
+            if (request.getCategoryHindi() != null) {
+                remides.setHiCategory(trimToNull(request.getCategoryHindi()));
             }
             if (request.getPrice() != null) {
                 remides.setPrice(request.getPrice());
@@ -99,10 +123,10 @@ public class RemidesController {
                 remides.setDiscountPercentage(request.getDiscountPercentage());
             }
             if (request.getCurrency() != null && !request.getCurrency().isEmpty()) {
-                remides.setCurrency(request.getCurrency());
+                remides.setCurrency(request.getCurrency().trim());
             }
             if (request.getImageBase64() != null) {
-                remides.setImageBase64(request.getImageBase64());
+                remides.setImageBase64(trimToNull(request.getImageBase64()));
             }
 
             Remides updated = remidesRepository.save(Objects.requireNonNull(remides, "remides"));
@@ -146,7 +170,13 @@ public class RemidesController {
                 .id(remides.getId())
                 .userId(remides.getUserId())
                 .title(remides.getTitle())
+                .titleHindi(remides.getHiTitle())
+                .subtitle(remides.getSubtitle())
+                .subtitleHindi(remides.getHiSubtitle())
                 .description(remides.getDescription())
+                .descriptionHindi(remides.getHiDescription())
+                .category(remides.getCategory())
+                .categoryHindi(remides.getHiCategory())
                 .price(remides.getPrice())
                 .tokenAmount(remides.getTokenAmount())
                 .discountPercentage(remides.getDiscountPercentage())
@@ -158,5 +188,13 @@ public class RemidesController {
                 .status(status)
                 .message(message)
                 .build();
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String cleaned = value.trim();
+        return cleaned.isEmpty() ? null : cleaned;
     }
 }

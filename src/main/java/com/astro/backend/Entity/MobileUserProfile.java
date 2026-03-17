@@ -61,6 +61,9 @@ public class MobileUserProfile {
     private Long districtMasterId;     // Foreign key to DistrictMaster
     private Long gemstoneMasterId;     // Foreign key to GemstoneMaster (optional)
     private Long yantraMasterId;       // Foreign key to YantraMaster (optional)
+    private Long gotraMasterId;        // Preferred gotra from mobile booking
+    private Long rashiMasterId;        // Preferred rashi from mobile booking
+    private Long nakshatraMasterId;    // Preferred nakshatra from mobile booking
 
     // ===== Profile Management =====
     private Boolean isProfileComplete; // Track profile completeness

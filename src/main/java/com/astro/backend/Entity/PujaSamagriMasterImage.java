@@ -24,7 +24,7 @@ public class PujaSamagriMasterImage {
     @JsonIgnore
     private PujaSamagriMaster samagriMaster;
 
-    @Column(nullable = false, length = 2048)
+    @Column(nullable = false, columnDefinition = "LONGTEXT")
     private String imageUrl;
 
     @Column(nullable = false)
@@ -68,4 +68,3 @@ public class PujaSamagriMasterImage {
         }
     }
 }
-

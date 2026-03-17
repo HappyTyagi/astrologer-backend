@@ -268,73 +268,128 @@ public class PujaSamagriPurchaseService {
         final String paymentMethod = valueOrDefault(first.getPaymentMethod(), "NA");
         final String transactionId = valueOrDefault(first.getTransactionId(), "NA");
         final String addressText = formatAddress(first.getAddress());
+        final String status = valueOrDefault(first.getStatus(), "COMPLETED");
+        final double walletUsed = first.getWalletUsed() == null ? 0.0 : Math.max(0.0, first.getWalletUsed());
+        final double gatewayPaid = first.getGatewayPaid() == null ? 0.0 : Math.max(0.0, first.getGatewayPaid());
 
         double subtotal = 0.0;
-        final StringBuilder rows = new StringBuilder();
+        double discount = 0.0;
+        double total = 0.0;
+        int totalQty = 0;
         int sr = 1;
+        final StringBuilder rows = new StringBuilder();
+
         for (PujaSamagriPurchase item : purchases) {
-            final int quantity = item.getQuantity() == null ? 0 : item.getQuantity();
-            final double unitPrice = item.getFinalUnitPrice() == null ? 0.0 : item.getFinalUnitPrice();
-            final double line = item.getLineTotal() == null ? 0.0 : item.getLineTotal();
-            subtotal += line;
+            final int quantity = item.getQuantity() == null || item.getQuantity() < 1 ? 1 : item.getQuantity();
+            final double unitPrice = item.getUnitPrice() == null ? 0.0 : item.getUnitPrice();
+            final double finalUnitPrice = item.getFinalUnitPrice() == null ? unitPrice : item.getFinalUnitPrice();
+            final double line = item.getLineTotal() == null ? finalUnitPrice * quantity : item.getLineTotal();
+            final double mrpLine = unitPrice * quantity;
+            final double lineDiscount = Math.max(0.0, mrpLine - line);
+
+            subtotal += mrpLine;
+            discount += lineDiscount;
+            total += line;
+            totalQty += quantity;
 
             rows.append("""
                         <tr>
-                          <td>%d</td>
-                          <td>%s</td>
-                          <td style="text-align:center;">%d</td>
-                          <td style="text-align:right;">%s</td>
-                          <td style="text-align:right;">%s</td>
+                          <td style="padding:11px 10px;border-bottom:1px solid #ece8da;">%d</td>
+                          <td style="padding:11px 10px;border-bottom:1px solid #ece8da;font-weight:600;color:#2d2c2a;">%s</td>
+                          <td style="padding:11px 10px;border-bottom:1px solid #ece8da;text-align:center;">%d</td>
+                          <td style="padding:11px 10px;border-bottom:1px solid #ece8da;text-align:right;">%s</td>
+                          <td style="padding:11px 10px;border-bottom:1px solid #ece8da;text-align:right;">%s</td>
+                          <td style="padding:11px 10px;border-bottom:1px solid #ece8da;text-align:right;font-weight:700;color:#1f3d8a;">%s</td>
                         </tr>
                     """.formatted(
                     sr++,
                     escapeHtml(valueOrDefault(item.getName(), "Puja Samagri")),
                     quantity,
                     escapeHtml(formatMoney(unitPrice, currency)),
+                    escapeHtml(formatMoney(lineDiscount, currency)),
                     escapeHtml(formatMoney(line, currency))
             ));
         }
 
         return """
+                <!doctype html>
                 <html>
-                <body style="margin:0;padding:0;background:#f3f6fc;font-family:Arial,sans-serif;color:#1f2a44;">
-                  <div style="max-width:820px;margin:0 auto;padding:18px;">
-                    <div style="background:#ffffff;border:1px solid #dbe4f6;border-radius:14px;padding:20px;">
-                      <h2 style="margin:0;color:#1d3c8b;">Puja Samagri Purchase Receipt</h2>
-                      <p style="margin:6px 0 0 0;color:#5b6785;">Thank you for shopping with Astro Adhyaay.</p>
-                      <hr style="border:none;border-top:1px solid #e5ebf7;margin:14px 0 16px 0;"/>
-                      <table style="width:100%%;font-size:14px;line-height:1.5;">
-                        <tr><td><strong>Order</strong></td><td>%s</td></tr>
-                        <tr><td><strong>Date</strong></td><td>%s</td></tr>
-                        <tr><td><strong>Payment Method</strong></td><td>%s</td></tr>
-                        <tr><td><strong>Transaction</strong></td><td>%s</td></tr>
-                        <tr><td><strong>Delivery Address</strong></td><td>%s</td></tr>
-                      </table>
-                
-                      <div style="margin-top:16px;border:1px solid #dbe4f6;border-radius:10px;overflow:hidden;">
-                        <table style="width:100%%;border-collapse:collapse;font-size:14px;">
+                <head>
+                  <meta charset="utf-8" />
+                  <meta name="viewport" content="width=device-width, initial-scale=1" />
+                  <style>
+                    body { margin:0; background:#f5f2e9; font-family:Calibri, Arial, sans-serif; color:#1f1f1f; }
+                    .wrap { max-width:840px; margin:24px auto; padding:0 14px; }
+                    .card { background:#ffffff; border:1px solid #eee5d1; border-radius:22px; overflow:hidden; box-shadow:0 12px 28px rgba(40,35,18,.08); }
+                    .hero { background:linear-gradient(135deg,#1e2237,#3c2d67); color:#ffffff; padding:24px; }
+                    .hero h2 { margin:0; font-size:25px; letter-spacing:.2px; }
+                    .hero p { margin:8px 0 0; opacity:.92; font-size:14px; }
+                    .body { padding:22px; }
+                    .meta { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-bottom:14px; }
+                    .chip { border:1px solid #ece4d2; border-radius:12px; background:#fcfaf4; padding:10px 12px; font-size:13px; }
+                    .label { color:#7e7769; font-size:12px; text-transform:uppercase; letter-spacing:.4px; display:block; margin-bottom:3px; }
+                    .value { color:#27251f; font-weight:700; }
+                    .status { display:inline-block; background:#e7f7ed; color:#1f8b4a; font-weight:700; border-radius:999px; padding:5px 10px; font-size:12px; border:1px solid #bce5cb; }
+                    table { width:100%%; border-collapse:collapse; margin-top:14px; border:1px solid #ece8da; border-radius:12px; overflow:hidden; }
+                    thead th { background:#fbf8f1; color:#706956; font-size:12px; text-transform:uppercase; letter-spacing:.3px; padding:10px; border-bottom:1px solid #ece8da; text-align:left; }
+                    .summary { margin:15px 0 0 auto; max-width:360px; border:1px solid #ece4d3; border-radius:14px; padding:14px; background:#fcfaf4; }
+                    .sum-row { display:flex; justify-content:space-between; padding:6px 0; font-size:14px; color:#34312a; }
+                    .sum-row.total { border-top:1px solid #e9e2d0; margin-top:8px; padding-top:10px; font-size:20px; font-weight:700; color:#1f3d8a; }
+                    .sum-row .good { color:#1f8b4a; font-weight:700; }
+                    .address { margin-top:16px; border:1px solid #ece4d3; border-radius:14px; background:#fcfaf4; padding:12px; font-size:13px; color:#464235; }
+                    .foot { margin-top:14px; font-size:12px; color:#857f71; line-height:1.6; }
+                    @media (max-width: 640px) { .meta { grid-template-columns:1fr; } }
+                  </style>
+                </head>
+                <body>
+                  <div class="wrap">
+                    <div class="card">
+                      <div class="hero">
+                        <h2>Puja Samagri Receipt</h2>
+                        <p>Thank you for shopping with Astro Adhyaay. Your premium PDF invoice is attached.</p>
+                      </div>
+                      <div class="body">
+                        <div class="meta">
+                          <div class="chip"><span class="label">Order ID</span><span class="value">%s</span></div>
+                          <div class="chip"><span class="label">Order Date</span><span class="value">%s</span></div>
+                          <div class="chip"><span class="label">Payment Method</span><span class="value">%s</span></div>
+                          <div class="chip"><span class="label">Transaction</span><span class="value">%s</span></div>
+                        </div>
+
+                        <div style="margin:2px 0 6px;">
+                          <span class="label" style="display:inline;color:#7e7769;">Status:</span>
+                          <span class="status">%s</span>
+                        </div>
+
+                        <table>
                           <thead>
-                            <tr style="background:#1d3c8b;color:#ffffff;">
-                              <th style="padding:10px;text-align:left;">#</th>
-                              <th style="padding:10px;text-align:left;">Item</th>
-                              <th style="padding:10px;text-align:center;">Qty</th>
-                              <th style="padding:10px;text-align:right;">Unit Price</th>
-                              <th style="padding:10px;text-align:right;">Amount</th>
+                            <tr>
+                              <th style="width:7%%;">#</th>
+                              <th style="width:35%%;">Item</th>
+                              <th style="width:9%%;text-align:center;">Qty</th>
+                              <th style="width:16%%;text-align:right;">MRP</th>
+                              <th style="width:13%%;text-align:right;">Discount</th>
+                              <th style="width:20%%;text-align:right;">Amount</th>
                             </tr>
                           </thead>
-                          <tbody>
-                            %s
-                          </tbody>
+                          <tbody>%s</tbody>
                         </table>
+
+                        <div class="summary">
+                          <div class="sum-row"><span>Total Items</span><span>%d</span></div>
+                          <div class="sum-row"><span>Subtotal</span><span>%s</span></div>
+                          <div class="sum-row"><span>Discount</span><span class="good">-%s</span></div>
+                          <div class="sum-row"><span>Wallet Used</span><span>%s</span></div>
+                          <div class="sum-row"><span>Gateway Paid</span><span>%s</span></div>
+                          <div class="sum-row total"><span>Grand Total</span><span>%s</span></div>
+                        </div>
+
+                        <div class="address"><strong>Delivery Address:</strong><br/>%s</div>
+                        <div class="foot">
+                          Need support? Reply to this email and our team will assist you.<br/>
+                          Astrologer Services Private Limited | support@astrologer.app
+                        </div>
                       </div>
-                
-                      <div style="margin-top:16px;text-align:right;font-size:15px;">
-                        <div><strong>Total:</strong> %s</div>
-                      </div>
-                
-                      <p style="margin-top:18px;font-size:12px;color:#6d7691;">
-                        PDF invoice is attached with this email. If you need help, reply to this mail.
-                      </p>
                     </div>
                   </div>
                 </body>
@@ -344,9 +399,15 @@ public class PujaSamagriPurchaseService {
                 escapeHtml(orderDate),
                 escapeHtml(paymentMethod),
                 escapeHtml(transactionId),
-                escapeHtml(addressText),
+                escapeHtml(status),
                 rows.toString(),
-                escapeHtml(formatMoney(subtotal, currency))
+                totalQty,
+                escapeHtml(formatMoney(subtotal, currency)),
+                escapeHtml(formatMoney(discount, currency)),
+                escapeHtml(formatMoney(walletUsed, currency)),
+                escapeHtml(formatMoney(gatewayPaid, currency)),
+                escapeHtml(formatMoney(total, currency)),
+                escapeHtml(addressText)
         );
     }
 
@@ -357,73 +418,138 @@ public class PujaSamagriPurchaseService {
 
         final PujaSamagriPurchase first = purchases.get(0);
         final String currency = valueOrDefault(first.getCurrency(), "INR");
+        final double walletUsed = first.getWalletUsed() == null ? 0.0 : Math.max(0.0, first.getWalletUsed());
+        final double gatewayPaid = first.getGatewayPaid() == null ? 0.0 : Math.max(0.0, first.getGatewayPaid());
+
+        double subtotal = 0.0;
+        double total = 0.0;
+        double discount = 0.0;
 
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-            Document document = new Document(PageSize.A4, 28, 28, 30, 24);
+            Document document = new Document(PageSize.A4, 28, 28, 24, 24);
             PdfWriter.getInstance(document, baos);
             document.open();
 
-            Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, new Color(29, 60, 139));
-            Font labelFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, new Color(63, 78, 112));
-            Font valueFont = FontFactory.getFont(FontFactory.HELVETICA, 10, new Color(29, 39, 64));
+            FontFactory.registerDirectories();
+            Font heroTitle = invoiceFont(21, Font.BOLD, Color.WHITE);
+            Font heroSub = invoiceFont(10.5f, Font.NORMAL, new Color(224, 232, 255));
+            Font panelLabel = invoiceFont(9.2f, Font.BOLD, new Color(94, 102, 118));
+            Font panelValue = invoiceFont(10.7f, Font.BOLD, new Color(31, 43, 67));
+            Font detailTitle = invoiceFont(10.3f, Font.BOLD, new Color(26, 43, 94));
+            Font detailBody = invoiceFont(9.9f, Font.NORMAL, new Color(34, 40, 54));
+            Font tableHead = invoiceFont(9.8f, Font.BOLD, Color.WHITE);
+            Font tableBody = invoiceFont(9.8f, Font.NORMAL, new Color(30, 36, 52));
+            Font totalFont = invoiceFont(12.7f, Font.BOLD, new Color(23, 48, 122));
+            Font footFont = invoiceFont(9.2f, Font.NORMAL, new Color(86, 94, 108));
 
-            Paragraph title = new Paragraph("Puja Samagri Purchase Receipt", titleFont);
-            title.setSpacingAfter(10f);
-            document.add(title);
+            Color heroBg = new Color(30, 37, 73);
+            Color panelBg = new Color(248, 250, 255);
+            Color panelBorder = new Color(220, 228, 244);
+            Color tableHeaderBg = new Color(44, 64, 136);
 
-            PdfPTable meta = new PdfPTable(new float[]{1f, 2.2f});
+            PdfPTable hero = new PdfPTable(1);
+            hero.setWidthPercentage(100f);
+            PdfPCell heroCell = new PdfPCell();
+            heroCell.setBackgroundColor(heroBg);
+            heroCell.setBorderColor(heroBg);
+            heroCell.setPadding(16f);
+            Paragraph title = new Paragraph("Puja Samagri Tax Invoice", heroTitle);
+            title.setSpacingAfter(5f);
+            heroCell.addElement(title);
+            heroCell.addElement(new Paragraph("Astrologer Services Private Limited", heroSub));
+            heroCell.addElement(new Paragraph("Original receipt for customer", heroSub));
+            hero.addCell(heroCell);
+            hero.setSpacingAfter(9f);
+            document.add(hero);
+
+            PdfPTable meta = new PdfPTable(new float[]{1f, 1f, 1f, 1f});
             meta.setWidthPercentage(100f);
-            meta.setSpacingAfter(12f);
-            meta.addCell(metaCell("Order", labelFont));
-            meta.addCell(metaCell(shortOrderId(first.getOrderId()), valueFont));
-            meta.addCell(metaCell("Date", labelFont));
-            meta.addCell(metaCell(formatDateTime(first.getPurchasedAt()), valueFont));
-            meta.addCell(metaCell("Payment Method", labelFont));
-            meta.addCell(metaCell(valueOrDefault(first.getPaymentMethod(), "NA"), valueFont));
-            meta.addCell(metaCell("Transaction", labelFont));
-            meta.addCell(metaCell(valueOrDefault(first.getTransactionId(), "NA"), valueFont));
-            meta.addCell(metaCell("Address", labelFont));
-            meta.addCell(metaCell(formatAddress(first.getAddress()), valueFont));
+            meta.setSpacingAfter(10f);
+            meta.addCell(invoicePanelCell("Invoice No", shortOrderId(first.getOrderId()), panelLabel, panelValue, panelBg, panelBorder));
+            meta.addCell(invoicePanelCell("Invoice Date", formatDateTime(first.getPurchasedAt()), panelLabel, panelValue, panelBg, panelBorder));
+            meta.addCell(invoicePanelCell("Payment", valueOrDefault(first.getPaymentMethod(), "NA"), panelLabel, panelValue, panelBg, panelBorder));
+            meta.addCell(invoicePanelCell("Status", valueOrDefault(first.getStatus(), "COMPLETED"), panelLabel, panelValue, panelBg, panelBorder));
             document.add(meta);
 
-            PdfPTable table = new PdfPTable(new float[]{0.7f, 2.5f, 0.9f, 1.2f, 1.2f});
-            table.setWidthPercentage(100f);
-            table.setSpacingBefore(4f);
-            table.setSpacingAfter(12f);
+            PdfPTable details = new PdfPTable(new float[]{1f, 1f});
+            details.setWidthPercentage(100f);
+            details.setSpacingAfter(10f);
+            details.addCell(invoiceDetailCell(
+                    "Delivery Address",
+                    new String[]{
+                            formatAddress(first.getAddress()),
+                            "Customer ID: " + valueOrDefault(first.getUserId() == null ? null : String.valueOf(first.getUserId()), "-")
+                    },
+                    detailTitle,
+                    detailBody,
+                    panelBg,
+                    panelBorder
+            ));
+            details.addCell(invoiceDetailCell(
+                    "Payment Details",
+                    new String[]{
+                            "Transaction: " + valueOrDefault(first.getTransactionId(), "NA"),
+                            "Wallet Used: " + formatMoney(walletUsed, currency),
+                            "Gateway Paid: " + formatMoney(gatewayPaid, currency)
+                    },
+                    detailTitle,
+                    detailBody,
+                    panelBg,
+                    panelBorder
+            ));
+            document.add(details);
 
-            table.addCell(headerCell("#"));
-            table.addCell(headerCell("Item"));
-            table.addCell(headerCell("Qty"));
-            table.addCell(headerCell("Unit Price"));
-            table.addCell(headerCell("Amount"));
+            PdfPTable table = new PdfPTable(new float[]{0.8f, 3.5f, 0.9f, 1.5f, 1.2f, 1.5f});
+            table.setWidthPercentage(100f);
+            table.setSpacingAfter(9f);
+            table.addCell(invoiceTableHeaderCell("#", tableHead, tableHeaderBg));
+            table.addCell(invoiceTableHeaderCell("Item", tableHead, tableHeaderBg));
+            table.addCell(invoiceTableHeaderCell("Qty", tableHead, tableHeaderBg));
+            table.addCell(invoiceTableHeaderCell("MRP", tableHead, tableHeaderBg));
+            table.addCell(invoiceTableHeaderCell("Disc.", tableHead, tableHeaderBg));
+            table.addCell(invoiceTableHeaderCell("Amount", tableHead, tableHeaderBg));
 
             int sr = 1;
-            double total = 0.0;
             for (PujaSamagriPurchase item : purchases) {
-                final int qty = item.getQuantity() == null ? 0 : item.getQuantity();
-                final double unit = item.getFinalUnitPrice() == null ? 0.0 : item.getFinalUnitPrice();
-                final double line = item.getLineTotal() == null ? 0.0 : item.getLineTotal();
+                final int quantity = item.getQuantity() == null || item.getQuantity() < 1 ? 1 : item.getQuantity();
+                final double unitPrice = item.getUnitPrice() == null ? 0.0 : item.getUnitPrice();
+                final double finalUnitPrice = item.getFinalUnitPrice() == null ? unitPrice : item.getFinalUnitPrice();
+                final double line = item.getLineTotal() == null ? finalUnitPrice * quantity : item.getLineTotal();
+                final double mrpLine = unitPrice * quantity;
+                final double lineDiscount = Math.max(0.0, mrpLine - line);
+                subtotal += mrpLine;
                 total += line;
+                discount += lineDiscount;
 
-                table.addCell(bodyCell(String.valueOf(sr++), Element.ALIGN_CENTER));
-                table.addCell(bodyCell(valueOrDefault(item.getName(), "Puja Samagri"), Element.ALIGN_LEFT));
-                table.addCell(bodyCell(String.valueOf(qty), Element.ALIGN_CENTER));
-                table.addCell(bodyCell(formatMoney(unit, currency), Element.ALIGN_RIGHT));
-                table.addCell(bodyCell(formatMoney(line, currency), Element.ALIGN_RIGHT));
+                table.addCell(invoiceTableBodyCell(String.valueOf(sr++), tableBody, Element.ALIGN_CENTER, Color.WHITE, panelBorder));
+                table.addCell(invoiceTableBodyCell(valueOrDefault(item.getName(), "Puja Samagri"), tableBody, Element.ALIGN_LEFT, Color.WHITE, panelBorder));
+                table.addCell(invoiceTableBodyCell(String.valueOf(quantity), tableBody, Element.ALIGN_CENTER, Color.WHITE, panelBorder));
+                table.addCell(invoiceTableBodyCell(formatMoney(unitPrice, currency), tableBody, Element.ALIGN_RIGHT, Color.WHITE, panelBorder));
+                table.addCell(invoiceTableBodyCell(formatMoney(lineDiscount, currency), tableBody, Element.ALIGN_RIGHT, Color.WHITE, panelBorder));
+                table.addCell(invoiceTableBodyCell(formatMoney(line, currency), tableBody, Element.ALIGN_RIGHT, Color.WHITE, panelBorder));
             }
             document.add(table);
 
-            Paragraph totalPara = new Paragraph("Total: " + formatMoney(total, currency), titleFont);
-            totalPara.setAlignment(Element.ALIGN_RIGHT);
-            document.add(totalPara);
+            PdfPTable summary = new PdfPTable(new float[]{1.7f, 1f});
+            summary.setWidthPercentage(45f);
+            summary.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            summary.setSpacingAfter(10f);
+            summary.addCell(invoiceTableBodyCell("Subtotal", detailBody, Element.ALIGN_LEFT, panelBg, panelBorder));
+            summary.addCell(invoiceTableBodyCell(formatMoney(subtotal, currency), detailBody, Element.ALIGN_RIGHT, panelBg, panelBorder));
+            summary.addCell(invoiceTableBodyCell("Discount", detailBody, Element.ALIGN_LEFT, Color.WHITE, panelBorder));
+            summary.addCell(invoiceTableBodyCell("-" + formatMoney(discount, currency), detailBody, Element.ALIGN_RIGHT, Color.WHITE, panelBorder));
+            summary.addCell(invoiceTableBodyCell("Wallet Used", detailBody, Element.ALIGN_LEFT, panelBg, panelBorder));
+            summary.addCell(invoiceTableBodyCell(formatMoney(walletUsed, currency), detailBody, Element.ALIGN_RIGHT, panelBg, panelBorder));
+            summary.addCell(invoiceTableBodyCell("Gateway Paid", detailBody, Element.ALIGN_LEFT, Color.WHITE, panelBorder));
+            summary.addCell(invoiceTableBodyCell(formatMoney(gatewayPaid, currency), detailBody, Element.ALIGN_RIGHT, Color.WHITE, panelBorder));
+            summary.addCell(invoiceTableBodyCell("Grand Total", totalFont, Element.ALIGN_LEFT, new Color(231, 238, 255), panelBorder));
+            summary.addCell(invoiceTableBodyCell(formatMoney(total, currency), totalFont, Element.ALIGN_RIGHT, new Color(231, 238, 255), panelBorder));
+            document.add(summary);
 
-            Font footFont = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 9, new Color(104, 112, 130));
-            Paragraph foot = new Paragraph(
-                    "This is a system generated receipt. For support, contact Astro Adhyaay support.",
-                    footFont
-            );
-            foot.setSpacingBefore(10f);
-            document.add(foot);
+            Paragraph help = new Paragraph("Need help? support@astrologer.app", footFont);
+            help.setSpacingAfter(3f);
+            document.add(help);
+            document.add(new Paragraph("This is a system-generated invoice and does not require signature.", footFont));
 
             document.close();
             return baos.toByteArray();
@@ -432,31 +558,73 @@ public class PujaSamagriPurchaseService {
         }
     }
 
-    private PdfPCell metaCell(String value, Font font) {
-        PdfPCell cell = new PdfPCell(new Phrase(valueOrDefault(value, "-"), font));
-        cell.setPadding(6f);
-        cell.setBorderColor(new Color(223, 231, 248));
+    private Font invoiceFont(float size, int style, Color color) {
+        Font font = FontFactory.getFont("Calibri", size, style, color);
+        if (font == null || font.getFamilyname() == null || "unknown".equalsIgnoreCase(font.getFamilyname())) {
+            return new Font(Font.HELVETICA, size, style, color);
+        }
+        return font;
+    }
+
+    private PdfPCell invoicePanelCell(
+            String label,
+            String value,
+            Font labelFont,
+            Font valueFont,
+            Color bgColor,
+            Color borderColor
+    ) {
+        PdfPCell cell = new PdfPCell();
+        cell.setPadding(9f);
+        cell.setBackgroundColor(bgColor);
+        cell.setBorderColor(borderColor);
+        Paragraph labelPara = new Paragraph(valueOrDefault(label, "-"), labelFont);
+        labelPara.setSpacingAfter(4f);
+        cell.addElement(labelPara);
+        cell.addElement(new Paragraph(valueOrDefault(value, "-"), valueFont));
         return cell;
     }
 
-    private PdfPCell headerCell(String text) {
-        Font font = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, Color.WHITE);
-        PdfPCell cell = new PdfPCell(new Phrase(text, font));
+    private PdfPCell invoiceDetailCell(
+            String title,
+            String[] lines,
+            Font titleFont,
+            Font bodyFont,
+            Color bgColor,
+            Color borderColor
+    ) {
+        PdfPCell cell = new PdfPCell();
+        cell.setPadding(10f);
+        cell.setBackgroundColor(bgColor);
+        cell.setBorderColor(borderColor);
+        Paragraph titlePara = new Paragraph(valueOrDefault(title, "-"), titleFont);
+        titlePara.setSpacingAfter(5f);
+        cell.addElement(titlePara);
+        if (lines != null) {
+            for (String line : lines) {
+                cell.addElement(new Paragraph(valueOrDefault(line, "-"), bodyFont));
+            }
+        }
+        return cell;
+    }
+
+    private PdfPCell invoiceTableHeaderCell(String text, Font font, Color bgColor) {
+        PdfPCell cell = new PdfPCell(new Phrase(valueOrDefault(text, "-"), font));
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
         cell.setPadding(7f);
-        cell.setBackgroundColor(new Color(29, 60, 139));
-        cell.setBorderColor(new Color(29, 60, 139));
+        cell.setBackgroundColor(bgColor);
+        cell.setBorderColor(bgColor);
         return cell;
     }
 
-    private PdfPCell bodyCell(String text, int align) {
-        Font font = FontFactory.getFont(FontFactory.HELVETICA, 10, new Color(29, 39, 64));
+    private PdfPCell invoiceTableBodyCell(String text, Font font, int align, Color bgColor, Color borderColor) {
         PdfPCell cell = new PdfPCell(new Phrase(valueOrDefault(text, "-"), font));
         cell.setHorizontalAlignment(align);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        cell.setPadding(6f);
-        cell.setBorderColor(new Color(223, 231, 248));
+        cell.setPadding(6.5f);
+        cell.setBackgroundColor(bgColor);
+        cell.setBorderColor(borderColor);
         return cell;
     }
 
