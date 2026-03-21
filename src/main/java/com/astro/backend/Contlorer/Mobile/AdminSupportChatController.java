@@ -118,6 +118,19 @@ public class AdminSupportChatController {
         ));
     }
 
+    @PostMapping("/sessions/{chatId}/clear-user")
+    public ResponseEntity<?> clearUserChat(
+            @PathVariable String chatId,
+            HttpServletRequest request
+    ) {
+        User actor = currentUser(request);
+        AdminSupportChatSession session = adminSupportChatService.clearUserChat(actor, chatId);
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "session", adminSupportChatService.toSessionPayload(session, actor)
+        ));
+    }
+
     @PostMapping("/sessions/{chatId}/presence")
     public ResponseEntity<?> updatePresence(
             @PathVariable String chatId,

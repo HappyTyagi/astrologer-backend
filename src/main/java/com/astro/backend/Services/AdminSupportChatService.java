@@ -203,6 +203,18 @@ public class AdminSupportChatService {
         return sessionRepository.save(session);
     }
 
+    public AdminSupportChatSession clearUserChat(User actor, String chatId) {
+        if (actor.getRole() == Role.ADMIN) {
+            throw new IllegalArgumentException("Admin chat history cannot be cleared from user-side action");
+        }
+        AdminSupportChatSession session = getSession(actor, chatId);
+        LocalDateTime now = LocalDateTime.now();
+        session.setUserChatClearedAt(now);
+        session.setUserUnreadCount(0);
+        session.setLastReadByUserAt(now);
+        return sessionRepository.save(session);
+    }
+
     public AdminSupportCallSession startCall(
             User actor,
             String chatId,
@@ -377,6 +389,7 @@ public class AdminSupportChatService {
         payload.put("adminRtmId", session.getAdminRtmId());
         payload.put("adminUserId", session.getAdminUserId());
         payload.put("userLastSeenAt", session.getUserLastSeenAt() == null ? null : session.getUserLastSeenAt().toString());
+        payload.put("userChatClearedAt", session.getUserChatClearedAt() == null ? null : session.getUserChatClearedAt().toString());
         return payload;
     }
 

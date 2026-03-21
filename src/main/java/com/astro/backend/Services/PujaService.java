@@ -2282,46 +2282,28 @@ public void softDeleteSamagriMaster(Long id) {
         String displayGotra = gotraName == null || gotraName.isBlank() ? "-" : gotraName.trim();
         String displayRashi = rashiName == null || rashiName.isBlank() ? "-" : rashiName.trim();
         String displayNakshatra = nakshatraName == null || nakshatraName.isBlank() ? "-" : nakshatraName.trim();
-
-        return """
-                <html>
-                <body style="margin:0;padding:0;background:#efe4c9;font-family:Georgia,'Times New Roman',serif;color:#4a2f1a;">
-                  <div style="max-width:860px;margin:0 auto;padding:16px 10px;">
-                    <table role="presentation" style="width:100%%;border-collapse:separate;border-spacing:0;background:#f4e8cf;border:1px solid #c8ab73;border-radius:8px;overflow:hidden;">
-                      <tr>
-                        <td style="width:24px;background:linear-gradient(#d9b882,#b3844f);"></td>
-                        <td style="padding:22px 24px;background:radial-gradient(circle at top,#f9f0db 0%%,#f1e2c2 66%%,#ead7b4 100%%);">
-                          <div style="text-align:center;margin-bottom:12px;">
-                            <div style="font-size:36px;line-height:1;color:#9a6b2f;">ॐ</div>
-                            <div style="font-size:34px;font-weight:700;letter-spacing:.4px;">ASTRO ADHYAAY</div>
-                            <div style="font-size:28px;margin-top:8px;font-weight:700;">You are cordially invited...</div>
-                            <div style="font-size:42px;margin-top:8px;font-weight:700;">Mr./Ms. %s</div>
-                            <div style="font-size:24px;margin-top:4px;">(Gotra: %s | Rashi: %s | Nakshatra: %s)</div>
-                            <div style="font-size:24px;margin-top:6px;">Your gracious presence is deeply valued...</div>
-                          </div>
-                          <div style="margin-top:14px;font-size:29px;font-weight:700;">Ceremony Details:</div>
-                          <ul style="margin:8px 0 0 22px;padding:0;font-size:30px;line-height:1.45;">
-                            <li><strong>Puja:</strong> %s</li>
-                            <li><strong>Date & Time:</strong> %s</li>
-                          </ul>
-                          <div style="margin-top:12px;font-size:32px;font-weight:700;">Join the Ceremony:</div>
-                          <div style="margin-top:6px;font-size:28px;word-break:break-all;">
-                            <a href="%s" style="color:#1f5f9e;text-decoration:underline;">%s</a>
-                          </div>
-                          <div style="margin-top:18px;text-align:right;font-size:24px;line-height:1.45;">
-                            With Sincere Regards & Blessings,<br/>
-                            The Astro Adhyaay Pooja Team
-                          </div>
-                        </td>
-                        <td style="width:24px;background:linear-gradient(#d9b882,#b3844f);"></td>
-                      </tr>
-                    </table>
-                    <p style="text-align:center;color:#6b5234;font-size:13px;margin:10px 0 0 0;">
-                      Calendar invite is attached in this email.
-                    </p>
-                  </div>
-                </body>
-                </html>
+        String detailsHtml = """
+                <div style="text-align:center;margin-bottom:12px;">
+                  <div style="font-size:34px;line-height:1;color:#9a6b2f;">ॐ</div>
+                  <div style="font-size:40px;font-weight:700;letter-spacing:.5px;color:#5d381f;">ASTRO ADHYAAY</div>
+                  <div style="font-size:30px;margin-top:8px;color:#5d381f;">You are cordially invited...</div>
+                  <div style="font-size:46px;margin-top:8px;font-weight:700;color:#4b2814;">Mr./Ms. %s</div>
+                  <div style="font-size:23px;margin-top:6px;color:#603d21;">(Gotra: %s | Rashi: %s | Nakshatra: %s)</div>
+                  <div style="font-size:27px;margin-top:8px;color:#5c3820;">Your gracious presence is deeply valued...</div>
+                </div>
+                <div style="margin-top:16px;font-size:31px;font-weight:700;color:#4f2c18;">🪔 Ceremony Details:</div>
+                <ul style="margin:8px 0 0 24px;padding:0;font-size:29px;line-height:1.5;color:#4f2c18;">
+                  <li><strong>Puja:</strong> %s</li>
+                  <li><strong>Date & Time:</strong> %s</li>
+                </ul>
+                <div style="margin-top:14px;font-size:31px;font-weight:700;color:#4f2c18;">🔗 Join the Ceremony:</div>
+                <div style="margin-top:6px;font-size:28px;word-break:break-all;">
+                  <a href="%s" style="color:#1f5f9e;text-decoration:underline;">%s</a>
+                </div>
+                <div style="margin-top:20px;text-align:right;font-size:24px;line-height:1.45;color:#5c3820;">
+                  With Sincere Regards & Blessings,<br/>
+                  The Astro Adhyaay Pooja Team
+                </div>
                 """.formatted(
                 escapeHtml(displayName),
                 escapeHtml(displayGotra),
@@ -2331,6 +2313,10 @@ public void softDeleteSamagriMaster(Long id) {
                 escapeHtml(slotTimeText),
                 escapeHtml(meetLink),
                 escapeHtml(meetLink)
+        );
+        return wrapPujaMailTemplate(
+                detailsHtml,
+                "Calendar invite is attached in this email."
         );
     }
 
@@ -2352,47 +2338,66 @@ public void softDeleteSamagriMaster(Long id) {
                 listHtml.append("<li>").append(escapeHtml(name + suffix)).append("</li>");
             }
         }
-
-        return """
-                <html>
-                <body style="margin:0;padding:0;background:#efe4c9;font-family:Georgia,'Times New Roman',serif;color:#4a2f1a;">
-                  <div style="max-width:860px;margin:0 auto;padding:16px 10px;">
-                    <table role="presentation" style="width:100%%;border-collapse:separate;border-spacing:0;background:#f4e8cf;border:1px solid #c8ab73;border-radius:8px;overflow:hidden;">
-                      <tr>
-                        <td style="width:24px;background:linear-gradient(#d9b882,#b3844f);"></td>
-                        <td style="padding:22px 24px;background:radial-gradient(circle at top,#f9f0db 0%%,#f1e2c2 66%%,#ead7b4 100%%);">
-                          <div style="text-align:center;">
-                            <div style="font-size:36px;line-height:1;color:#9a6b2f;">ॐ</div>
-                            <div style="font-size:34px;font-weight:700;letter-spacing:.4px;">ASTRO ADHYAAY</div>
-                            <div style="font-size:48px;margin-top:10px;font-weight:700;">Authentic Puja Samagri List</div>
-                          </div>
-                          <ul style="margin:12px 0 0 22px;padding:0;font-size:30px;line-height:1.45;">
-                            %s
-                          </ul>
-                          <div style="margin-top:12px;border-top:1px solid #bfa172;padding-top:10px;font-size:26px;line-height:1.45;">
-                            <strong>Puja:</strong> %s<br/>
-                            <strong>Slot:</strong> %s<br/>
-                            <strong>Join:</strong> <a href="%s" style="color:#1f5f9e;text-decoration:underline;">Google Meet Link</a>
-                          </div>
-                          <div style="margin-top:14px;text-align:center;font-size:26px;font-weight:700;">
-                            WEAR INDIAN TRADITIONAL WEAR
-                          </div>
-                          <div style="text-align:center;margin-top:8px;font-size:22px;">
-                            Saree / Suit &nbsp; | &nbsp; Dhoti Kurta / Kurta Pajama
-                          </div>
-                        </td>
-                        <td style="width:24px;background:linear-gradient(#d9b882,#b3844f);"></td>
-                      </tr>
-                    </table>
-                  </div>
-                </body>
-                </html>
+        String detailsHtml = """
+                <div style="text-align:center;">
+                  <div style="font-size:34px;line-height:1;color:#9a6b2f;">ॐ</div>
+                  <div style="font-size:40px;font-weight:700;letter-spacing:.5px;color:#5d381f;">ASTRO ADHYAAY</div>
+                  <div style="font-size:54px;margin-top:10px;font-weight:700;color:#4b2814;">Authentic Puja Samagri List</div>
+                </div>
+                <ul style="margin:14px 0 0 24px;padding:0;font-size:29px;line-height:1.5;color:#4f2c18;">
+                  %s
+                </ul>
+                <div style="margin-top:14px;border-top:1px solid #bfa172;padding-top:12px;font-size:25px;line-height:1.5;color:#4f2c18;">
+                  <strong>Puja:</strong> %s<br/>
+                  <strong>Slot:</strong> %s<br/>
+                  <strong>Join:</strong> <a href="%s" style="color:#1f5f9e;text-decoration:underline;">Google Meet Link</a>
+                </div>
+                <div style="margin-top:16px;text-align:center;font-size:27px;font-weight:700;color:#4f2c18;">
+                  WEAR INDIAN TRADITIONAL WEAR
+                </div>
+                <div style="text-align:center;margin-top:10px;font-size:22px;color:#5b3920;">
+                  👩 Saree / Suit &nbsp; &nbsp; | &nbsp; &nbsp; 🙏 Dhoti Kurta / Kurta Pajama
+                </div>
                 """.formatted(
                 listHtml.toString(),
                 escapeHtml(pujaName),
                 escapeHtml(slotTimeText),
                 escapeHtml(meetLink)
         );
+        return wrapPujaMailTemplate(detailsHtml, null);
+    }
+
+    private String wrapPujaMailTemplate(String contentHtml, String footerNote) {
+        String noteHtml = (footerNote == null || footerNote.isBlank())
+                ? ""
+                : """
+                  <p style="text-align:center;color:#6b5234;font-size:13px;margin:10px 0 0 0;">
+                    %s
+                  </p>
+                """.formatted(escapeHtml(footerNote));
+
+        return """
+                <html>
+                <body style="margin:0;padding:0;background:#eadfc7;font-family:Georgia,'Times New Roman',serif;color:#4a2f1a;">
+                  <div style="max-width:900px;margin:0 auto;padding:16px 10px;">
+                    <table role="presentation" style="width:100%%;border-collapse:separate;border-spacing:0;background:#f4e8cf;border:1px solid #c8ab73;border-radius:10px;overflow:hidden;box-shadow:0 4px 16px rgba(92,67,38,.15);">
+                      <tr>
+                        <td style="width:30px;background:#d0ab75;">
+                          <div style="height:100%%;min-height:280px;background:linear-gradient(180deg,#d6b47d 0%%,#be8f57 50%%,#d6b47d 100%%);"></div>
+                        </td>
+                        <td style="padding:24px 26px;background:radial-gradient(circle at top,#f9f0db 0%%,#f1e2c2 66%%,#ead7b4 100%%);">
+                          %s
+                        </td>
+                        <td style="width:30px;background:#d0ab75;">
+                          <div style="height:100%%;min-height:280px;background:linear-gradient(180deg,#d6b47d 0%%,#be8f57 50%%,#d6b47d 100%%);"></div>
+                        </td>
+                      </tr>
+                    </table>
+                    %s
+                  </div>
+                </body>
+                </html>
+                """.formatted(contentHtml, noteHtml);
     }
 
     private byte[] buildCalendarInviteIcs(PujaBooking booking, String pujaName, PujaSlot slot, String meetLink) {

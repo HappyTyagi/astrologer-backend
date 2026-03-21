@@ -85,6 +85,8 @@ public class AdminSupportChatSession {
 
     private LocalDateTime lastReadByUserAt;
 
+    private LocalDateTime userChatClearedAt;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
