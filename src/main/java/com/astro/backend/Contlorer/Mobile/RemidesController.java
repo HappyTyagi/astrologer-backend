@@ -67,16 +67,60 @@ public class RemidesController {
     }
 
     @GetMapping
-    public ResponseEntity<List<RemidesResponse>> getRemides(@RequestParam(value = "userId", required = false) Long userId) {
+    public ResponseEntity<?> getRemides(
+            @RequestParam(value = "userId", required = false) Long userId,
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size,
+            @RequestParam(value = "search", required = false) String search
+    ) {
         List<Remides> remidesList = (userId == null)
                 ? remidesRepository.findAll()
                 : remidesRepository.findByUserId(userId);
+
+        final String normalizedSearch = normalizeSearch(search);
+        if (!normalizedSearch.isEmpty()) {
+            remidesList = remidesList.stream()
+                    .filter(remides ->
+                            containsSearch(remides.getTitle(), normalizedSearch)
+                                    || containsSearch(remides.getHiTitle(), normalizedSearch)
+                                    || containsSearch(remides.getSubtitle(), normalizedSearch)
+                                    || containsSearch(remides.getHiSubtitle(), normalizedSearch)
+                                    || containsSearch(remides.getDescription(), normalizedSearch)
+                                    || containsSearch(remides.getHiDescription(), normalizedSearch)
+                                    || containsSearch(remides.getCategory(), normalizedSearch)
+                                    || containsSearch(remides.getHiCategory(), normalizedSearch))
+                    .toList();
+        }
 
         List<RemidesResponse> response = remidesList.stream()
                 .map(remides -> toResponse(remides, true, "Remides fetched successfully"))
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(response);
+        final boolean pagedRequested = page != null || size != null || !normalizedSearch.isEmpty();
+        if (!pagedRequested) {
+            return ResponseEntity.ok(response);
+        }
+
+        final int pageIndex = normalizePage(page);
+        final int pageSize = normalizeSize(size);
+        final int total = response.size();
+        final int fromIndex = Math.min(pageIndex * pageSize, total);
+        final int toIndex = Math.min(fromIndex + pageSize, total);
+        final List<RemidesResponse> pageItems = response.subList(fromIndex, toIndex);
+        final int totalPages = pageSize == 0 ? 0 : (int) Math.ceil(total / (double) pageSize);
+
+        final java.util.Map<String, Object> payload = new java.util.LinkedHashMap<>();
+        payload.put("status", true);
+        payload.put("message", "Remides fetched successfully");
+        payload.put("items", pageItems);
+        payload.put("count", total);
+        payload.put("page", pageIndex);
+        payload.put("size", pageSize);
+        payload.put("totalPages", totalPages);
+        payload.put("hasNext", toIndex < total);
+        payload.put("hasPrevious", pageIndex > 0);
+        payload.put("search", normalizedSearch);
+        return ResponseEntity.ok(payload);
     }
 
     @PutMapping("/{id}")
@@ -196,5 +240,36 @@ public class RemidesController {
         }
         String cleaned = value.trim();
         return cleaned.isEmpty() ? null : cleaned;
+    }
+
+    private String normalizeSearch(String search) {
+        if (search == null) {
+            return "";
+        }
+        return search.trim().toLowerCase();
+    }
+
+    private boolean containsSearch(String value, String search) {
+        if (search == null || search.isEmpty()) {
+            return true;
+        }
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        return value.toLowerCase().contains(search);
+    }
+
+    private int normalizePage(Integer page) {
+        if (page == null || page < 0) {
+            return 0;
+        }
+        return page;
+    }
+
+    private int normalizeSize(Integer size) {
+        if (size == null || size <= 0) {
+            return 12;
+        }
+        return Math.min(size, 100);
     }
 }

@@ -56,8 +56,50 @@ public class PujaController {
     private final AgoraTokenService agoraTokenService;
 
     @GetMapping("/list")
-    public Object listPujas() {
-        return pujaRepo.findAll();
+    public Object listPujas(
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size,
+            @RequestParam(value = "search", required = false) String search
+    ) {
+        List<Puja> pujas = pujaRepo.findAll();
+        final String normalizedSearch = normalizeSearch(search);
+        if (!normalizedSearch.isEmpty()) {
+            pujas = pujas.stream()
+                    .filter(puja ->
+                            containsSearch(puja.getName(), normalizedSearch)
+                                    || containsSearch(puja.getHiName(), normalizedSearch)
+                                    || containsSearch(puja.getDescription(), normalizedSearch)
+                                    || containsSearch(puja.getCategory(), normalizedSearch)
+                                    || containsSearch(puja.getBenefits(), normalizedSearch)
+                                    || containsSearch(puja.getRituals(), normalizedSearch))
+                    .toList();
+        }
+
+        final boolean pagedRequested = page != null || size != null || !normalizedSearch.isEmpty();
+        if (!pagedRequested) {
+            return pujas;
+        }
+
+        final int pageIndex = normalizePage(page);
+        final int pageSize = normalizeSize(size);
+        final int total = pujas.size();
+        final int fromIndex = Math.min(pageIndex * pageSize, total);
+        final int toIndex = Math.min(fromIndex + pageSize, total);
+        final List<Puja> pageItems = pujas.subList(fromIndex, toIndex);
+        final int totalPages = pageSize == 0 ? 0 : (int) Math.ceil(total / (double) pageSize);
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("status", true);
+        payload.put("message", "Pujas fetched successfully");
+        payload.put("items", pageItems);
+        payload.put("count", total);
+        payload.put("page", pageIndex);
+        payload.put("size", pageSize);
+        payload.put("totalPages", totalPages);
+        payload.put("hasNext", toIndex < total);
+        payload.put("hasPrevious", pageIndex > 0);
+        payload.put("search", normalizedSearch);
+        return payload;
     }
 
     @GetMapping("/popup/daily")
@@ -186,23 +228,37 @@ public class PujaController {
     }
 
     @GetMapping("/history/{userId}")
-    public Object history(@PathVariable Long userId) {
+    public Object history(
+            @PathVariable Long userId,
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size,
+            @RequestParam(value = "search", required = false) String search
+    ) {
         final List<PujaBooking> bookings = bookingRepo.findByUserIdOrderByBookedAtDesc(userId);
         final Set<Long> slotIds = bookings.stream()
                 .map(PujaBooking::getSlotId)
                 .filter(id -> id != null && id > 0)
                 .collect(Collectors.toSet());
+        final Set<Long> pujaIds = bookings.stream()
+                .map(PujaBooking::getPujaId)
+                .filter(id -> id != null && id > 0)
+                .collect(Collectors.toSet());
         final Map<Long, PujaSlot> slotById = slotRepo.findAllById(slotIds)
                 .stream()
                 .collect(Collectors.toMap(PujaSlot::getId, s -> s));
+        final Map<Long, Puja> pujaById = pujaRepo.findAllById(pujaIds)
+                .stream()
+                .collect(Collectors.toMap(Puja::getId, p -> p));
 
-        return bookings.stream().map(b -> {
+        final List<Map<String, Object>> rows = bookings.stream().map(b -> {
             PujaSlot slot = b.getSlotId() == null ? null : slotById.get(b.getSlotId());
+            Puja puja = b.getPujaId() == null ? null : pujaById.get(b.getPujaId());
             Map<String, Object> row = new LinkedHashMap<>();
             row.put("id", b.getId());
             row.put("orderId", PujaOrderIdHelper.build(b.getUserId(), b.getId()));
             row.put("userId", b.getUserId());
             row.put("pujaId", b.getPujaId());
+            row.put("pujaName", puja == null ? null : puja.getName());
             row.put("slotId", b.getSlotId());
             row.put("slotTime", slot == null ? null : slot.getSlotTime());
             row.put("slotSelectedByMobile", b.getSlotSelectedByMobile());
@@ -220,6 +276,36 @@ public class PujaController {
             row.put("reminderSentAt", b.getReminderSentAt());
             return row;
         }).toList();
+
+        final String normalizedSearch = normalizeSearch(search);
+        final List<Map<String, Object>> filteredRows = rows.stream()
+                .filter(row -> matchesHistorySearch(row, normalizedSearch))
+                .toList();
+
+        final boolean pagedRequested = page != null || size != null || !normalizedSearch.isEmpty();
+        if (!pagedRequested) {
+            return filteredRows;
+        }
+
+        final int pageIndex = normalizePage(page);
+        final int pageSize = normalizeSize(size);
+        final int total = filteredRows.size();
+        final int fromIndex = Math.min(pageIndex * pageSize, total);
+        final int toIndex = Math.min(fromIndex + pageSize, total);
+        final List<Map<String, Object>> pageItems = filteredRows.subList(fromIndex, toIndex);
+        final int totalPages = pageSize == 0 ? 0 : (int) Math.ceil(total / (double) pageSize);
+
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("status", true);
+        payload.put("items", pageItems);
+        payload.put("count", total);
+        payload.put("page", pageIndex);
+        payload.put("size", pageSize);
+        payload.put("totalPages", totalPages);
+        payload.put("hasNext", toIndex < total);
+        payload.put("hasPrevious", pageIndex > 0);
+        payload.put("search", normalizedSearch);
+        return payload;
     }
 
     @PostMapping("/{bookingId}/generate-agora-link")
@@ -762,5 +848,55 @@ public class PujaController {
                 .replace("&", "&amp;")
                 .replace("<", "&lt;")
                 .replace(">", "&gt;");
+    }
+
+    private String normalizeSearch(String search) {
+        if (search == null) {
+            return "";
+        }
+        return search.trim().toLowerCase();
+    }
+
+    private boolean containsSearch(String value, String search) {
+        if (search == null || search.isEmpty()) {
+            return true;
+        }
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        return value.toLowerCase().contains(search);
+    }
+
+    private boolean matchesHistorySearch(Map<String, Object> row, String search) {
+        if (search == null || search.isEmpty()) {
+            return true;
+        }
+        return containsSearchValue(row.get("orderId"), search)
+                || containsSearchValue(row.get("status"), search)
+                || containsSearchValue(row.get("paymentMethod"), search)
+                || containsSearchValue(row.get("transactionId"), search)
+                || containsSearchValue(row.get("pujaName"), search)
+                || containsSearchValue(row.get("pujaId"), search);
+    }
+
+    private boolean containsSearchValue(Object value, String search) {
+        if (value == null) {
+            return false;
+        }
+        return value.toString().toLowerCase().contains(search);
+    }
+
+    private int normalizePage(Integer page) {
+        if (page == null || page < 0) {
+            return 0;
+        }
+        return page;
+    }
+
+    private int normalizeSize(Integer size) {
+        if (size == null || size <= 0) {
+            return 12;
+        }
+        return Math.min(size, 100);
     }
 }

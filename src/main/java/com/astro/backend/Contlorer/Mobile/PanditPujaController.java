@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -52,7 +53,10 @@ public class PanditPujaController {
     @GetMapping("/upcoming-pujas")
     public ResponseEntity<?> upcomingPujas(
             HttpServletRequest request,
-            @RequestParam(name = "view", required = false) String view
+            @RequestParam(name = "view", required = false) String view,
+            @RequestParam(name = "page", required = false) Integer page,
+            @RequestParam(name = "size", required = false) Integer size,
+            @RequestParam(name = "search", required = false) String search
     ) {
         User actor = requireCurrentUser(request);
         if (!isAdminOrPerformer(actor)) {
@@ -172,12 +176,41 @@ public class PanditPujaController {
                 })
                 .toList();
 
-        return ResponseEntity.ok(Map.of(
-                "status", true,
-                "view", scope.name(),
-                "count", rows.size(),
-                "bookings", rows
-        ));
+        final String normalizedSearch = normalizeSearch(search);
+        final List<Map<String, Object>> filteredRows = rows.stream()
+                .filter(row -> matchesSearch(row, normalizedSearch))
+                .toList();
+
+        final boolean pagedRequested = page != null || size != null || !normalizedSearch.isEmpty();
+        if (!pagedRequested) {
+            return ResponseEntity.ok(Map.of(
+                    "status", true,
+                    "view", scope.name(),
+                    "count", filteredRows.size(),
+                    "bookings", filteredRows
+            ));
+        }
+
+        final int pageIndex = normalizePage(page);
+        final int pageSize = normalizeSize(size);
+        final int total = filteredRows.size();
+        final int fromIndex = Math.min(pageIndex * pageSize, total);
+        final int toIndex = Math.min(fromIndex + pageSize, total);
+        final List<Map<String, Object>> pageItems = filteredRows.subList(fromIndex, toIndex);
+        final int totalPages = pageSize == 0 ? 0 : (int) Math.ceil(total / (double) pageSize);
+
+        final Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("status", true);
+        payload.put("view", scope.name());
+        payload.put("count", total);
+        payload.put("bookings", pageItems);
+        payload.put("page", pageIndex);
+        payload.put("size", pageSize);
+        payload.put("totalPages", totalPages);
+        payload.put("hasNext", toIndex < total);
+        payload.put("hasPrevious", pageIndex > 0);
+        payload.put("search", normalizedSearch);
+        return ResponseEntity.ok(payload);
     }
 
     private PujaViewScope parseScope(String rawScope) {
@@ -270,5 +303,48 @@ public class PanditPujaController {
         if (!text.isEmpty()) {
             parts.add(text);
         }
+    }
+
+    private String normalizeSearch(String search) {
+        if (search == null) {
+            return "";
+        }
+        return search.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private boolean matchesSearch(Map<String, Object> row, String search) {
+        if (search == null || search.isEmpty()) {
+            return true;
+        }
+        return contains(row.get("bookingId"), search)
+                || contains(row.get("userName"), search)
+                || contains(row.get("pujaName"), search)
+                || contains(row.get("bookingStatus"), search)
+                || contains(row.get("packageName"), search)
+                || contains(row.get("packageCode"), search)
+                || contains(row.get("address"), search)
+                || contains(row.get("mobileNumber"), search)
+                || contains(row.get("email"), search);
+    }
+
+    private boolean contains(Object value, String search) {
+        if (value == null) {
+            return false;
+        }
+        return value.toString().toLowerCase(Locale.ROOT).contains(search);
+    }
+
+    private int normalizePage(Integer page) {
+        if (page == null || page < 0) {
+            return 0;
+        }
+        return page;
+    }
+
+    private int normalizeSize(Integer size) {
+        if (size == null || size <= 0) {
+            return 12;
+        }
+        return Math.min(size, 100);
     }
 }

@@ -24,7 +24,11 @@ public class PujaSamagriShopController {
     private final PujaSamagriMasterImageRepository imageRepository;
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PujaSamagriShopItemResponse>>> listShopItems() {
+    public ResponseEntity<ApiResponse<Object>> listShopItems(
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size,
+            @RequestParam(value = "search", required = false) String search
+    ) {
         final List<PujaSamagriMaster> activeMasters = masterRepository.findByIsActiveOrderByName(true);
         List<PujaSamagriMaster> masters = activeMasters.stream()
                 .filter(m -> Boolean.TRUE.equals(m.getShopEnabled()))
@@ -33,14 +37,15 @@ public class PujaSamagriShopController {
             // Backward compatibility: if shopEnabled isn't configured yet, show all active items.
             masters = activeMasters;
         }
-        if (masters.isEmpty()) {
-            return ResponseEntity.ok(
-                    ResponseUtils.createSuccessResponse(
-                            List.of(),
-                            true,
-                            "No items available"
-                    )
-            );
+        final String normalizedSearch = normalizeSearch(search);
+        if (!normalizedSearch.isEmpty()) {
+            masters = masters.stream()
+                    .filter(master ->
+                            containsSearch(master.getName(), normalizedSearch)
+                                    || containsSearch(master.getHiName(), normalizedSearch)
+                                    || containsSearch(master.getDescription(), normalizedSearch)
+                                    || containsSearch(master.getHiDescription(), normalizedSearch))
+                    .toList();
         }
 
         final List<Long> ids = masters.stream()
@@ -48,21 +53,53 @@ public class PujaSamagriShopController {
                 .filter(Objects::nonNull)
                 .toList();
 
-        final Map<Long, List<String>> imagesByMasterId = imageRepository.findActiveByMasterIdsOrdered(ids)
-                .stream()
-                .filter(i -> i.getSamagriMaster() != null && i.getSamagriMaster().getId() != null)
-                .collect(Collectors.groupingBy(
-                        i -> i.getSamagriMaster().getId(),
-                        LinkedHashMap::new,
-                        Collectors.mapping(PujaSamagriMasterImage::getImageUrl, Collectors.toList())
-                ));
+        final Map<Long, List<String>> imagesByMasterId = ids.isEmpty()
+                ? Map.of()
+                : imageRepository.findActiveByMasterIdsOrdered(ids)
+                        .stream()
+                        .filter(i -> i.getSamagriMaster() != null && i.getSamagriMaster().getId() != null)
+                        .collect(Collectors.groupingBy(
+                                i -> i.getSamagriMaster().getId(),
+                                LinkedHashMap::new,
+                                Collectors.mapping(PujaSamagriMasterImage::getImageUrl, Collectors.toList())
+                        ));
 
         final List<PujaSamagriShopItemResponse> response = masters.stream()
                 .map(m -> toShopResponse(m, imagesByMasterId.get(m.getId())))
                 .toList();
+
+        final boolean pagedRequested = page != null || size != null || !normalizedSearch.isEmpty();
+        if (!pagedRequested) {
+            return ResponseEntity.ok(
+                    ResponseUtils.createSuccessResponse(
+                            response,
+                            true,
+                            response.isEmpty() ? "No items available" : "Shop items fetched successfully"
+                    )
+            );
+        }
+
+        final int pageIndex = normalizePage(page);
+        final int pageSize = normalizeSize(size);
+        final int total = response.size();
+        final int fromIndex = Math.min(pageIndex * pageSize, total);
+        final int toIndex = Math.min(fromIndex + pageSize, total);
+        final List<PujaSamagriShopItemResponse> pageItems = response.subList(fromIndex, toIndex);
+        final int totalPages = pageSize == 0 ? 0 : (int) Math.ceil(total / (double) pageSize);
+
+        final Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("items", pageItems);
+        payload.put("count", total);
+        payload.put("page", pageIndex);
+        payload.put("size", pageSize);
+        payload.put("totalPages", totalPages);
+        payload.put("hasNext", toIndex < total);
+        payload.put("hasPrevious", pageIndex > 0);
+        payload.put("search", normalizedSearch);
+
         return ResponseEntity.ok(
                 ResponseUtils.createSuccessResponse(
-                        response,
+                        payload,
                         true,
                         "Shop items fetched successfully"
                 )
@@ -127,5 +164,36 @@ public class PujaSamagriShopController {
             }
         }
         return merged.stream().toList();
+    }
+
+    private String normalizeSearch(String search) {
+        if (search == null) {
+            return "";
+        }
+        return search.trim().toLowerCase();
+    }
+
+    private boolean containsSearch(String value, String search) {
+        if (search == null || search.isEmpty()) {
+            return true;
+        }
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        return value.toLowerCase().contains(search);
+    }
+
+    private int normalizePage(Integer page) {
+        if (page == null || page < 0) {
+            return 0;
+        }
+        return page;
+    }
+
+    private int normalizeSize(Integer size) {
+        if (size == null || size <= 0) {
+            return 12;
+        }
+        return Math.min(size, 100);
     }
 }

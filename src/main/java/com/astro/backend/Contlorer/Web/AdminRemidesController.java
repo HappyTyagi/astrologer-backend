@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -53,7 +54,11 @@ public class AdminRemidesController {
     }
 
     @GetMapping("/bookings")
-    public ResponseEntity<?> getAllRemedyBookings() {
+    public ResponseEntity<?> getAllRemedyBookings(
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "size", required = false) Integer size,
+            @RequestParam(value = "search", required = false) String search
+    ) {
         List<RemidesPurchase> purchases = remidesPurchaseRepository.findAllByOrderByPurchasedAtDesc();
         Set<Long> userIds = purchases.stream()
                 .map(RemidesPurchase::getUserId)
@@ -125,11 +130,39 @@ public class AdminRemidesController {
             rows.add(row);
         }
 
-        return ResponseEntity.ok(Map.of(
-                "status", true,
-                "count", rows.size(),
-                "bookings", rows
-        ));
+        final String normalizedSearch = normalizeSearch(search);
+        final List<Map<String, Object>> filteredRows = rows.stream()
+                .filter(row -> matchesSearch(row, normalizedSearch))
+                .toList();
+
+        final boolean pagedRequested = page != null || size != null || !normalizedSearch.isEmpty();
+        if (!pagedRequested) {
+            return ResponseEntity.ok(Map.of(
+                    "status", true,
+                    "count", filteredRows.size(),
+                    "bookings", filteredRows
+            ));
+        }
+
+        final int pageIndex = normalizePage(page);
+        final int pageSize = normalizeSize(size);
+        final int total = filteredRows.size();
+        final int fromIndex = Math.min(pageIndex * pageSize, total);
+        final int toIndex = Math.min(fromIndex + pageSize, total);
+        final List<Map<String, Object>> pageItems = filteredRows.subList(fromIndex, toIndex);
+        final int totalPages = pageSize == 0 ? 0 : (int) Math.ceil(total / (double) pageSize);
+
+        final Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("status", true);
+        payload.put("count", total);
+        payload.put("bookings", pageItems);
+        payload.put("page", pageIndex);
+        payload.put("size", pageSize);
+        payload.put("totalPages", totalPages);
+        payload.put("hasNext", toIndex < total);
+        payload.put("hasPrevious", pageIndex > 0);
+        payload.put("search", normalizedSearch);
+        return ResponseEntity.ok(payload);
     }
 
     @PostMapping
@@ -215,5 +248,48 @@ public class AdminRemidesController {
 
     private String defaultText(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private String normalizeSearch(String search) {
+        if (search == null) {
+            return "";
+        }
+        return search.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private boolean matchesSearch(Map<String, Object> row, String search) {
+        if (search == null || search.isEmpty()) {
+            return true;
+        }
+        return contains(row.get("orderId"), search)
+                || contains(row.get("userName"), search)
+                || contains(row.get("mobileNumber"), search)
+                || contains(row.get("email"), search)
+                || contains(row.get("status"), search)
+                || contains(row.get("paymentMethod"), search)
+                || contains(row.get("transactionId"), search)
+                || contains(row.get("address"), search)
+                || contains(row.get("titles"), search);
+    }
+
+    private boolean contains(Object value, String search) {
+        if (value == null) {
+            return false;
+        }
+        return value.toString().toLowerCase(Locale.ROOT).contains(search);
+    }
+
+    private int normalizePage(Integer page) {
+        if (page == null || page < 0) {
+            return 0;
+        }
+        return page;
+    }
+
+    private int normalizeSize(Integer size) {
+        if (size == null || size <= 0) {
+            return 12;
+        }
+        return Math.min(size, 100);
     }
 }
